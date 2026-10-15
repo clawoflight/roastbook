@@ -190,8 +190,12 @@ export function BeanDetailPage() {
       const encodedImage = await fetchImageAsBase64(imageUrl(image.storagePath))
       const extracted = await extractBeanInfo({
         data: {
-          imageBase64: encodedImage.base64,
-          mimeType: encodedImage.mimeType,
+          images: [
+            {
+              imageBase64: encodedImage.base64,
+              mimeType: encodedImage.mimeType,
+            },
+          ],
         },
       })
       if (!showSuggestion(extracted, 'image')) {

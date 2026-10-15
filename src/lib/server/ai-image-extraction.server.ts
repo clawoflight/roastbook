@@ -12,16 +12,16 @@ import { getOpenAIConfig } from '@/lib/server/ai-runtime.server'
 import { parseStructuredResearchResult } from '@/lib/structured-research'
 import type { ExtractedBeanInfo } from '@/modules/ai/read-models'
 
-export async function extractBeanInfoFromImage(
-  imageBase64: string,
+export async function extractBeanInfoFromImages(
+  imagesBase64: readonly string[],
   mimeType: string = 'image/jpeg',
 ): Promise<ExtractedBeanInfo> {
   const config = getOpenAIConfig()
   if (!config.apiKey) return {}
 
   const systemPrompt = beanInfoPrompt(
-    'Extract coffee bean information from product images (bags, labels, packaging).',
-    'Only include fields where you can clearly read the information. Do not guess.',
+    'Extract coffee bean information from product images (bags, labels, packaging). Several images may show different sides of the same bag; combine what they show into one result.',
+    'Only include fields where you can clearly read the information. Do not guess. When images disagree, keep the value that is most legible and specific (for example a full roast date over a partial one) and omit the field when the conflict cannot be resolved.',
   )
   const requestLogId = await startAiRequestLog({
     requestType: 'bean-image-extraction',
@@ -29,7 +29,11 @@ export async function extractBeanInfoFromImage(
     requestPayload: {
       model: config.visionModel,
       mimeType,
-      imageBytes: Buffer.byteLength(imageBase64, 'base64'),
+      imageCount: imagesBase64.length,
+      imageBytes: imagesBase64.reduce(
+        (total, image) => total + Buffer.byteLength(image, 'base64'),
+        0,
+      ),
       stream: false,
     },
   })
@@ -55,16 +59,19 @@ export async function extractBeanInfoFromImage(
           {
             role: 'user',
             content: [
-              {
+              ...imagesBase64.map((imageBase64) => ({
                 type: 'image_url',
                 image_url: {
                   url: `data:${mimeType};base64,${imageBase64}`,
                   detail: 'high',
                 },
-              },
+              })),
               {
                 type: 'text',
-                text: 'Extract the coffee bean information from this image.',
+                text:
+                  imagesBase64.length === 1
+                    ? 'Extract the coffee bean information from this image.'
+                    : `Extract the coffee bean information from these ${imagesBase64.length} images of the same coffee.`,
               },
             ],
           },

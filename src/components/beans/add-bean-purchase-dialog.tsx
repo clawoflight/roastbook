@@ -79,14 +79,15 @@ export function AddBeanPurchaseDialog({
   }
 
   const extractDetails = async () => {
-    const image = imageUpload.images[0]
-    if (!image) return
+    if (imageUpload.images.length === 0) return
     setIsExtracting(true)
     try {
       const extracted = await extractBeanInfo({
         data: {
-          imageBase64: image.base64,
-          mimeType: image.file.type,
+          images: imageUpload.images.slice(0, 6).map((image) => ({
+            imageBase64: image.base64,
+            mimeType: image.file.type,
+          })),
         },
       })
       let applied = 0

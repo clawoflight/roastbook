@@ -45,8 +45,8 @@ export function RoasterResearchAction({
 
   const handleResearch = async () => {
     const name = currentData.name.trim()
-    if (!name) {
-      toast.error('Enter a roaster name first')
+    if (!name && !currentData.website.trim()) {
+      toast.error('Enter a roaster name or website first')
       return
     }
 
@@ -85,7 +85,11 @@ export function RoasterResearchAction({
           variant="outline"
           size="sm"
           onClick={handleResearch}
-          disabled={disabled || isResearching || !currentData.name.trim()}
+          disabled={
+            disabled ||
+            isResearching ||
+            (!currentData.name.trim() && !currentData.website.trim())
+          }
           aria-busy={isResearching}
           className="h-11 sm:h-11 [@media(hover:hover)]:h-8"
         >
@@ -93,8 +97,8 @@ export function RoasterResearchAction({
           {isResearching ? 'Researching…' : 'Research online'}
         </Button>
         <AiActionHelp>
-          Finds and verifies official roaster details online. Uses the name plus
-          any entered location, country, website, Instagram handle, and notes.
+          Finds and verifies official roaster details online. Needs a name or a
+          website and uses any other entered details to narrow the search.
         </AiActionHelp>
       </div>
 

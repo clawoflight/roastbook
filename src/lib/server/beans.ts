@@ -10,7 +10,7 @@ import {
 import { BEAN_TYPE_VALUES, ROAST_LEVEL_VALUES } from '@/lib/domain-contracts'
 import { expectReturnedRow } from '@/lib/domain-errors'
 import {
-  extractBeanInfoFromImage,
+  extractBeanInfoFromImages,
   isResearchEnabled,
   isVisionEnabled,
   researchBeanFromWeb,
@@ -76,8 +76,15 @@ const beanUpdateSchema = beanCreateSchema.partial().extend({
 })
 
 const extractBeanInfoSchema = z.object({
-  imageBase64: imageBase64Schema,
-  mimeType: imageMimeTypeSchema,
+  images: z
+    .array(
+      z.object({
+        imageBase64: imageBase64Schema,
+        mimeType: imageMimeTypeSchema,
+      }),
+    )
+    .min(1)
+    .max(6),
 })
 
 const researchBeanInfoSchema = z.object({
@@ -409,11 +416,15 @@ export const extractBeanInfo = createServerFn({ method: 'POST' })
     if (!isVisionEnabled()) {
       throw new Error('OpenAI vision is not configured')
     }
-    const image = Buffer.from(data.imageBase64, 'base64')
-    await validateImageBuffer(image, data.mimeType)
-    const aiImage = await createAiImage(image)
+    const aiImages = await Promise.all(
+      data.images.map(async ({ imageBase64, mimeType }) => {
+        const image = Buffer.from(imageBase64, 'base64')
+        await validateImageBuffer(image, mimeType)
+        return (await createAiImage(image)).toString('base64')
+      }),
+    )
     return withResourceLimits('bean-image-extraction', () =>
-      extractBeanInfoFromImage(aiImage.toString('base64'), 'image/jpeg'),
+      extractBeanInfoFromImages(aiImages, 'image/jpeg'),
     )
   })
 

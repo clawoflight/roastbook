@@ -47,18 +47,22 @@ const roasterUpdateSchema = roasterCreateSchema.partial().extend({
   notes: notesSchema.nullable().optional(),
 })
 
-const researchRoasterInfoSchema = z.object({
-  name: nameSchema,
-  knownContext: z
-    .object({
-      location: shortTextSchema.optional(),
-      country: shortTextSchema.optional(),
-      website: z.string().trim().max(2_048).optional(),
-      instagramHandle: z.string().trim().max(100).optional(),
-      notes: notesSchema.optional(),
-    })
-    .optional(),
-})
+const researchRoasterInfoSchema = z
+  .object({
+    name: z.string().trim().max(200),
+    knownContext: z
+      .object({
+        location: shortTextSchema.optional(),
+        country: shortTextSchema.optional(),
+        website: z.string().trim().max(2_048).optional(),
+        instagramHandle: z.string().trim().max(100).optional(),
+        notes: notesSchema.optional(),
+      })
+      .optional(),
+  })
+  .refine((data) => data.name || data.knownContext?.website, {
+    message: 'Enter a roaster name or website first',
+  })
 
 const ROASTERS_PAGE_SIZE = 25
 const roasterListSchema = z.object({

@@ -87,7 +87,7 @@ async function researchStructuredDataFromWeb<
     },
   })
   const abortController = new AbortController()
-  const timeout = setTimeout(() => abortController.abort(), 60_000)
+  const timeout = setTimeout(() => abortController.abort(), 120_000)
 
   try {
     const { text: content } = await chat({
@@ -106,6 +106,12 @@ async function researchStructuredDataFromWeb<
       preview: content.slice(0, 300),
     })
     return content ? parseStructuredResearchResult(content, fields) : {}
+  } catch (error) {
+    console.error(`[AI research:${logLabel}] failed`, { ...logContext, error })
+    if (abortController.signal.aborted) {
+      throw new Error('Online research timed out. Please try again.')
+    }
+    throw error
   } finally {
     clearTimeout(timeout)
   }
@@ -137,11 +143,12 @@ export async function researchBeanFromWeb(
 
 export async function researchRoasterFromWeb(
   roasterName: string,
-  knownContext?: Readonly<Record<string, unknown>>,
+  knownContext?: Readonly<{ website?: string } & Record<string, unknown>>,
 ): Promise<ExtractedRoasterInfo> {
+  const identity = roasterName ? `"${roasterName}"` : knownContext?.website
   return researchStructuredDataFromWeb({
     subject: 'coffee roaster',
-    searchQuery: `"${roasterName}" coffee roaster official website Instagram location`,
+    searchQuery: `${identity} coffee roaster official website Instagram location`,
     role: 'You are a specialty coffee research assistant',
     task: 'Identify the specified coffee roaster and research its official company details.',
     fields: ROASTER_INFO_FIELDS,
@@ -149,6 +156,7 @@ export async function researchRoasterFromWeb(
       'Prefer the roaster’s official website, About page, and official Instagram profile.',
       'Use reputable specialty coffee sources only to fill gaps left by official sources.',
       'Verify that every result belongs to the exact roaster and not a similarly named café or coffee company.',
+      'When a website is known, treat it as the strongest identity signal, even if it is a shop, marketplace, or social profile rather than the official site.',
       'Use the headquarters or primary roasting location, not a retailer, stockist, or temporary event location.',
     ],
     knownContext,

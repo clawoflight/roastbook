@@ -143,12 +143,12 @@ export function BeanForm({
 
     setIsExtracting(true)
     try {
-      const firstImage = images[0]
-      if (!firstImage) return
       const extracted = await extractBeanInfo({
         data: {
-          imageBase64: firstImage.base64,
-          mimeType: firstImage.file.type,
+          images: images.slice(0, 6).map((image) => ({
+            imageBase64: image.base64,
+            mimeType: image.file.type,
+          })),
         },
       })
 
@@ -274,8 +274,8 @@ export function BeanForm({
                   Extract details with AI
                 </Button>
                 <AiActionHelp>
-                  Reads coffee and roaster details from the packaging. Uses only
-                  the first uploaded picture.
+                  Reads coffee and roaster details from the packaging. Combines
+                  up to six uploaded pictures and resolves conflicting details.
                 </AiActionHelp>
               </div>
             ) : undefined
