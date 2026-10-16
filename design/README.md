@@ -3,8 +3,11 @@
 `views/roastbook.fig` is one [OpenPencil](https://openpencil.dev) document of
 every Roastbook view, captured from a running instance:
 
-- **Pages:** a page per view, holding its desktop (1280 px) and mobile
-  (390 px) artboards, then a **Components** page.
+- **Pages:** a page per view, holding its desktop (1440×900) and mobile
+  (390×844) artboards, then a **Components** page. A page longer than the
+  screen grows its artboard to show everything.
+- **Content:** the seed data's mock records, but lists show at most six
+  items, so a view shows the pattern rather than the whole database.
 - **Layout:** auto layout throughout. Flex and block stacks become stacks, CSS
   grids become grid layouts, and `ml-auto` pushes become grow spacers.
   Positioned elements are absolute children with matching constraints, so the
@@ -46,7 +49,9 @@ bunx playwright-core install chromium-headless-shell
 ROASTBOOK_URL=http://localhost:3000 bun capture.ts
 ```
 
-`VIEWS="Beans,Bean"` captures only the named views. `CDP_URL` points it at a
+Before measuring, the capture cuts every list rendered by one JSX line to its
+first six items (`LIST_LIMIT` in `capture.ts`) and lets the page lay itself out
+again. `VIEWS="Beans,Bean"` captures only the named views. `CDP_URL` points it at a
 remote Chrome instead of a local headless one, and `OUTPUT` writes somewhere
 other than `views/roastbook.fig`. A capture replaces the document and
 `tokens/`, so commit or export design edits you want to keep first.

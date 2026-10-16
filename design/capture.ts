@@ -17,6 +17,7 @@ import {
   type SnapshotElement,
   snapshotPage,
   TEXT_PROPS,
+  trimRepeats,
 } from './capture/snapshot'
 import {
   importTokens,
@@ -36,10 +37,13 @@ const OUTPUT = process.env.OUTPUT ?? 'views/roastbook.fig'
 const TOKENS_DIR = 'tokens'
 const ONLY = process.env.VIEWS?.split(',')
 
+// Common device sizes; a page taller than the screen grows its artboard to fit.
 const VIEWPORTS = [
-  { name: 'Desktop', width: 1280, height: 800 },
+  { name: 'Desktop', width: 1440, height: 900 },
   { name: 'Mobile', width: 390, height: 844 },
 ]
+// Seed data lists dozens of records; a design shows the pattern with a few.
+const LIST_LIMIT = 6
 const ARTBOARD_GAP = 160
 
 // `detail` opens the first entry linked from `path` instead of `path` itself.
@@ -138,6 +142,7 @@ async function snapshotView(
     await settle(page)
   }
   await page.addStyleTag({ content: CAPTURE_CSS })
+  await page.evaluate(trimRepeats, LIST_LIMIT)
   await fitToContent(page, viewport.width)
   return page.evaluate(snapshotPage, {
     element: ELEMENT_PROPS,

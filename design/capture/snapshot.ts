@@ -545,3 +545,30 @@ export async function snapshotPage(props: {
   if (!wasDark) root.classList.remove('dark')
   return body
 }
+
+/**
+ * Cuts lists the seed data makes long: an element's children rendered by the same JSX
+ * line beyond the first `limit` are removed, and the page lays itself out again. Small
+ * repeats such as chart cells and rating stars stay whole.
+ */
+export function trimRepeats(limit: number) {
+  let removed = 0
+  for (const parent of Array.from(document.querySelectorAll('body *'))) {
+    const runs = new Map<string, Element[]>()
+    for (const child of Array.from(parent.children)) {
+      const source = child.getAttribute('data-tsd-source')
+      if (!source) continue
+      const run = runs.get(source) ?? []
+      run.push(child)
+      runs.set(source, run)
+    }
+    for (const items of runs.values()) {
+      if (items.length <= limit) continue
+      const { width, height } = (items[0] as Element).getBoundingClientRect()
+      if (height < 32 || width < 64) continue
+      for (const item of items.slice(limit)) item.remove()
+      removed += items.length - limit
+    }
+  }
+  return removed
+}
