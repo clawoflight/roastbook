@@ -104,6 +104,12 @@ For a changed route, verify 375px, 768px, and 1280px widths, including keyboard
 access, loading/empty/error states, console errors, and failed network requests.
 Store temporary artifacts under `.artifacts/qa/`; the directory is ignored.
 
+## Design files
+
+`design/` is a separate package, outside the application's dependencies and
+type checks, that captures every view into editable OpenPencil documents and
+runs the OpenPencil editor for them. See `design/README.md`.
+
 ## Generated files
 
 - Run `bun run generate-routes` after route-file changes.

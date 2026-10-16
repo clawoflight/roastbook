@@ -292,6 +292,7 @@ running.
 | [Deployment](docs/deployment.md) | Docker, Helm, security boundary |
 | [Shottimer API](docs/shottimer.md) | Device integration endpoints |
 | [Design system](DESIGN.md) | Layout contract and UI conventions |
+| [Design files](design/README.md) | Editable OpenPencil views and editor |
 | [Helm chart reference](charts/README.md) | Chart values and defaults |
 
 ## 📁 Project layout

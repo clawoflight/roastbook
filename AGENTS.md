@@ -13,6 +13,7 @@ Hodor authentication proxy in front of the application.
 - Docker, Helm, and security boundary: `docs/deployment.md`
 - Demo edition and Vercel build: `docs/demo-mode.md`
 - Visual and interaction rules: `DESIGN.md`
+- OpenPencil design files, capture, and editor: `design/README.md`
 - Database schema: `src/db/schema.ts`
 - Helm defaults: `charts/values.yaml`
 
