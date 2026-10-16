@@ -7,7 +7,12 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": ["**", "!src/routeTree.gen.ts", "!drizzle/meta", "!design/tokens"]
+    "includes": [
+      "**",
+      "!src/routeTree.gen.ts",
+      "!drizzle/meta",
+      "!design/tokens"
+    ]
   },
   "formatter": {
     "enabled": true,
