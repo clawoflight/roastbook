@@ -170,6 +170,80 @@ function loadImage(url: string) {
   return cached
 }
 
+/** The first page: what the document is, where it comes from, and how it is laid out. */
+function cover(
+  graph: SceneGraph,
+  pageId: string,
+  views: number,
+  components: { components: number },
+) {
+  graph.updateNode(pageId, { name: 'Cover' })
+  const frame = graph.createNode('FRAME', pageId, {
+    name: 'Cover',
+    width: 1440,
+    height: 900,
+    layoutMode: 'VERTICAL',
+    itemSpacing: 24,
+    paddingTop: 120,
+    paddingLeft: 120,
+    paddingRight: 120,
+    primaryAxisSizing: 'FIXED',
+    counterAxisSizing: 'FIXED',
+    fills: [
+      {
+        type: 'SOLID',
+        color: { r: 0.965, g: 0.929, b: 0.875, a: 1 },
+        opacity: 1,
+        visible: true,
+      },
+    ],
+  })
+  const ink = [
+    {
+      type: 'SOLID' as const,
+      color: { r: 0.227, g: 0.165, b: 0.118, a: 1 },
+      opacity: 1,
+      visible: true,
+    },
+  ]
+  const line = (
+    text: string,
+    fontSize: number,
+    fontWeight: number,
+    fontFamily = 'Hanken Grotesk',
+  ) =>
+    graph.createNode('TEXT', frame.id, {
+      name: text.slice(0, 40),
+      text,
+      fontFamily,
+      fontSize,
+      fontWeight,
+      lineHeight: Math.round(fontSize * 1.3),
+      fills: ink,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
+      width: 1200,
+      height: fontSize,
+    })
+  line('Roastbook', 96, 800, 'Bricolage Grotesque')
+  line(
+    'Every view of the app, desktop (1440×900) and mobile (390×844), with its tokens and components.',
+    28,
+    500,
+  )
+  line(
+    `${views} views · ${components.components} components · variables for color (Light and Dark), spacing, radius and fonts.`,
+    20,
+    400,
+  )
+  line(
+    `Generated ${new Date().toISOString().slice(0, 10)} by design/capture.ts from the running app (src/). ` +
+      'Re-running the capture replaces this file: change the app, or copy what you design into a new file.',
+    20,
+    400,
+  )
+}
+
 const graph = new SceneGraph()
 const [firstPage] = graph.getPages()
 if (!firstPage) throw new Error('a new document has no page')
@@ -184,12 +258,19 @@ const binder = new ThemeBinder(graph)
 const browser = CDP_URL
   ? await chromium.connectOverCDP(CDP_URL)
   : await chromium.launch()
-const context = await browser.newContext({
-  deviceScaleFactor: 1,
-  colorScheme: 'light',
-  reducedMotion: 'reduce',
-})
-const page = await context.newPage()
+// The mobile capture is a touch phone, so `pointer: coarse` styles (44px targets) apply.
+const pages = new Map<string, Page>()
+for (const viewport of VIEWPORTS) {
+  const touch = viewport.name === 'Mobile'
+  const context = await browser.newContext({
+    deviceScaleFactor: 1,
+    colorScheme: 'light',
+    reducedMotion: 'reduce',
+    isMobile: touch,
+    hasTouch: touch,
+  })
+  pages.set(viewport.name, await context.newPage())
+}
 
 const elements = new Map<string, SnapshotElement>()
 const measured = new Map<string, Box>()
@@ -200,15 +281,18 @@ let numbersBound = 0
 
 for (const view of VIEWS) {
   if (ONLY && !ONLY.includes(view.name)) continue
-  const viewPage = viewPages.length === 0 ? firstPage : graph.addPage(view.name)
-  graph.updateNode(viewPage.id, { name: view.name })
+  const viewPage = graph.addPage(view.name)
   let x = 0
   for (const viewport of VIEWPORTS) {
     let snapshot: SnapshotElement | null = null
     // A dev server can reload the page mid-capture (dependency re-optimization), so retry.
     for (let attempt = 1; ; attempt++) {
       try {
-        snapshot = await snapshotView(page, view, viewport)
+        snapshot = await snapshotView(
+          pages.get(viewport.name) as Page,
+          view,
+          viewport,
+        )
         break
       } catch (error) {
         if (attempt === 3) throw error
@@ -225,6 +309,13 @@ for (const view of VIEWS) {
     const name = `${view.name} — ${viewport.name}`
     const root = await builder.view(snapshot, viewPage.id, name)
     graph.updateNode(root.id, { x })
+    // A page longer than the screen marks where the screen ends.
+    if (snapshot.box.height > viewport.height)
+      graph.updateNode(root.id, {
+        guides: [
+          { id: `${root.id}:fold`, axis: 'y', position: viewport.height },
+        ],
+      })
     x += snapshot.box.width + ARTBOARD_GAP
     await prepareGraphFonts(graph, [root.id])
     const report = await checkLayout(graph, root.id, builder.measured)
@@ -264,8 +355,15 @@ const components = extractComponents(
   elements,
   measured,
 )
-// The library goes after the views.
-graph.reorderChild(library.id, graph.rootId, graph.getPages().length)
+// The cover leads; the library pages follow the views.
+cover(graph, firstPage.id, viewPages.length, components)
+for (const name of ['Components', 'Primitives', 'Icons']) {
+  const libraryPage = graph
+    .getPages()
+    .find((candidate) => candidate.name === name)
+  if (libraryPage)
+    graph.reorderChild(libraryPage.id, graph.rootId, graph.getPages().length)
+}
 // .fig keeps pages in order-key order; without keys it writes them in the order above.
 for (const page of graph.getPages())
   page.source = { ...page.source, orderKey: null }

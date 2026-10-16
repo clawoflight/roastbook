@@ -60,6 +60,19 @@ const hex = (value: string) => /^#[0-9a-f]{3,8}$/i.test(value)
 
 const FONTS = { display: 'Bricolage Grotesque', body: 'Hanken Grotesk' }
 
+/** OpenPencil's own token fields: the CSS a token is in code, and where pickers offer it. */
+const code = (web: string, scopes: string[]) => ({
+  $extensions: { 'dev.openpencil': { codeSyntax: { WEB: web }, scopes } },
+})
+
+// Text colors are for text and icons, border colors for strokes, the rest for surfaces.
+function colorScopes(name: string) {
+  if (/(^|-)(foreground|text)$|^link$/.test(name))
+    return ['TEXT_FILL', 'SHAPE_FILL', 'STROKE']
+  if (/(^|-)(border|input|ring)$/.test(name)) return ['STROKE']
+  return ['FRAME_FILL', 'SHAPE_FILL', 'STROKE']
+}
+
 /** DTCG shadows from a CSS shadow list. */
 function shadowToken(css: string) {
   const channel = (value: number) =>
@@ -82,25 +95,37 @@ export function variableTokenFiles(theme: Theme): TokenFile[] {
     Object.fromEntries(
       [...values]
         .filter(([, value]) => hex(value))
-        .map(([name, value]) => [name, { $type: 'color', $value: value }]),
+        .map(([name, value]) => [
+          name,
+          {
+            $type: 'color',
+            $value: value,
+            ...code(`var(--${name})`, colorScopes(name)),
+          },
+        ]),
     )
   const radius = theme.radius
   return [
     { path: 'Color/Light.tokens.json', content: colors(theme.light) },
     { path: 'Color/Dark.tokens.json', content: colors(theme.dark) },
     {
-      path: 'Spacing/Default.tokens.json',
+      path: 'Spacing/Value.tokens.json',
       content: {
         spacing: Object.fromEntries(
           SPACING.map((value) => [
             value,
-            { $type: 'dimension', $value: dimension(value) },
+            {
+              $type: 'dimension',
+              $value: dimension(value),
+              // Tailwind derives every step from one --spacing unit of 4px.
+              ...code(`calc(var(--spacing) * ${value / 4})`, ['GAP']),
+            },
           ]),
         ),
       },
     },
     {
-      path: 'Radius/Default.tokens.json',
+      path: 'Radius/Value.tokens.json',
       content: {
         radius: Object.fromEntries(
           Object.entries({
@@ -110,18 +135,28 @@ export function variableTokenFiles(theme: Theme): TokenFile[] {
             xl: radius + 4,
           }).map(([name, value]) => [
             name,
-            { $type: 'dimension', $value: dimension(value) },
+            {
+              $type: 'dimension',
+              $value: dimension(value),
+              ...code(`var(--radius-${name})`, ['CORNER_RADIUS']),
+            },
           ]),
         ),
       },
     },
     {
-      path: 'Font/Default.tokens.json',
+      path: 'Font/Value.tokens.json',
       content: {
         font: Object.fromEntries(
           Object.entries(FONTS).map(([name, value]) => [
             name,
-            { $type: 'fontFamily', $value: value },
+            {
+              $type: 'fontFamily',
+              $value: value,
+              ...code(`var(--font-${name === 'body' ? 'sans' : name})`, [
+                'FONT_FAMILY',
+              ]),
+            },
           ]),
         ),
       },

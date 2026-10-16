@@ -44,7 +44,9 @@ export const px = (value: string | undefined) => {
 }
 export const near = (a: number, b: number, tolerance = EPSILON) =>
   Math.abs(a - b) <= tolerance
-const round = (value: number) => Math.round(value * 100) / 100
+// Geometry snaps to whole pixels, as design files keep it; type keeps its fractions.
+const round = Math.round
+const fine = (value: number) => Math.round(value * 100) / 100
 const end = (box: Box, axis: Axis) =>
   axis === 'x' ? box.x + box.width : box.y + box.height
 const size = (box: Box, axis: Axis) => (axis === 'x' ? box.width : box.height)
@@ -485,13 +487,11 @@ function characterStyle(style: Record<string, string>) {
     fontWeight: Number.parseInt(style['font-weight'] ?? '400', 10),
     italic: style['font-style'] === 'italic',
     lineHeight:
-      style['line-height'] === 'normal'
-        ? null
-        : round(px(style['line-height'])),
+      style['line-height'] === 'normal' ? null : fine(px(style['line-height'])),
     letterSpacing:
       style['letter-spacing'] === 'normal'
         ? 0
-        : round(px(style['letter-spacing'])),
+        : fine(px(style['letter-spacing'])),
     textCase: TEXT_CASE[style['text-transform'] ?? ''] ?? 'ORIGINAL',
     fontFeatures: (style['font-variant-numeric'] ?? '').includes('tabular-nums')
       ? [{ tag: 'tnum', enabled: true }]
@@ -570,6 +570,13 @@ function lineBox(leaf: SnapshotText): Box {
       : px(style['line-height'])
   const height = lineHeight * leaf.lines
   return { ...leaf.box, y: leaf.box.y + (leaf.box.height - height) / 2, height }
+}
+
+const LAYOUT_NAMES: Record<Mode, string> = {
+  HORIZONTAL: 'Row',
+  VERTICAL: 'Stack',
+  GRID: 'Grid',
+  NONE: 'Layers',
 }
 
 /** Children as layout sees them: text by its line box rather than its glyphs. */
@@ -736,7 +743,7 @@ export class SceneBuilder {
     const baseStyle = characterStyle(base.style)
     const box = { ...lineBox(leaf), x: room.x, width: room.width }
     // `line-height: normal` depends on the font's metrics; pin the line the browser drew.
-    baseStyle.lineHeight ??= round(box.height / leaf.lines)
+    baseStyle.lineHeight ??= fine(box.height / leaf.lines)
     const text = leaf.runs.map((run) => run.text).join('')
     const styleRuns: StyleRun[] = []
     let offset = base.text.length
@@ -820,6 +827,8 @@ export class SceneBuilder {
       )
     const walk = (id: string) => {
       for (const child of this.graph.getChildren(id)) {
+        if (child.name === 'Vector')
+          this.graph.updateNode(child.id, { name: 'Path' })
         if (child.strokes[0] && isInk(child.strokes[0]))
           this.recordColor(child.id, 'strokes/0/color', element.style, 'color')
         if (child.fills[0] && isInk(child.fills[0]))
@@ -963,10 +972,16 @@ export class SceneBuilder {
       counterAxisSpacing: layout.counterSpacing,
       primaryAxisAlign: layout.primaryAlign,
       counterAxisAlign: layout.counterAlign,
-      paddingTop: round(padding.top),
-      paddingRight: round(padding.right),
-      paddingBottom: round(padding.bottom),
-      paddingLeft: round(padding.left),
+      // Borders are inside strokes that take no room, as in Figma, so padding is the CSS
+      // padding and lands on the spacing scale.
+      paddingTop: round(padding.top - px(element.style['border-top-width'])),
+      paddingRight: round(
+        padding.right - px(element.style['border-right-width']),
+      ),
+      paddingBottom: round(
+        padding.bottom - px(element.style['border-bottom-width']),
+      ),
+      paddingLeft: round(padding.left - px(element.style['border-left-width'])),
       ...(layout.grid
         ? {
             gridTemplateColumns: layout.grid.columns,
@@ -1046,6 +1061,9 @@ export class SceneBuilder {
       }
     }
     this.sizeSelf(frame, element, layout, lined(flow), axis)
+    // A bare HTML container is named for what it does in the layout.
+    if (name === element.name && /^(div|span|section)$/.test(name))
+      this.graph.updateNode(frame.id, { name: LAYOUT_NAMES[layout.mode] })
     if (parseColor(element.style['background-color']).a === 1)
       this.backdrops.pop()
     return frame
@@ -1088,7 +1106,13 @@ export class SceneBuilder {
               child.type === 'TEXT' &&
               child.textAutoResize === 'WIDTH_AND_HEIGHT',
           ))
-    const effective = align === 'STRETCH' && hugsAcross ? 'MIN' : align
+    // Text is as tall as its lines; one that filled its row's height sits centred in it.
+    const effective =
+      align === 'STRETCH' && hugsAcross
+        ? 'MIN'
+        : align === 'STRETCH' && node.type === 'TEXT' && cross === 'y'
+          ? 'CENTER'
+          : align
     if (effective === 'STRETCH') updates.layoutAlignSelf = 'STRETCH'
     else if (effective !== layout.counterAlign)
       updates.layoutAlignSelf = effective

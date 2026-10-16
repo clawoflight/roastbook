@@ -1,170 +1,664 @@
 {
   "background": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--background)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "card": {
     "$type": "color",
-    "$value": "#2a2219"
+    "$value": "#2a2219",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--card)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "card-foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--card-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "popover": {
     "$type": "color",
-    "$value": "#2a2219"
+    "$value": "#2a2219",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--popover)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "popover-foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--popover-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "primary": {
     "$type": "color",
-    "$value": "#d2873e"
+    "$value": "#d2873e",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--primary)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "primary-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--primary-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "secondary": {
     "$type": "color",
-    "$value": "#36281c"
+    "$value": "#36281c",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--secondary)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "secondary-foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--secondary-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "muted": {
     "$type": "color",
-    "$value": "#2e251b"
+    "$value": "#2e251b",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--muted)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "muted-foreground": {
     "$type": "color",
-    "$value": "#b8a78f"
+    "$value": "#b8a78f",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--muted-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "accent": {
     "$type": "color",
-    "$value": "#4a3322"
+    "$value": "#4a3322",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--accent)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "accent-foreground": {
     "$type": "color",
-    "$value": "#f3e4d0"
+    "$value": "#f3e4d0",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--accent-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "destructive": {
     "$type": "color",
-    "$value": "#c0573a"
+    "$value": "#c0573a",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--destructive)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "border": {
     "$type": "color",
-    "$value": "#3c2e20"
+    "$value": "#3c2e20",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--border)"
+        },
+        "scopes": [
+          "STROKE"
+        ]
+      }
+    }
   },
   "input": {
     "$type": "color",
-    "$value": "#9f7548"
+    "$value": "#9f7548",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--input)"
+        },
+        "scopes": [
+          "STROKE"
+        ]
+      }
+    }
   },
   "ring": {
     "$type": "color",
-    "$value": "#d2873e"
+    "$value": "#d2873e",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--ring)"
+        },
+        "scopes": [
+          "STROKE"
+        ]
+      }
+    }
   },
   "chart-1": {
     "$type": "color",
-    "$value": "#d2873e"
+    "$value": "#d2873e",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--chart-1)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "chart-2": {
     "$type": "color",
-    "$value": "#b07a45"
+    "$value": "#b07a45",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--chart-2)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "chart-3": {
     "$type": "color",
-    "$value": "#f3e4d0"
+    "$value": "#f3e4d0",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--chart-3)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "chart-4": {
     "$type": "color",
-    "$value": "#8a5a30"
+    "$value": "#8a5a30",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--chart-4)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "chart-5": {
     "$type": "color",
-    "$value": "#c0573a"
+    "$value": "#c0573a",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--chart-5)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "coffee": {
     "$type": "color",
-    "$value": "#b07a45"
+    "$value": "#b07a45",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--coffee)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "coffee-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--coffee-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "ink": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--ink)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "ink-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--ink-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "positive": {
     "$type": "color",
-    "$value": "#8aa850"
+    "$value": "#8aa850",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--positive)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "positive-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--positive-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "link": {
     "$type": "color",
-    "$value": "#e0a565"
+    "$value": "#e0a565",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--link)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "positive-text": {
     "$type": "color",
-    "$value": "#b7d47a"
+    "$value": "#b7d47a",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--positive-text)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "destructive-text": {
     "$type": "color",
-    "$value": "#ef947c"
+    "$value": "#ef947c",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--destructive-text)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "favorite": {
     "$type": "color",
-    "$value": "#e3a0bd"
+    "$value": "#e3a0bd",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--favorite)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "favorite-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--favorite-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar": {
     "$type": "color",
-    "$value": "#2a2219"
+    "$value": "#2a2219",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-primary": {
     "$type": "color",
-    "$value": "#d2873e"
+    "$value": "#d2873e",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-primary)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-primary-foreground": {
     "$type": "color",
-    "$value": "#1f1a14"
+    "$value": "#1f1a14",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-primary-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-accent": {
     "$type": "color",
-    "$value": "#36281c"
+    "$value": "#36281c",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-accent)"
+        },
+        "scopes": [
+          "FRAME_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-accent-foreground": {
     "$type": "color",
-    "$value": "#f6eddf"
+    "$value": "#f6eddf",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-accent-foreground)"
+        },
+        "scopes": [
+          "TEXT_FILL",
+          "SHAPE_FILL",
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-border": {
     "$type": "color",
-    "$value": "#3c2e20"
+    "$value": "#3c2e20",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-border)"
+        },
+        "scopes": [
+          "STROKE"
+        ]
+      }
+    }
   },
   "sidebar-ring": {
     "$type": "color",
-    "$value": "#d2873e"
+    "$value": "#d2873e",
+    "$extensions": {
+      "dev.openpencil": {
+        "codeSyntax": {
+          "WEB": "var(--sidebar-ring)"
+        },
+        "scopes": [
+          "STROKE"
+        ]
+      }
+    }
   }
 }

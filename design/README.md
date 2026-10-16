@@ -3,9 +3,12 @@
 `views/roastbook.fig` is one [OpenPencil](https://openpencil.dev) document of
 every Roastbook view, captured from a running instance:
 
-- **Pages:** a page per view, holding its desktop (1440×900) and mobile
-  (390×844) artboards, then a **Components** page. A page longer than the
-  screen grows its artboard to show everything.
+- **Pages:** a **Cover**, then a page per view holding its desktop (1440×900)
+  and mobile (390×844) artboards, then the library pages **Components**,
+  **Primitives** and **Icons**. A view longer than the screen grows its
+  artboard to show everything, with a guide where the screen ends. The mobile
+  capture emulates a touch phone, so `pointer: coarse` sizes (44 px targets)
+  apply.
 - **Content:** the seed data's mock records, but lists show at most six
   items, so a view shows the pattern rather than the whole database.
 - **Layout:** auto layout throughout. Flex and block stacks become stacks, CSS
@@ -13,15 +16,22 @@ every Roastbook view, captured from a running instance:
   Positioned elements are absolute children with matching constraints, so the
   mobile tab bar stays pinned to the bottom.
 - **Components:** every Lucide icon, and each shared React component that
-  occurs more than once, is a component on the Components page. Every
-  occurrence in the views is an instance, carrying its own text, images and
-  sizes as overrides. shadcn's `data-variant` and `data-size` become variant
-  properties.
+  occurs on more than one page or more than once on one artboard, is a
+  component whose description names the source file and line. Every
+  occurrence is an instance carrying its own text, images and sizes as
+  overrides. Occurrences that differ in what an instance cannot override in
+  .fig (layout direction, positions inside fixed frames, variable bindings)
+  become variants: shadcn's `data-variant` and `data-size` first, then
+  `Breakpoint`, then the surface `Fill` token, and `Layout=n` only as a last
+  resort.
 - **Variables:** colour variables have a Light and a Dark mode, taken from
   `src/styles.css`. Switch an artboard's Color mode to Dark and every bound
   colour follows; photos and colours the app hardcodes stay as they are.
   There are also variables for the 4 px spacing scale, the radius scale and the
-  two font families.
+  two font families. Every variable carries its CSS as Web code syntax
+  (`var(--background)`, `calc(var(--spacing) * 4)`) and is scoped to where it
+  belongs: text colours to text and icons, border colours to strokes, spacing
+  to gaps and padding.
 - **Bindings:** fills, strokes and text colours are bound only where the light
   and the dark theme both drew that token. Paddings, gaps and corner radii are
   bound where they sit on the scales.
@@ -31,7 +41,9 @@ every Roastbook view, captured from a running instance:
 
 Layers are named after the element's role and the component file that
 rendered it, for example `page-header · page-layout`, so a layer leads back to
-its source in `src/`.
+its source in `src/`. Bare containers are named for their layout (`Row`,
+`Stack`, `Grid`, `Layers`). Geometry is in whole pixels, and padding is the
+CSS padding with borders as inside strokes, as Figma lays them out.
 
 `tokens/` holds the same tokens as W3C design token (DTCG) files: one folder
 per collection, with a file per mode, and `styles.tokens.json` for typography

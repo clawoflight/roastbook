@@ -66,6 +66,13 @@ function misplacedChild(
   const frameAt = placed(graph, node.id, rootId)
   if (!frameBox || !frameAt) return undefined
   let slack = 0
+  // Borders are inside strokes that take no room, so children sit up to a border closer to it.
+  const border =
+    Math.max(
+      node.borderTopWeight,
+      node.borderLeftWeight,
+      node.strokes[0]?.weight ?? 0,
+    ) * 2
   for (const child of children) {
     const box = measured.get(child.id)
     const at = box && placed(graph, child.id, rootId)
@@ -83,12 +90,12 @@ function misplacedChild(
         : 0
     }
     const tolerance = (a: 'x' | 'y') =>
-      TOLERANCE + drift(a) + (stacks && a === axis ? slack : 0)
+      TOLERANCE + border + drift(a) + (stacks && a === axis ? slack : 0)
     if (
       !near(got.x, want.x, tolerance('x')) ||
       !near(got.y, want.y, tolerance('y')) ||
-      !near(got.width, want.width, TOLERANCE + drift('x')) ||
-      !near(got.height, want.height, TOLERANCE + drift('y'))
+      !near(got.width, want.width, TOLERANCE + border + drift('x')) ||
+      !near(got.height, want.height, TOLERANCE + border + drift('y'))
     )
       return child
     if (stacks && child.layoutPositioning !== 'ABSOLUTE') slack += drift(axis)

@@ -4,6 +4,8 @@
 // page, and every occurrence, that one included, becomes an instance carrying
 // its own text, images, colors and sizes as overrides. shadcn's `data-variant`
 // and `data-size` become the variant properties of a component set.
+
+import { join } from 'node:path'
 import {
   FigmaAPI,
   type FigmaComponentNode,
@@ -57,21 +59,31 @@ function signature(graph: SceneGraph, node: SceneNode): string {
 
 // What a .fig instance cannot override on its layers (tested by saving and reopening):
 // they always come from the component, so occurrences have to agree on them.
+// Variable bindings too: a layer bound to another token than its component's reverts.
 const FIXED_IN_COMPONENT = [
   'layoutMode',
   'clipsContent',
   'horizontalConstraint',
   'verticalConstraint',
   'gridPosition',
+  'boundVariables',
 ] as const
 
 /**
  * Whether two same-shaped layers agree on everything an instance takes from its component:
  * the fields above, and where freely placed descendants sit.
  */
-function samePlacement(graph: SceneGraph, a: SceneNode, b: SceneNode): boolean {
-  if (FIXED_IN_COMPONENT.some((field) => !same(a[field], b[field])))
-    return false
+function samePlacement(
+  graph: SceneGraph,
+  a: SceneNode,
+  b: SceneNode,
+  root = true,
+): boolean {
+  // Where the instance itself sits (its grid cell, its constraints) is its own, not the component's.
+  const fields = root
+    ? (['layoutMode', 'clipsContent'] as const)
+    : FIXED_IN_COMPONENT
+  if (fields.some((field) => !same(a[field], b[field]))) return false
   const others = graph.getChildren(b.id)
   return graph.getChildren(a.id).every((child, i) => {
     const other = others[i]
@@ -80,11 +92,48 @@ function samePlacement(graph: SceneGraph, a: SceneNode, b: SceneNode): boolean {
       a.layoutMode === 'NONE' || child.layoutPositioning === 'ABSOLUTE'
     if (
       free &&
-      (Math.abs(child.x - other.x) > 1 || Math.abs(child.y - other.y) > 1)
+      (['x', 'y'] as const).some(
+        (axis) => !pinnedAlike(axis, a, child, b, other),
+      )
     )
       return false
-    return child.type === 'INSTANCE' || samePlacement(graph, child, other)
+    return (
+      child.type === 'INSTANCE' || samePlacement(graph, child, other, false)
+    )
   })
+}
+
+/**
+ * Whether two freely placed layers keep the same distance to the edge their constraint
+ * pins them to, so the component's constraints put each where its occurrence had it.
+ */
+function pinnedAlike(
+  axis: 'x' | 'y',
+  parentA: SceneNode,
+  a: SceneNode,
+  parentB: SceneNode,
+  b: SceneNode,
+) {
+  const edges = (parent: SceneNode, node: SceneNode) => {
+    const start = axis === 'x' ? node.x : node.y
+    const size = axis === 'x' ? node.width : node.height
+    const room = axis === 'x' ? parent.width : parent.height
+    return {
+      start,
+      end: room - start - size,
+      centre: start + size / 2 - room / 2,
+    }
+  }
+  const one = edges(parentA, a)
+  const two = edges(parentB, b)
+  const constraint =
+    axis === 'x' ? a.horizontalConstraint : a.verticalConstraint
+  const close = (key: 'start' | 'end' | 'centre') =>
+    Math.abs(one[key] - two[key]) <= 1
+  if (constraint === 'MAX') return close('end')
+  if (constraint === 'CENTER') return close('centre')
+  if (constraint === 'STRETCH') return close('start') && close('end')
+  return close('start')
 }
 
 function height(graph: SceneGraph, node: SceneNode): number {
@@ -98,6 +147,26 @@ function height(graph: SceneGraph, node: SceneNode): number {
   )
 }
 
+/** The artboard (page-level frame) a layer sits in. */
+function artboardOf(graph: SceneGraph, node: SceneNode) {
+  let top = node
+  while (top.parentId && graph.getNode(top.parentId)?.type !== 'CANVAS')
+    top = graph.getNode(top.parentId) as SceneNode
+  return top
+}
+
+const viewportOf = (graph: SceneGraph, node: SceneNode) =>
+  artboardOf(graph, node).name.split(' — ').at(-1) ?? ''
+
+// Where each component file lives in the app, for component descriptions.
+const SOURCES = new Map(
+  [
+    ...new Bun.Glob('**/*.tsx').scanSync({
+      cwd: join(import.meta.dir, '../../src'),
+    }),
+  ].map((path) => [path.split('/').at(-1) as string, `src/${path}`]),
+)
+
 const pascal = (file: string) =>
   file
     .replace(/\.tsx$/, '')
@@ -110,6 +179,9 @@ interface Group {
   variant: Record<string, string>
   nodes: SceneNode[]
   kind: 'icon' | 'primitive' | 'component'
+  source?: string
+  /** The viewports its occurrences are in, read before they are replaced. */
+  viewports: Set<string>
 }
 
 const PRIMITIVES =
@@ -127,9 +199,8 @@ function candidates(
   const visit = (node: SceneNode) => {
     for (const child of graph.getChildren(node.id)) visit(child)
     if (node.type !== 'FRAME') return
-    let group: Omit<Group, 'nodes'> & {
+    let group: Omit<Group, 'nodes' | 'viewports'> & {
       file?: string
-      source?: string
       part?: string
     }
     if (node.name.startsWith('icon/')) {
@@ -154,7 +225,11 @@ function candidates(
       }
     }
     const key = `${group.source ?? group.family}|${JSON.stringify(group.variant)}|${signature(graph, node)}`
-    const entry = groups.get(key) ?? { ...group, nodes: [] }
+    const entry = groups.get(key) ?? {
+      ...group,
+      nodes: [],
+      viewports: new Set<string>(),
+    }
     entry.nodes.push(node)
     groups.set(key, entry)
   }
@@ -176,19 +251,15 @@ function candidates(
     for (const [i, nodes] of clusters.entries())
       groups.set(`${key}#${i}`, { ...group, nodes })
   }
-  const artboard = (node: SceneNode) => {
-    let top = node
-    while (top.parentId && graph.getNode(top.parentId)?.type !== 'CANVAS')
-      top = graph.getNode(top.parentId) as SceneNode
-    return top
-  }
   // Something a view shows once per viewport is a section of that view, not a component:
   // it has to recur on another page, or more than once on one artboard.
   const recurs = (group: Group) => {
-    const pages = new Set(group.nodes.map((node) => artboard(node).parentId))
+    const pages = new Set(
+      group.nodes.map((node) => artboardOf(graph, node).parentId),
+    )
     const perArtboard = new Map<string, number>()
     for (const node of group.nodes) {
-      const id = artboard(node).id
+      const id = artboardOf(graph, node).id
       perArtboard.set(id, (perArtboard.get(id) ?? 0) + 1)
     }
     return pages.size > 1 || Math.max(...perArtboard.values()) > 1
@@ -196,6 +267,8 @@ function candidates(
   const kept = [...groups.values()].filter(
     (group) => group.kind === 'icon' || recurs(group),
   )
+  for (const group of kept)
+    for (const node of group.nodes) group.viewports.add(viewportOf(graph, node))
   // A file that renders several roots names each by its part, then by line if parts repeat.
   const sources = new Map<string, Set<string>>()
   for (const group of kept)
@@ -216,7 +289,6 @@ function candidates(
     ;(parts.get(key) ?? parts.set(key, new Set()).get(key))?.add(group.source)
   }
   // Parts that only one viewport shows are told apart by it, others by their line.
-  const viewport = (node: SceneNode) => artboard(node).name.split(' — ').at(-1)
   for (const group of kept) {
     if (
       !group.file ||
@@ -225,7 +297,7 @@ function candidates(
     )
       continue
     const shared = (parts.get(`${group.file}|${group.part}`)?.size ?? 0) > 1
-    const viewports = new Set(group.nodes.map(viewport))
+    const viewports = group.viewports
     const suffix = !shared
       ? ''
       : viewports.size === 1
@@ -234,6 +306,15 @@ function candidates(
     group.family = `${pascal(group.file)}/${group.part}${suffix}`
   }
   return kept
+}
+
+/** Where a component comes from, which Dev Mode and agents read from its description. */
+function describe(group: Group) {
+  if (group.kind === 'icon')
+    return `Lucide icon "${group.family.slice(5)}" (lucide-react).`
+  const [file = '', line] = group.source?.split(':') ?? []
+  const path = SOURCES.get(file) ?? file
+  return `Rendered by ${path}${line ? `:${line}` : ''}. Captured from the running app by design/capture.ts.`
 }
 
 export interface ComponentReport {
@@ -338,57 +419,32 @@ export function extractComponents(
 ): ComponentReport {
   const api = new FigmaAPI(graph)
   const report: ComponentReport = { components: 0, sets: 0, instances: 0 }
-  // The library page is one column of titled shelves, each wrapping its components.
-  const column = graph.createNode('FRAME', libraryPageId, {
-    name: 'Roastbook design system',
-    layoutMode: 'VERTICAL',
-    itemSpacing: 96,
-    paddingTop: 64,
-    paddingRight: 64,
-    paddingBottom: 64,
-    paddingLeft: 64,
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    fills: [],
-  })
+  // Icons, primitives and app components each get a page, wrapping their components.
   const shelves = new Map<Group['kind'], SceneNode>()
   const shelf = (kind: Group['kind']) => {
     let frame = shelves.get(kind)
     if (!frame) {
-      const title = {
-        icon: 'Icons',
-        primitive: 'Primitives',
-        component: 'Roastbook components',
-      }[kind]
-      const section = graph.createNode('FRAME', column.id, {
-        name: title,
-        layoutMode: 'VERTICAL',
-        itemSpacing: 32,
-        primaryAxisSizing: 'HUG',
-        counterAxisSizing: 'HUG',
-        fills: [],
-      })
-      graph.createNode('TEXT', section.id, {
-        name: 'title',
-        text: title,
-        fontFamily: 'Bricolage Grotesque',
-        fontWeight: 800,
-        fontSize: 40,
-        lineHeight: 48,
-        textAutoResize: 'WIDTH_AND_HEIGHT',
-        width: 400,
-        height: 48,
-      })
-      frame = graph.createNode('FRAME', section.id, {
-        name: `${title} shelf`,
+      const page =
+        kind === 'component'
+          ? libraryPageId
+          : graph.addPage(kind === 'icon' ? 'Icons' : 'Primitives').id
+      frame = graph.createNode('FRAME', page, {
+        name: {
+          icon: 'Icons',
+          primitive: 'Primitives',
+          component: 'Roastbook components',
+        }[kind],
         layoutMode: 'HORIZONTAL',
         layoutWrap: 'WRAP',
         itemSpacing: 48,
         counterAxisSpacing: 48,
+        paddingTop: 64,
+        paddingRight: 64,
+        paddingBottom: 64,
+        paddingLeft: 64,
         width: kind === 'icon' ? 960 : 2800,
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'HUG',
-        counterAxisAlign: 'MIN',
         fills: [],
       })
       shelves.set(kind, frame)
@@ -422,7 +478,10 @@ export function extractComponents(
       api.getNodeById(clone.id) as FigmaNodeProxy,
     )
     const main = graph.getNode(proxy.id) as SceneNode
-    graph.updateNode(main.id, { name: group.family })
+    graph.updateNode(main.id, {
+      name: group.family,
+      symbolDescription: describe(group),
+    })
     if (group.kind === 'icon')
       for (const child of graph.getChildren(main.id))
         graph.updateNode(child.id, {
@@ -456,28 +515,62 @@ export function extractComponents(
         members.flatMap((member) => Object.keys(member.group.variant)),
       ),
     ]
-    const values = members.map((member) =>
-      keys.map((key) => `${key}=${member.group.variant[key] ?? 'none'}`),
+    const title = (key: string) => key.charAt(0).toUpperCase() + key.slice(1)
+    const names = members.map((member) =>
+      keys.map((key) => `${title(key)}=${member.group.variant[key] ?? 'none'}`),
     )
-    // Occurrences alike in variant but not in structure are told apart by a layout number.
-    const repeats =
-      new Set(values.map((value) => value.join())).size < values.length
-    const seen = new Map<string, number>()
-    members.forEach((member, i) => {
-      const own = values[i] ?? []
-      const count = (seen.get(own.join()) ?? 0) + 1
-      seen.set(own.join(), count)
-      graph.updateNode(member.main.id, {
-        name: [...own, ...(repeats ? [`layout=${count}`] : [])].join(', '),
-      })
-    })
+    // Members alike in variant get the first property that tells them apart: the breakpoint
+    // each shows on, else the token its surface is filled with, else a layout number.
+    const repeated = (list: string[][]) =>
+      new Set(list.map((name) => name.join())).size < list.length
+    const fillToken = (member: (typeof members)[number]) => {
+      const main = graph.getNode(member.main.id)
+      const id = main?.boundVariables['fills/0/color']
+      return (id && graph.variables.get(id)?.name) || 'none'
+    }
+    const properties: [string, (member: (typeof members)[number]) => string][] =
+      [
+        [
+          'Breakpoint',
+          (member) =>
+            (member.group.viewports.size === 1
+              ? [...member.group.viewports][0]
+              : 'Both') as string,
+        ],
+        ['Fill', fillToken],
+      ]
+    for (const [property, value] of properties) {
+      if (!repeated(names)) break
+      const tried = names.map((name, i) => [
+        ...name,
+        `${property}=${value(members[i] as (typeof members)[number])}`,
+      ])
+      if (
+        new Set(tried.map((name) => name.join())).size >
+        new Set(names.map((name) => name.join())).size
+      )
+        names.splice(0, names.length, ...tried)
+    }
+    if (repeated(names)) {
+      const seen = new Map<string, number>()
+      for (const name of names) {
+        const count = (seen.get(name.join()) ?? 0) + 1
+        seen.set(name.join(), count)
+        name.push(`Layout=${count}`)
+      }
+    }
+    for (const [i, member] of members.entries())
+      graph.updateNode(member.main.id, { name: names[i]?.join(', ') })
     const parent = graph.getNode(members[0]?.main.id ?? '')?.parentId
     if (!parent) continue
     const set = api.combineAsVariants(
       members.map((member) => member.main as unknown as FigmaComponentNode),
       api.getNodeById(parent) as FigmaNodeProxy,
     )
-    graph.updateNode(set.id, { name })
+    graph.updateNode(set.id, {
+      name,
+      symbolDescription: describe(members[0]?.group as Group),
+    })
     report.sets++
   }
   return report
