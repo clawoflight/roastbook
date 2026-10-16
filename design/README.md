@@ -39,7 +39,12 @@ preview gateway. The script therefore builds a development-mode bundle (about
 
 - the MCP bridge is proxied through the editor's own origin at `/__mcp`;
 - `.fig` files under `views/` are served read-only at their absolute paths,
-  which is where a browser tab fetches MCP `open_file` paths from;
+  which is where a browser tab fetches MCP `open_file` paths from, and at
+  `/views/<name>.fig`;
+- `/` opens the overview view; open another with
+  `/?file=https://open-pencil.<preview-domain>/views/<name>.fig`;
+- OpenPencil's service worker is replaced by one that unregisters itself, so a
+  rebuild is not shadowed by a cached bundle;
 - an empty MCP root setting in the editor means `views/`.
 
 ```bash

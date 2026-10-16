@@ -7,7 +7,7 @@
 // MCP bridge, gated on import.meta.env.DEV) and serves it with `vite preview`.
 import { createReadStream } from 'node:fs'
 import { realpath } from 'node:fs/promises'
-import { extname, sep } from 'node:path'
+import { extname, join, sep } from 'node:path'
 import process from 'node:process'
 
 import {
@@ -17,6 +17,7 @@ import {
   type Plugin,
   type UserConfig,
 } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { openPencilAutomationPlugin } from './vite/automation'
 import base from './vite.config'
 
@@ -27,7 +28,8 @@ if (!publicOrigin)
   throw new Error('OPENPENCIL_DEV_ORIGIN must be the public editor origin')
 
 // In a browser, MCP open_file fetches the file's absolute path from this origin.
-// Serve read-only design files under OPENPENCIL_FILES_ROOT at those paths.
+// Serve read-only design files under OPENPENCIL_FILES_ROOT at those paths, and
+// at /views/<name>.fig for links; a bare / opens the overview view.
 function designFiles(root: string): Plugin {
   async function install(middlewares: Connect.Server) {
     const realRoot = await realpath(root)
@@ -62,12 +64,20 @@ function designFiles(root: string): Plugin {
       },
     )
     middlewares.use(async (request, response, next) => {
-      const path = decodeURIComponent(
-        new URL(request.url ?? '/', 'http://x').pathname,
-      )
+      const url = new URL(request.url ?? '/', 'http://x')
+      if (request.method === 'GET' && url.pathname === '/' && !url.search) {
+        const file = `${publicOrigin}/views/overview.fig`
+        response.writeHead(302, {
+          location: `/?file=${encodeURIComponent(file)}`,
+        })
+        return response.end()
+      }
+      const path = decodeURIComponent(url.pathname)
       if (request.method !== 'GET' || !['.fig', '.pen'].includes(extname(path)))
         return next()
-      const real = await realpath(path).catch(() => null)
+      const real = await realpath(
+        path.startsWith('/views/') ? join(realRoot, path.slice(7)) : path,
+      ).catch(() => null)
       if (!real?.startsWith(realRoot + sep)) return next()
       response.setHeader('content-type', 'application/octet-stream')
       createReadStream(real).pipe(response)
@@ -105,8 +115,23 @@ const gateway = {
 }
 
 export default defineConfig(async (env) => {
-  const resolved = typeof base === 'function' ? await base(env) : await base
-  return mergeConfig(resolved as UserConfig, {
+  const resolved = (
+    typeof base === 'function' ? await base(env) : await base
+  ) as UserConfig
+  // The base service worker precaches ~35 MB through the gateway after every
+  // rebuild and answers navigations from that cache; replace it with one that
+  // unregisters itself.
+  resolved.plugins = resolved.plugins
+    ?.flat()
+    .filter(
+      (plugin) =>
+        !(
+          plugin &&
+          'name' in plugin &&
+          plugin.name.startsWith('vite-plugin-pwa')
+        ),
+    )
+  return mergeConfig(resolved, {
     // Relative, so it follows whichever origin served the page (WebSocket accepts
     // relative http(s) URLs since Chrome 125, Firefox 124, and Safari 17.3).
     define: {
@@ -119,6 +144,7 @@ export default defineConfig(async (env) => {
     plugins: [
       ...(filesRoot ? [designFiles(filesRoot)] : []),
       previewAutomation(),
+      VitePWA({ selfDestroying: true }),
     ],
     server: gateway,
     preview: gateway,
