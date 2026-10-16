@@ -504,7 +504,8 @@ export async function snapshotPage(props: {
               Number.parseFloat(computed.borderTopWidth)
             : element.box.y + (element.box.height - lineHeight) / 2,
           width: element.box.width - padLeft - padRight,
-          height: lineHeight,
+          // Text boxes are centred on their lines, so a two-line box is two lines tall.
+          height: multiline ? lineHeight * 2 : lineHeight,
         },
       })
       return element
@@ -513,6 +514,9 @@ export async function snapshotPage(props: {
     if (node.childNodes.length && isTextOnly(node)) {
       const runs: TextRun[] = []
       collectRuns(node, runs)
+      // Ellipsis text the browser fits whole should not truncate in a slightly wider font.
+      if (node.scrollWidth <= node.clientWidth)
+        for (const run of runs) run.style['text-overflow'] = 'clip'
       const leaf = textLeaf(Array.from(node.childNodes), runs)
       if (leaf) element.children.push(leaf)
       return element

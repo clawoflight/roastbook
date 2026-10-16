@@ -678,7 +678,14 @@ export class SceneBuilder {
     const independent =
       side >= 0 && !weights.every((weight) => weight === weights[0])
 
-    const effects: Effect[] = parseCSSShadows(style['box-shadow'])
+    // CSS paints inset shadows inside the border, the renderer from the outer edge over the
+    // inside stroke, hiding it. On a bordered layer the border wins: its inset highlight goes.
+    const bordered = ['top', 'right', 'bottom', 'left'].some(
+      (side) => px(style[`border-${side}-width`]) > 0,
+    )
+    const effects: Effect[] = parseCSSShadows(style['box-shadow']).filter(
+      (effect) => !(bordered && effect.type === 'INNER_SHADOW'),
+    )
     const blur = style['backdrop-filter']?.match(/blur\(([\d.]+)px\)/)
     if (blur)
       effects.push({
