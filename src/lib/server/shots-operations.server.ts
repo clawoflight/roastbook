@@ -54,7 +54,7 @@ import { LEGACY_SENSORY_TASTE_TAG_NAMES } from '@/lib/taste-tags'
 import type { ShotSortKey } from '@/modules/brews/read-models'
 
 type ShotCreateCandidate = ReturnType<typeof shotCreateSchema.parse>
-const SHOTS_PAGE_SIZE = 25
+const SHOTS_PAGE_SIZE = 12
 const SHOT_GROUPS_PAGE_SIZE = 8
 const BEAN_SHOT_CHART_LIMIT = 100
 

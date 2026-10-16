@@ -445,7 +445,8 @@ export function BrewRhythmCard({
                   return (
                     <TableCell
                       key={part.label}
-                      className="h-10 rounded-lg border border-border text-center tabular-nums"
+                      // The busiest cells are dark enough to need light text.
+                      className={`h-10 rounded-lg border border-border text-center tabular-nums ${intensity > 0.8 ? 'text-primary-foreground' : ''}`}
                       style={{
                         backgroundColor: `color-mix(in srgb, var(--primary) ${Math.round(intensity * 75)}%, var(--secondary))`,
                       }}

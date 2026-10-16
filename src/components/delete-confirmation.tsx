@@ -46,9 +46,10 @@ export function DeleteConfirmation({
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         {trigger ?? (
+          // Matches the `sm` actions it sits beside in page headers.
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             className="text-destructive-text hover:bg-destructive/10 hover:text-destructive-text"
             aria-label={title}
           >

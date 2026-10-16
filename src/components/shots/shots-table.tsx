@@ -60,7 +60,7 @@ interface ShotsTableProps {
   serverPagination?: ShotsTableServerPagination
 }
 
-const PAGE_SIZE = 25
+const PAGE_SIZE = 12
 
 type SortKey = 'date' | 'bean' | 'dose' | 'yield' | 'time' | 'rating'
 

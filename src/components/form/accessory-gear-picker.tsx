@@ -21,12 +21,13 @@ export function AccessoryGearPicker({
   if (items.length === 0) return null
 
   const controls = (
-    <div className="flex flex-wrap gap-2">
+    // One row that scrolls sideways, so a long gear list does not stack into a tall column.
+    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
       {items.map((item) => (
         <Toggle
           key={item.id}
           variant="outline"
-          className="min-h-11"
+          className="min-h-11 shrink-0 [@media(hover:hover)_and_(pointer:fine)]:min-h-8"
           pressed={value.includes(item.id)}
           onPressedChange={(pressed) =>
             onChange(

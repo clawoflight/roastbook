@@ -94,11 +94,15 @@ export function BrewsPage({
     params: { shotId: String(shot.id) },
   })
 
+  // Phones show date, bean and method; the measurements need a wider screen.
+  const PHONE_HIDDEN = 'hidden sm:table-cell'
   const columns: readonly CollectionColumn<Shot>[] = [
     {
       key: 'bean',
       header: 'Bean',
       sortKey: 'bean',
+      // Long bean names wrap instead of running into the method column.
+      cellClassName: 'whitespace-normal',
       cell: (shot) => {
         if (!shot.bean) return '—'
         const thumbnail = getBeanThumbnail(shot.bean)
@@ -127,6 +131,7 @@ export function BrewsPage({
     },
     {
       key: 'dose',
+      className: PHONE_HIDDEN,
       header: 'Dose',
       align: 'right',
       sortKey: 'dose',
@@ -135,6 +140,7 @@ export function BrewsPage({
     },
     {
       key: 'yield',
+      className: PHONE_HIDDEN,
       header: 'Yield',
       align: 'right',
       sortKey: 'yield',
@@ -143,6 +149,7 @@ export function BrewsPage({
     },
     {
       key: 'time',
+      className: PHONE_HIDDEN,
       header: 'Time',
       align: 'right',
       sortKey: 'time',
@@ -153,6 +160,7 @@ export function BrewsPage({
       ? [
           {
             key: 'rating',
+            className: PHONE_HIDDEN,
             header: 'Rating',
             align: 'right' as const,
             sortKey: 'rating',

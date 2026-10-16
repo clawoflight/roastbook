@@ -82,7 +82,8 @@ export function VisitFields({
       </FormSection>
 
       <FormSection title="Drink">
-        <div className="space-y-4">
+        {/* One line from md: drink, its options and the price sit side by side. */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:[&>*]:min-w-0 md:[&>*]:flex-1">
           <DrinkSelectionFields
             configuration={choices.drinks}
             values={values}
@@ -91,7 +92,7 @@ export function VisitFields({
               onFieldChange('drinkOptionValueIds', next.drinkOptionValueIds)
             }}
           />
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.5fr)] gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,0.5fr)] gap-4 md:flex-[1.6]">
             <CurrencyInputField
               id="price"
               label="Price"

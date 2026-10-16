@@ -27,9 +27,9 @@ export function SuggestionChips({
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold text-muted-foreground">Suggestions</p>
-      {/* Phones get one swipeable row so rich chips (bean bags, gear sets)
-          do not stack into a column taller than the picker they shortcut. */}
-      <fieldset className="-my-1 flex min-w-0 snap-x gap-2 overflow-x-auto border-0 p-0 py-1 sm:flex-wrap sm:overflow-visible">
+      {/* One swipeable row at every width, with a visible scrollbar, so rich
+          chips (bean bags, gear sets) never stack taller than their picker. */}
+      <fieldset className="-my-1 flex min-w-0 snap-x gap-2 overflow-x-auto border-0 p-0 py-1 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
         <legend className="sr-only">{label} suggestions</legend>
         {items.map((item) => {
           const isSelected = String(item.id) === value
@@ -42,16 +42,16 @@ export function SuggestionChips({
               aria-pressed={isSelected}
               onClick={() => onChange(String(item.id))}
               className={cn(
-                'h-auto min-h-11 max-w-[85%] shrink-0 snap-start rounded-xl py-2 text-left whitespace-normal sm:max-w-none sm:shrink [@media(hover:hover)_and_(pointer:fine)]:min-h-8',
+                'h-auto min-h-11 max-w-64 shrink-0 snap-start rounded-xl py-1.5 text-left [@media(hover:hover)_and_(pointer:fine)]:min-h-8',
                 item.leading &&
-                  'min-h-14 gap-2.5 pr-3 [@media(hover:hover)_and_(pointer:fine)]:min-h-14',
+                  'min-h-11 gap-2 py-1 pr-3 pl-1.5 [@media(hover:hover)_and_(pointer:fine)]:min-h-10',
               )}
             >
               {item.leading}
-              <span className="flex min-w-0 flex-col items-start gap-0.5">
-                <span>{item.name}</span>
+              <span className="flex min-w-0 flex-col items-start">
+                <span className="max-w-full truncate">{item.name}</span>
                 {item.description ? (
-                  <span className="font-normal text-current/70">
+                  <span className="max-w-full truncate font-normal text-current/70">
                     {item.description}
                   </span>
                 ) : null}

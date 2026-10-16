@@ -97,7 +97,8 @@ export function CoffeeShopOsmSearch({
             event.preventDefault()
             void handleSearch()
           }}
-          className="h-11 text-base sm:h-full"
+          // The group sets the height for both pointers; the field fills it so the text centres.
+          className="h-full! py-0 text-base"
         />
         <InputGroupAddon
           align="inline-end"

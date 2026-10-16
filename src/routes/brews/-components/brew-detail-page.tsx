@@ -253,7 +253,7 @@ export function BrewDetailPage() {
               trigger={
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon-sm"
                   className="border border-destructive/20 bg-destructive/5 text-destructive-text hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive-text"
                   aria-label="Delete brew"
                 >

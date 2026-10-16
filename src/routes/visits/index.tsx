@@ -178,34 +178,34 @@ function VisitCard({ visit }: { visit: Visit }) {
         </div>
       </div>
 
-      {tasteProfile.overallRating && visit.rating != null && (
-        <StarRating
-          value={visit.rating}
-          readOnly
-          variant="compact"
-          sizeClassName="size-4"
-          className="mt-3"
-          ariaLabel="Visit rating"
-        />
-      )}
-
-      {(visit.bean || visit.price) && (
-        <p className="mt-3 text-sm text-muted-foreground">
+      {/* Rating, bean and price share one line, spaced rather than dotted. */}
+      {((tasteProfile.overallRating && visit.rating != null) ||
+        visit.bean ||
+        visit.price) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {tasteProfile.overallRating && visit.rating != null && (
+            <StarRating
+              value={visit.rating}
+              readOnly
+              variant="compact"
+              sizeClassName="size-4"
+              ariaLabel="Visit rating"
+            />
+          )}
           {visit.bean && (
-            <>
+            <span className="min-w-0 truncate">
               Bean:{' '}
               <span className="font-bold text-foreground">
                 {visit.bean.name}
               </span>
-            </>
+            </span>
           )}
-          {visit.bean && visit.price && ' · '}
           {visit.price && (
             <span className="font-bold text-foreground">
               {formatCurrency(visit.price, visit.currency || 'EUR')}
             </span>
           )}
-        </p>
+        </div>
       )}
 
       {(positiveTags.length > 0 || negativeTags.length > 0) && (

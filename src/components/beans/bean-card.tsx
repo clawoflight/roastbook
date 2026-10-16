@@ -105,13 +105,14 @@ export function BeanCard({
         </div>
 
         {weightEstimate ? (
+          // A fill level up the right edge, square-ended so it does not read as a scrollbar.
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-1.5"
+            className="pointer-events-none absolute inset-y-0 right-0 z-20 flex w-1.5 flex-col justify-end"
             aria-hidden="true"
           >
             <span
-              className="block h-full rounded-r-full bg-white/75 transition-[width] duration-200 motion-reduce:transition-none"
-              style={{ width: `${weightEstimate.percentRemaining}%` }}
+              className="block w-full bg-white/75 transition-[height] duration-200 motion-reduce:transition-none"
+              style={{ height: `${weightEstimate.percentRemaining}%` }}
             />
           </div>
         ) : null}

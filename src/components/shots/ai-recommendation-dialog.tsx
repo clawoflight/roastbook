@@ -85,16 +85,17 @@ export function AiRecommendationDialog({
     }
   }
 
-  const buttonTitle = !enabled
-    ? 'Configure OpenAI to enable recommendations'
-    : !request
-      ? 'Choose beans and a brewing method first'
-      : undefined
+  const buttonTitle = !request
+    ? 'Choose beans and a brewing method first'
+    : undefined
   const helpText = isFocusedShot
     ? 'Assesses this brew and suggests the next adjustment. Uses its beans, method, exact gear, parameters, tasting result, and matching history.'
     : 'Suggests the next controlled brew adjustment from the latest completed brew for the selected beans and its history. Unsaved form values are not used.'
 
   const visibleDisabledReason = showDisabledReason ? buttonTitle : undefined
+
+  // Without a configured AI provider there is nothing to offer, so no button at all.
+  if (!enabled) return null
 
   return (
     <>
@@ -106,7 +107,7 @@ export function AiRecommendationDialog({
               variant="outline"
               size={size}
               className={className ? 'min-w-0 flex-1' : undefined}
-              disabled={!enabled || !request}
+              disabled={!request}
               title={visibleDisabledReason ? undefined : buttonTitle}
               onClick={() => {
                 setOpen(true)

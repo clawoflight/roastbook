@@ -124,21 +124,16 @@ function VisitDetailPage() {
         eyebrow="Café visit"
         title={visit.drinkType?.name || 'Coffee'}
         description={
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span>{formatDateTime(visit.visitedAt)}</span>
             {tasteProfile.overallRating && visit.rating ? (
-              <>
-                <span aria-hidden className="text-border">
-                  •
-                </span>
-                <StarRating
-                  value={visit.rating}
-                  readOnly
-                  variant="compact"
-                  sizeClassName="size-4"
-                  ariaLabel="Visit rating"
-                />
-              </>
+              <StarRating
+                value={visit.rating}
+                readOnly
+                variant="compact"
+                sizeClassName="size-4"
+                ariaLabel="Visit rating"
+              />
             ) : null}
           </span>
         }
@@ -293,7 +288,7 @@ function VisitDetailPage() {
                 <CardHeader>
                   <CardTitle>
                     Previous visits
-                    <Badge variant="secondary" className="ml-2">
+                    <Badge variant="secondary" className="ml-2 min-w-6 px-1.5">
                       {previousVisits.length}
                     </Badge>
                   </CardTitle>

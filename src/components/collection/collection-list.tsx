@@ -70,6 +70,8 @@ export type CollectionColumn<TItem> = {
   readonly align?: 'left' | 'right'
   /** Set to make the header sortable; passed back through `sort.onSort`. */
   readonly sortKey?: string
+  /** Applied to the header and every cell, for example to hide a column on phones. */
+  readonly className?: string
   readonly cellClassName?: string
   readonly cell: (item: TItem) => ReactNode
 }
@@ -274,6 +276,7 @@ export function CollectionList<TItem>({
                     key={column.key}
                     label={column.header}
                     align={column.align}
+                    className={column.className}
                     active={sort.key === column.sortKey}
                     direction={sort.direction}
                     onSort={() => {
@@ -283,7 +286,10 @@ export function CollectionList<TItem>({
                 ) : (
                   <TableHead
                     key={column.key}
-                    className={cn(column.align === 'right' && 'text-right')}
+                    className={cn(
+                      column.align === 'right' && 'text-right',
+                      column.className,
+                    )}
                   >
                     {column.header}
                   </TableHead>
@@ -301,6 +307,7 @@ export function CollectionList<TItem>({
                     className={cn(
                       'text-muted-foreground',
                       column.align === 'right' && 'text-right',
+                      column.className,
                       column.cellClassName,
                     )}
                   >

@@ -88,7 +88,7 @@ function DrinkSettings() {
         description="Choose the finished drinks available on brews and café visits. Enable milk only for types that should ask which milk was used."
         action={<Coffee className="size-5 text-link" aria-hidden="true" />}
       >
-        <ul className="divide-y divide-border rounded-xl border border-border">
+        <ul className="max-h-96 divide-y divide-border overflow-y-auto overscroll-contain rounded-xl border border-border">
           {configuration.drinkTypes.map((drinkType) => {
             const usesMilk = milkGroup
               ? drinkType.optionGroupIds.includes(milkGroup.id)
@@ -166,7 +166,7 @@ function DrinkSettings() {
           description="These choices appear whenever the selected drink type uses milk."
           action={<Milk className="size-5 text-link" aria-hidden="true" />}
         >
-          <ul className="divide-y divide-border rounded-xl border border-border">
+          <ul className="max-h-96 divide-y divide-border overflow-y-auto overscroll-contain rounded-xl border border-border">
             {milkGroup.values.map((value) => (
               <li
                 key={value.id}

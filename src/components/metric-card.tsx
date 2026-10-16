@@ -69,13 +69,13 @@ export function MetricCard({
             </p>
           ) : null}
         </div>
+        {/* A bare icon: a filled circle around it read as a button. */}
         {Icon ? (
           <span
+            aria-hidden
             className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-full',
-              variant === 'hero'
-                ? 'bg-coffee-foreground/10 text-coffee-foreground'
-                : 'bg-primary/10 text-link',
+              'shrink-0',
+              variant === 'hero' ? 'text-coffee-foreground/80' : 'text-link',
             )}
           >
             <Icon className="size-5" />

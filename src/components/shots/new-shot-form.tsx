@@ -31,6 +31,15 @@ import {
 import { ShottimerShotDialog } from '@/components/shots/shottimer-shot-dialog'
 import { TasteTagSelector } from '@/components/shots/taste-tag-selector'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { StarRating } from '@/components/ui/star-rating'
 import {
   useCurrentLocalDateTimeLimit,
@@ -58,6 +67,7 @@ import {
   createShot,
   createShotAndSaveRecipe,
   getLastShotForBeanAndMethod,
+  updateShot,
 } from '@/lib/server/shots'
 import type {
   getBeanSuggestions,
@@ -67,6 +77,7 @@ import type {
   getTasteTagSuggestions,
 } from '@/lib/server/suggestions'
 import type { getTasteTags } from '@/lib/server/taste-tags'
+import { SHOT_SENSORY_RATING_KEYS } from '@/lib/shot-sensory'
 import {
   enabledSensoryRatingKeys,
   hasEnabledTasteProfileField,
@@ -151,6 +162,19 @@ function currentTastingValues(current: ShotFormValues) {
   }
 }
 
+/** What the tasting step edits; everything else stays as the brew was saved. */
+function tastingValues(values: ShotFormValues) {
+  const { rating, extractionBalance, notes } = values
+  return {
+    rating,
+    extractionBalance,
+    notes,
+    ...Object.fromEntries(
+      SHOT_SENSORY_RATING_KEYS.map((key) => [key, values[key]]),
+    ),
+  }
+}
+
 export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
   const {
     beans,
@@ -198,6 +222,11 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
     Readonly<Record<string, string>>
   >({})
   const [isDirty, setIsDirty] = useState(false)
+  // The saved brew the tasting dialog completes, with the values it was saved with.
+  const [tasting, setTasting] = useState<{
+    readonly id: number
+    readonly values: ShotFormValues
+  } | null>(null)
   const [timerKey, setTimerKey] = useState(0)
   const [inlineTimerVisible, setInlineTimerVisible] = useState(true)
   const isInitializing = useRef(true)
@@ -369,29 +398,55 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) {
       if (formElement) focusFirstInvalidControl(formElement)
-      return
+      return false
     }
 
     setIsSubmitting(true)
     try {
-      if (targetRecipe) {
-        await createShotAndSaveRecipe({
-          data: {
-            shot: data,
-            target:
-              targetRecipe.kind === 'new'
-                ? { name: targetRecipe.name }
-                : { recipeId: targetRecipe.recipeId },
-          },
-        })
-      } else {
-        await createShot({ data })
-      }
+      const shot = targetRecipe
+        ? (
+            await createShotAndSaveRecipe({
+              data: {
+                shot: data,
+                target:
+                  targetRecipe.kind === 'new'
+                    ? { name: targetRecipe.name }
+                    : { recipeId: targetRecipe.recipeId },
+              },
+            })
+          ).shot
+        : await createShot({ data })
       setIsDirty(false)
-      await onSaved()
+      // Tasting comes after the brew is saved, as an optional second step.
+      if (hasEnabledTasteProfileField(tasteProfile))
+        setTasting({ id: shot.id, values: submittedValues })
+      else await onSaved()
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : 'Could not save this brew',
+      )
+      return false
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Saves the tasting onto the brew just created, with the values it was saved with.
+  const saveTasting = async () => {
+    if (!tasting) return
+    setIsSubmitting(true)
+    try {
+      const data = newShotPayload(
+        { ...tasting.values, ...tastingValues(values) },
+        selectedTags,
+        { brewedAt },
+      )
+      await updateShot({ data: { id: tasting.id, ...data } })
+      await onSaved()
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Could not save the tasting',
       )
     } finally {
       setIsSubmitting(false)
@@ -403,11 +458,8 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
     await saveShot(null, event.currentTarget)
   }
 
-  const handleRecipeSubmit = async (target: SaveToRecipeTarget) => {
-    await saveShot(target)
-    // A successful save navigates away, so the dialog never closes itself.
-    return false
-  }
+  // Closes once the brew is saved, so the tasting dialog can take over.
+  const handleRecipeSubmit = (target: SaveToRecipeTarget) => saveShot(target)
 
   const beanOptions = beans
   const selectedBean = beanOptions.find(
@@ -605,13 +657,85 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
           errors={fieldErrors}
           onChange={set}
         />
-        {hasEnabledTasteProfileField(tasteProfile) ? (
-          <FormSection
-            title="Taste profile"
-            description="Rate the result once you have tasted it."
-            collapsible
-            defaultOpen={false}
+      </div>
+      {/* The height cap keeps the save buttons reachable on short windows:
+          a pinned sidebar taller than the viewport never scrolls its tail
+          into view, so it scrolls internally instead. */}
+      <aside className="order-2 space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
+        {selectedBean ? (
+          <div className="hidden lg:block">
+            <BeanCard bean={selectedBean} />
+          </div>
+        ) : null}
+        {hasShotTimer ? (
+          <ShotTimer timer={timer} className="hidden lg:flex" />
+        ) : null}
+        <AiRecommendationDialog
+          enabled={recommendationEnabled}
+          request={recommendationRequest}
+          size="lg"
+          className="w-full"
+          showDisabledReason
+        />
+        <div className="hidden space-y-4 lg:block">
+          {saveToRecipeDialog(
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="w-full"
+              disabled={!canSave}
+            />,
+          )}
+          <Button
+            type="submit"
+            size="lg"
+            disabled={!canSave}
+            aria-busy={isSubmitting}
+            className="w-full"
           >
+            {isSubmitting ? 'Saving…' : 'Save brew'}
+          </Button>
+        </div>
+      </aside>
+      {/* Phones keep the save actions within thumb reach above the tab bar
+          instead of at the end of a page several screens tall. The bar runs
+          2rem further down, behind the tab bar, so at the end of the page it
+          also covers the strip of bottom padding the tab bar leaves open. */}
+      <div className="sticky bottom-[calc(2rem+env(safe-area-inset-bottom))] z-20 order-3 -mx-4 -mb-8 flex gap-2 border-t border-border bg-card/95 px-4 pt-3 pb-11 backdrop-blur md:-mx-8 md:px-8 lg:hidden">
+        {saveToRecipeDialog(
+          <Button
+            type="button"
+            variant="outline"
+            className="min-w-0 flex-1 px-3"
+            disabled={!canSave}
+          />,
+        )}
+        <Button
+          type="submit"
+          disabled={!canSave}
+          aria-busy={isSubmitting}
+          className="min-w-0 flex-1 px-3"
+        >
+          {isSubmitting ? 'Saving…' : 'Save brew'}
+        </Button>
+      </div>
+      <Dialog
+        open={tasting !== null}
+        onOpenChange={(open) => {
+          // Closing without saving keeps the brew as it is.
+          if (!open && !isSubmitting) void onSaved()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>How did it taste?</DialogTitle>
+            <DialogDescription>
+              The brew is saved. Add a tasting now, or skip and add it later
+              from the brew.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
             {tasteProfile.overallRating ||
             showSensoryRatings ||
             showExtractionBalance ? (
@@ -661,69 +785,27 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
                 placeholder="How was it?"
               />
             ) : null}
-          </FormSection>
-        ) : null}
-      </div>
-      {/* The height cap keeps the save buttons reachable on short windows:
-          a pinned sidebar taller than the viewport never scrolls its tail
-          into view, so it scrolls internally instead. */}
-      <aside className="order-2 space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
-        {selectedBean ? (
-          <div className="hidden lg:block">
-            <BeanCard bean={selectedBean} />
-          </div>
-        ) : null}
-        {hasShotTimer ? (
-          <ShotTimer timer={timer} className="hidden lg:flex" />
-        ) : null}
-        <AiRecommendationDialog
-          enabled={recommendationEnabled}
-          request={recommendationRequest}
-          size="lg"
-          className="w-full"
-          showDisabledReason
-        />
-        <div className="hidden space-y-4 lg:block">
-          {saveToRecipeDialog(
+          </DialogBody>
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"
-              size="lg"
-              className="w-full"
-              disabled={!canSave}
-            />,
-          )}
-          <Button
-            type="submit"
-            size="lg"
-            disabled={!canSave}
-            aria-busy={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? 'Saving…' : 'Save brew'}
-          </Button>
-        </div>
-      </aside>
-      {/* Phones keep the save actions within thumb reach above the tab bar
-          instead of at the end of a page several screens tall. */}
-      <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 order-3 -mx-4 flex gap-2 border-t border-border bg-card/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8 lg:hidden">
-        {saveToRecipeDialog(
-          <Button
-            type="button"
-            variant="outline"
-            className="min-w-0 flex-1 px-3"
-            disabled={!canSave}
-          />,
-        )}
-        <Button
-          type="submit"
-          disabled={!canSave}
-          aria-busy={isSubmitting}
-          className="min-w-0 flex-1 px-3"
-        >
-          {isSubmitting ? 'Saving…' : 'Save brew'}
-        </Button>
-      </div>
+              disabled={isSubmitting}
+              onClick={() => void onSaved()}
+            >
+              Skip
+            </Button>
+            <Button
+              type="button"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting}
+              onClick={() => void saveTasting()}
+            >
+              {isSubmitting ? 'Saving…' : 'Save tasting'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   )
 }
