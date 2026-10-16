@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Runs the OpenPencil editor for this design folder. It uses OpenPencil's dev
-# server because only that build bridges a browser tab to the MCP server.
+# Runs the OpenPencil editor for this design folder: a development-mode bundle
+# (only development builds bridge a browser tab to the MCP server) served by
+# `vite preview`.
 #
 #   design/open-pencil/editor.sh setup   # clone, install, and build once
 #   design/open-pencil/editor.sh start   # foreground; run it through vibepod-preview
@@ -28,9 +29,11 @@ start)
   : "${OPENPENCIL_DEV_ORIGIN:?set to the public editor origin, e.g. https://open-pencil.<preview-domain>}"
   cp "$here/vite.vibepod.config.ts" "$op_dir/vite.vibepod.config.ts"
   cd "$op_dir"
-  OPENPENCIL_DEV_TOKEN="$(cat "$token_file")" \
-    OPENPENCIL_FILES_ROOT="$(dirname "$here")/views" \
-    exec bunx vite --config vite.vibepod.config.ts --host 127.0.0.1
+  export OPENPENCIL_DEV_TOKEN="$(cat "$token_file")"
+  export OPENPENCIL_FILES_ROOT="$(dirname "$here")/views"
+  NODE_ENV=development bunx vite build --config vite.vibepod.config.ts --mode development
+  exec bunx vite preview --config vite.vibepod.config.ts --mode development \
+    --host 127.0.0.1 --port "${PORT:-1420}" --strictPort
   ;;
 *)
   echo "usage: $0 setup|start" >&2

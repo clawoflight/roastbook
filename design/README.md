@@ -30,10 +30,12 @@ wrapping rows. Pseudo-elements, gradients, and hover states are not captured.
 
 ## Editor
 
-`open-pencil/editor.sh` runs the OpenPencil editor against `views/`. It uses
-OpenPencil's development server, the only browser build that connects a tab to
-its MCP server, and `open-pencil/vite.vibepod.config.ts` adapts it to a
-VibePod preview:
+`open-pencil/editor.sh` runs the OpenPencil editor against `views/`. Only
+development builds connect a browser tab to OpenPencil's MCP server, but the
+development server sends about 2,700 separate modules, which stalls behind the
+preview gateway. The script therefore builds a development-mode bundle (about
+30 s on each start) and serves it with `vite preview`.
+`open-pencil/vite.vibepod.config.ts` adapts it to a VibePod preview:
 
 - the MCP bridge is proxied through the editor's own origin at `/__mcp`;
 - `.fig` files under `views/` are served read-only at their absolute paths,
