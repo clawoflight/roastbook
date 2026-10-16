@@ -1,22 +1,46 @@
-// Captures Roastbook routes from a running instance into OpenPencil documents.
-// Each view loads in headless Chrome, its computed styles are snapshotted, and
-// OpenPencil lays the layers out again as editable auto-layout frames.
-import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+// Captures every Roastbook view from a running instance into one OpenPencil
+// document, views/roastbook.fig: a page per view with its desktop and mobile
+// artboards, the app's tokens as variables and styles, and repeated layers as
+// components. See README.md for what each step does.
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { sceneGraphFromStyledHTML } from '@open-pencil/core/io/formats/html/layers'
+import { populateFigPage } from '@open-pencil/core/io/formats/fig'
+import { prepareGraphFonts } from '@open-pencil/core/text'
+import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 import { chromium, type Page } from 'playwright-core'
+import { SceneBuilder } from './capture/build'
+import { extractComponents } from './capture/components'
+import {
+  type Box,
+  ELEMENT_PROPS,
+  type SnapshotElement,
+  snapshotPage,
+  TEXT_PROPS,
+} from './capture/snapshot'
+import {
+  importTokens,
+  parseTheme,
+  StyleMatcher,
+  ThemeBinder,
+  type TokenFile,
+  typographyTokenFile,
+  variableTokenFiles,
+} from './capture/tokens'
+import { checkLayout } from './capture/verify'
 
 const APP_URL = process.env.ROASTBOOK_URL ?? 'http://localhost:3000'
 // Optional remote Chrome (for example a chromedp/headless-shell container).
 const CDP_URL = process.env.CDP_URL
-const OUTPUT_DIR = process.env.OUTPUT_DIR ?? 'views'
+const OUTPUT = process.env.OUTPUT ?? 'views/roastbook.fig'
+const TOKENS_DIR = 'tokens'
 const ONLY = process.env.VIEWS?.split(',')
 
 const VIEWPORTS = [
   { name: 'Desktop', width: 1280, height: 800 },
   { name: 'Mobile', width: 390, height: 844 },
 ]
+const ARTBOARD_GAP = 160
 
 // `detail` opens the first entry linked from `path` instead of `path` itself.
 const VIEWS: { name: string; path: string; detail?: RegExp }[] = [
@@ -29,303 +53,48 @@ const VIEWS: { name: string; path: string; detail?: RegExp }[] = [
   { name: 'New bean', path: '/beans/new' },
   { name: 'Roasters', path: '/roasters' },
   { name: 'Roaster', path: '/roasters', detail: /^\/roasters\/(?!new)[^/]+$/ },
+  { name: 'New roaster', path: '/roasters/new' },
   { name: 'Recipes', path: '/recipes' },
   { name: 'Recipe', path: '/recipes', detail: /^\/recipes\/(?!new)[^/]+$/ },
+  { name: 'New recipe', path: '/recipes/new' },
+  { name: 'Brewing methods', path: '/brewing-methods' },
+  {
+    name: 'Brewing method',
+    path: '/brewing-methods',
+    detail: /^\/brewing-methods\/(?!new)[^/]+$/,
+  },
+  { name: 'New brewing method', path: '/brewing-methods/new' },
   { name: 'Gear', path: '/gear' },
   { name: 'Gear item', path: '/gear', detail: /^\/gear\/(?!new)[^/]+$/ },
+  { name: 'New gear', path: '/gear/new' },
   { name: 'Gear sets', path: '/gear-sets' },
-  { name: 'Brewing methods', path: '/brewing-methods' },
+  {
+    name: 'Gear set',
+    path: '/gear-sets',
+    detail: /^\/gear-sets\/(?!new)[^/]+$/,
+  },
+  { name: 'New gear set', path: '/gear-sets/new' },
   { name: 'Places', path: '/places' },
   { name: 'Place', path: '/places', detail: /^\/places\/(?!new)[^/]+$/ },
+  { name: 'New place', path: '/places/new' },
   { name: 'Visits', path: '/visits' },
+  { name: 'Visit', path: '/visits', detail: /^\/visits\/(?!new)[^/]+$/ },
+  { name: 'New visit', path: '/visits/new' },
   { name: 'Stats', path: '/stats' },
   { name: 'Settings', path: '/settings' },
+  { name: 'Settings — Appearance', path: '/settings/appearance' },
+  { name: 'Settings — Map', path: '/settings/map' },
+  { name: 'Settings — Drinks', path: '/settings/drinks' },
+  { name: 'Settings — Taste profile', path: '/settings/taste-profile' },
+  { name: 'Settings — AI', path: '/settings/ai' },
+  { name: 'Settings — Shot timer', path: '/settings/shottimer' },
+  { name: 'Settings — Storage', path: '/settings/storage' },
+  { name: 'Settings — About', path: '/settings/about' },
 ]
 
-interface DesignElement {
-  type: 'element'
-  tagName: string
-  attrs: Record<string, string>
-  children: DesignNode[]
-  computedStyle?: Record<string, string>
-}
-type DesignNode = DesignElement | { type: 'text'; text: string }
-
-// Runs in the page: mirrors @open-pencil/dom-css's browser runtime, but reads
-// the live layout instead of a 1000px sandbox, and turns SVGs, images, and
-// form fields into layers the importer can draw.
-async function snapshotPage(props: string[]): Promise<DesignNode[]> {
-  const imageCache = new Map<string, Promise<string | null>>()
-
-  const toDataURL = (blob: Blob) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = () => reject(reader.error)
-      reader.readAsDataURL(blob)
-    })
-
-  const rasterize = (src: string, width: number, height: number) =>
-    new Promise<string | null>((resolve) => {
-      const image = new Image()
-      image.onload = () => {
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.ceil(width * 2)
-        canvas.height = Math.ceil(height * 2)
-        canvas
-          .getContext('2d')
-          ?.drawImage(image, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL('image/png'))
-      }
-      image.onerror = () => resolve(null)
-      image.src = src
-    })
-
-  const imageSource = (src: string) => {
-    let cached = imageCache.get(src)
-    if (!cached) {
-      cached = fetch(src)
-        .then((response) => (response.ok ? response.blob() : null))
-        .then((blob) => (blob ? toDataURL(blob) : null))
-        .catch(() => null)
-      imageCache.set(src, cached)
-    }
-    return cached
-  }
-
-  const styleOf = (
-    element: Element,
-    overrides: Record<string, string> = {},
-  ) => {
-    const computed = getComputedStyle(element)
-    const style: Record<string, string> = {}
-    for (const property of props) {
-      const value = computed.getPropertyValue(property)
-      if (value) style[property] = value
-    }
-    return { ...style, ...overrides }
-  }
-
-  const layerName = (element: Element) => {
-    const source = element
-      .getAttribute('data-tsd-source')
-      ?.match(/([^/]+)\.tsx/)?.[1]
-    const role =
-      element.getAttribute('aria-label') ??
-      element.getAttribute('data-slot') ??
-      element.tagName.toLowerCase()
-    return source ? `${role} · ${source}` : role
-  }
-
-  const isHidden = (element: Element) => {
-    const style = getComputedStyle(element)
-    if (style.display === 'none' || style.visibility === 'hidden') return true
-    const rect = element.getBoundingClientRect()
-    // sr-only and other visually hidden helpers
-    return style.position === 'absolute' && rect.width <= 1 && rect.height <= 1
-  }
-
-  const isInline = (node: Node | null) =>
-    node instanceof Element &&
-    getComputedStyle(node).display.startsWith('inline')
-
-  const box = (element: Element) => {
-    const rect = element.getBoundingClientRect()
-    return { width: `${rect.width}px`, height: `${rect.height}px` }
-  }
-
-  const imageLayer = (element: Element, src: string | null): DesignElement => ({
-    type: 'element',
-    tagName: 'img',
-    attrs: { id: layerName(element), ...(src ? { src } : {}) },
-    children: [],
-    computedStyle: styleOf(element, box(element)),
-  })
-
-  async function visit(node: Node): Promise<DesignNode | null> {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.textContent ?? ''
-      if (text.trim()) return { type: 'text', text }
-      const keep =
-        text.length > 0 &&
-        (isInline(node.parentNode) ||
-          isInline(node.previousSibling) ||
-          isInline(node.nextSibling))
-      return keep ? { type: 'text', text } : null
-    }
-    if (!(node instanceof Element)) return null
-    const tag = node.tagName.toLowerCase()
-    if (
-      ['script', 'style', 'link', 'meta', 'template', 'noscript'].includes(tag)
-    )
-      return null
-    if (isHidden(node)) return null
-
-    if (tag === 'svg') {
-      const { width, height } = node.getBoundingClientRect()
-      const clone = node.cloneNode(true) as SVGElement
-      clone.setAttribute('width', String(width))
-      clone.setAttribute('height', String(height))
-      clone.setAttribute('color', getComputedStyle(node).color)
-      const markup = new XMLSerializer().serializeToString(clone)
-      const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`
-      return imageLayer(node, await rasterize(src, width, height))
-    }
-    if (tag === 'img') {
-      const src =
-        (node as HTMLImageElement).currentSrc || (node as HTMLImageElement).src
-      return imageLayer(node, src ? await imageSource(src) : null)
-    }
-    if (tag === 'canvas')
-      return imageLayer(node, (node as HTMLCanvasElement).toDataURL())
-    if (tag === 'input' || tag === 'textarea' || tag === 'select') {
-      const field = node as HTMLInputElement
-      if (
-        ['checkbox', 'radio', 'hidden', 'range', 'file'].includes(field.type)
-      ) {
-        return {
-          type: 'element',
-          tagName: 'div',
-          attrs: { id: layerName(node) },
-          children: [],
-          computedStyle: styleOf(node, box(node)),
-        }
-      }
-      const value =
-        tag === 'select'
-          ? ((node as HTMLSelectElement).selectedOptions[0]?.text ?? '')
-          : field.value
-      const placeholder = getComputedStyle(node, '::placeholder').color
-      return {
-        type: 'element',
-        tagName: 'div',
-        attrs: { id: layerName(node) },
-        children: [{ type: 'text', text: value || field.placeholder || '' }],
-        computedStyle: styleOf(node, {
-          ...box(node),
-          display: 'flex',
-          'align-items': tag === 'textarea' ? 'flex-start' : 'center',
-          ...(value ? {} : { color: placeholder }),
-        }),
-      }
-    }
-
-    const children: DesignNode[] = []
-    for (const child of Array.from(node.childNodes)) {
-      const layer = await visit(child)
-      if (layer) children.push(layer)
-    }
-    const overrides: Record<string, string> = {}
-    // The importer has no CSS grid; items keep their measured sizes in a wrapping row.
-    if (getComputedStyle(node).display.endsWith('grid')) {
-      Object.assign(overrides, {
-        display: 'flex',
-        'flex-direction': 'row',
-        'flex-wrap': 'wrap',
-        'align-items': 'flex-start',
-      })
-    }
-    // Text the browser kept on one line stays there when the design font measures wider.
-    const hasText = Array.from(node.childNodes).some(
-      (child) => child.nodeType === Node.TEXT_NODE && child.textContent?.trim(),
-    )
-    if (hasText) {
-      const range = document.createRange()
-      range.selectNodeContents(node)
-      const lines = new Set(
-        Array.from(range.getClientRects(), (rect) => Math.round(rect.bottom)),
-      )
-      const leaf = Array.from(node.childNodes).every(
-        (child) => child.nodeType === Node.TEXT_NODE,
-      )
-      if (lines.size === 1)
-        Object.assign(
-          overrides,
-          { 'white-space': 'nowrap' },
-          leaf ? { width: 'auto', height: 'auto' } : {},
-        )
-    }
-    return {
-      type: 'element',
-      tagName: tag,
-      attrs: { id: layerName(node) },
-      children,
-      computedStyle: styleOf(node, overrides),
-    }
-  }
-
-  const layers: DesignNode[] = []
-  for (const child of Array.from(document.body.childNodes)) {
-    const layer = await visit(child)
-    if (layer) layers.push(layer)
-  }
-  return layers
-}
-
-// The same list @open-pencil/dom-css's browser runtime reads.
-const PROPS = [
-  'align-items',
-  'aspect-ratio',
-  'background-color',
-  'background-image',
-  'border-bottom-color',
-  'border-bottom-style',
-  'border-bottom-left-radius',
-  'border-bottom-right-radius',
-  'border-bottom-width',
-  'border-left-color',
-  'border-left-style',
-  'border-left-width',
-  'border-radius',
-  'border-right-color',
-  'border-right-style',
-  'border-right-width',
-  'border-top-color',
-  'border-top-style',
-  'border-top-left-radius',
-  'border-top-right-radius',
-  'border-top-width',
-  'box-shadow',
-  'box-sizing',
-  'color',
-  'column-gap',
-  'display',
-  'align-self',
-  'bottom',
-  'flex-direction',
-  'flex-wrap',
-  'font-family',
-  'font-size',
-  'font-style',
-  'font-weight',
-  'gap',
-  'height',
-  'justify-content',
-  'letter-spacing',
-  'left',
-  'line-height',
-  'max-height',
-  'max-width',
-  'min-height',
-  'min-width',
-  'object-fit',
-  'opacity',
-  'overflow',
-  'padding-bottom',
-  'padding-left',
-  'padding-right',
-  'padding-top',
-  'position',
-  'right',
-  'row-gap',
-  'text-align',
-  'text-decoration-line',
-  'text-shadow',
-  'text-transform',
-  'top',
-  'white-space',
-  'width',
-]
+// Measuring has to see the page at rest, in the font instances OpenPencil renders.
+const CAPTURE_CSS =
+  '*, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important }'
 
 async function settle(page: Page) {
   await page.waitForLoadState('networkidle')
@@ -335,7 +104,7 @@ async function settle(page: Page) {
 // The app scrolls inside #app-scroll-area, so grow the viewport to its content
 // height to capture the whole view.
 async function fitToContent(page: Page, width: number) {
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 4; i++) {
     const overflow = await page.evaluate(() => {
       const area = document.querySelector('#app-scroll-area')
       return area ? area.scrollHeight - area.clientHeight : 0
@@ -350,7 +119,7 @@ async function fitToContent(page: Page, width: number) {
   }
 }
 
-async function captureView(
+async function snapshotView(
   page: Page,
   view: (typeof VIEWS)[number],
   viewport: (typeof VIEWPORTS)[number],
@@ -368,27 +137,44 @@ async function captureView(
     await page.goto(new URL(href, APP_URL).href)
     await settle(page)
   }
+  await page.addStyleTag({ content: CAPTURE_CSS })
   await fitToContent(page, viewport.width)
-  const children = await page.evaluate(snapshotPage, PROPS)
-  const { height } = page.viewportSize() ?? viewport
-  const frame: DesignElement = {
-    type: 'element',
-    tagName: 'div',
-    attrs: { id: `${view.name} — ${viewport.name}` },
-    children,
-    computedStyle: {
-      display: 'flex',
-      'flex-direction': 'column',
-      width: `${viewport.width}px`,
-      height: `${height}px`,
-      overflow: 'hidden',
-      'background-color': await page.evaluate(
-        () => getComputedStyle(document.body).backgroundColor,
-      ),
-    },
-  }
-  return frame
+  return page.evaluate(snapshotPage, {
+    element: ELEMENT_PROPS,
+    text: TEXT_PROPS,
+  })
 }
+
+const imageCache = new Map<string, Promise<Uint8Array | null>>()
+function loadImage(url: string) {
+  let cached = imageCache.get(url)
+  if (!cached) {
+    cached = url.startsWith('data:')
+      ? Promise.resolve(
+          new Uint8Array(
+            Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'),
+          ),
+        )
+      : fetch(url)
+          .then(async (response) =>
+            response.ok ? new Uint8Array(await response.arrayBuffer()) : null,
+          )
+          .catch(() => null)
+    imageCache.set(url, cached)
+  }
+  return cached
+}
+
+const graph = new SceneGraph()
+const [firstPage] = graph.getPages()
+if (!firstPage) throw new Error('a new document has no page')
+const library = graph.addPage('Components')
+
+const css = await readFile(join(import.meta.dir, '../src/styles.css'), 'utf8')
+const tokenFiles: TokenFile[] = variableTokenFiles(parseTheme(css))
+const skipped = importTokens(graph, library.id, tokenFiles)
+if (skipped.length) console.warn('tokens skipped:', skipped)
+const binder = new ThemeBinder(graph)
 
 const browser = CDP_URL
   ? await chromium.connectOverCDP(CDP_URL)
@@ -396,22 +182,28 @@ const browser = CDP_URL
 const context = await browser.newContext({
   deviceScaleFactor: 1,
   colorScheme: 'light',
+  reducedMotion: 'reduce',
 })
 const page = await context.newPage()
-const io = new IORegistry(BUILTIN_IO_FORMATS)
-await mkdir(OUTPUT_DIR, { recursive: true })
 
-// One document per view, its viewports side by side: OpenPencil limits agent
-// editing to 10,000 nodes per document, which the whole app exceeds.
+const elements = new Map<string, SnapshotElement>()
+const measured = new Map<string, Box>()
+const artboards: { id: string; name: string }[] = []
+const viewPages: string[] = []
+let colorsBound = 0
+let numbersBound = 0
+
 for (const view of VIEWS) {
   if (ONLY && !ONLY.includes(view.name)) continue
-  const frames: DesignElement[] = []
+  const viewPage = viewPages.length === 0 ? firstPage : graph.addPage(view.name)
+  graph.updateNode(viewPage.id, { name: view.name })
+  let x = 0
   for (const viewport of VIEWPORTS) {
+    let snapshot: SnapshotElement | null = null
     // A dev server can reload the page mid-capture (dependency re-optimization), so retry.
     for (let attempt = 1; ; attempt++) {
       try {
-        const frame = await captureView(page, view, viewport)
-        if (frame) frames.push(frame)
+        snapshot = await snapshotView(page, view, viewport)
         break
       } catch (error) {
         if (attempt === 3) throw error
@@ -420,50 +212,170 @@ for (const view of VIEWS) {
         )
       }
     }
+    if (!snapshot) {
+      console.warn(`skip ${view.name}: no entry linked from ${view.path}`)
+      break
+    }
+    const builder = new SceneBuilder(graph, loadImage)
+    const name = `${view.name} — ${viewport.name}`
+    const root = await builder.view(snapshot, viewPage.id, name)
+    graph.updateNode(root.id, { x })
+    x += snapshot.box.width + ARTBOARD_GAP
+    await prepareGraphFonts(graph, [root.id])
+    const report = await checkLayout(graph, root.id, builder.measured)
+    for (const use of builder.colors)
+      if (graph.getNode(use.nodeId) && binder.color(use)) colorsBound++
+    for (const id of builder.measured.keys()) {
+      const node = graph.getNode(id)
+      if (node) numbersBound += binder.numbers(node)
+    }
+    for (const [id, element] of builder.elements) elements.set(id, element)
+    for (const [id, box] of builder.measured) measured.set(id, box)
+    artboards.push({ id: root.id, name })
+    console.log(
+      `${name}: ${report.layers} layers, ${report.autoLayout} auto layout, ${report.fallbacks.length} fixed`,
+    )
   }
-  if (frames.length === 0) {
-    console.warn(`skip ${view.name}: no entry linked from ${view.path}`)
-    continue
-  }
-
-  const graph = sceneGraphFromStyledHTML(
-    {
-      type: 'document',
-      children: [
-        {
-          type: 'element',
-          tagName: 'div',
-          attrs: { id: view.name },
-          children: frames,
-          computedStyle: {
-            display: 'flex',
-            'flex-direction': 'row',
-            'align-items': 'flex-start',
-            gap: '160px',
-          },
-        },
-      ],
-    },
-    { pageName: view.name },
-  )
-  // Lift each viewport frame onto the page as its own artboard, keeping its place.
-  const [pageNode] = graph.getPages()
-  const [row] = pageNode ? graph.getChildren(pageNode.id) : []
-  if (!pageNode || !row)
-    throw new Error(`${view.name}: the import produced no page`)
-  for (const frame of graph.getChildren(row.id)) {
-    const { x, y } = graph.getAbsolutePosition(frame.id)
-    graph.reparentNode(frame.id, pageNode.id)
-    graph.updateNode(frame.id, { x, y })
-  }
-  graph.deleteNode(row.id)
-
-  const file = join(
-    OUTPUT_DIR,
-    `${view.name.toLowerCase().replaceAll(' ', '-')}.fig`,
-  )
-  const { data } = await io.writeDocument('fig', graph)
-  await writeFile(file, data as Uint8Array)
-  console.log(`wrote ${file}`)
+  if (x > 0) viewPages.push(viewPage.id)
+  else graph.deleteNode(viewPage.id)
 }
 await browser.close()
+
+// Text styles for the type the views use, then every matching layer takes its style.
+const texts = [...graph.getAllNodes()].filter(
+  (node): node is SceneNode => node.type === 'TEXT' && !node.internalOnly,
+)
+const typography = typographyTokenFile(texts)
+importTokens(graph, library.id, [typography])
+const styles = new StyleMatcher(graph)
+let styled = 0
+for (const node of graph.getAllNodes())
+  if (!node.internalOnly && styles.apply(node)) styled++
+
+const components = extractComponents(
+  graph,
+  viewPages,
+  library.id,
+  elements,
+  measured,
+)
+// The library goes after the views.
+graph.reorderChild(library.id, graph.rootId, graph.getPages().length)
+// .fig keeps pages in order-key order; without keys it writes them in the order above.
+for (const page of graph.getPages())
+  page.source = { ...page.source, orderKey: null }
+
+// Instances must still lay out as the page did.
+let drift = 0
+for (const artboard of artboards) {
+  const report = await checkLayout(graph, artboard.id, measured, {
+    fallBack: false,
+  })
+  drift += report.fallbacks.length
+  if (report.fallbacks.length)
+    console.warn(
+      `${artboard.name}: ${report.fallbacks.length} frames off after componentizing`,
+    )
+}
+
+if (process.env.DEBUG_TEXT)
+  for (const node of graph.getAllNodes()) {
+    const box = measured.get(node.id)
+    if (node.type !== 'TEXT' || !box || Math.abs(box.height - node.height) < 3)
+      continue
+    let owner = graph.getNode(node.parentId ?? '')
+    while (owner && owner.type !== 'INSTANCE')
+      owner = graph.getNode(owner.parentId ?? '')
+    const main = owner?.componentId ? graph.getNode(owner.componentId) : null
+    console.log(
+      'TEXT',
+      JSON.stringify({
+        text: node.text,
+        box,
+        w: node.width,
+        h: node.height,
+        ar: node.textAutoResize,
+        lh: node.lineHeight,
+        fs: node.fontSize,
+        ff: node.fontFamily,
+        fw: node.fontWeight,
+        style: node.textStyleId,
+        bv: node.boundVariables,
+        self: node.layoutAlignSelf,
+        grow: node.layoutGrow,
+        owner: owner?.name,
+        main: main?.name,
+      }),
+    )
+  }
+// The token files the document was built from, for code to read and other tools to import.
+await rm(TOKENS_DIR, { recursive: true, force: true })
+const merged: TokenFile[] = tokenFiles.map((file) =>
+  file.path === typography.path
+    ? {
+        ...file,
+        content: {
+          ...(file.content as object),
+          ...(typography.content as object),
+        },
+      }
+    : file,
+)
+for (const file of merged) {
+  const path = join(TOKENS_DIR, file.path)
+  await mkdir(dirname(path), { recursive: true })
+  await writeFile(path, `${JSON.stringify(file.content, null, 2)}\n`)
+}
+
+await mkdir(dirname(OUTPUT), { recursive: true })
+const { data } = await new IORegistry(BUILTIN_IO_FORMATS).writeDocument(
+  'fig',
+  graph,
+)
+await writeFile(OUTPUT, data as Uint8Array)
+console.log(
+  `wrote ${OUTPUT}: ${viewPages.length} views, ${graph.nodes.size} nodes, ${colorsBound} colors and ${numbersBound} sizes bound, ` +
+    `${styled} styled layers, ${components.components} components (${components.sets} sets, ${components.instances} instances), ` +
+    `${drift} frames off after componentizing`,
+)
+
+// The saved document must still look like the pages: reopen it, give its layers the
+// boxes their originals were measured at, and lay every artboard out again.
+const io = new IORegistry(BUILTIN_IO_FORMATS)
+const { graph: saved } = await io.readDocument({
+  name: OUTPUT,
+  data: data as Uint8Array,
+})
+for (const savedPage of saved.getPages())
+  await populateFigPage(saved, savedPage.id)
+const savedMeasured = new Map<string, Box>()
+const pair = (from: SceneNode, to: SceneNode) => {
+  const box = measured.get(from.id)
+  if (box) savedMeasured.set(to.id, box)
+  const targets = saved.getChildren(to.id)
+  graph.getChildren(from.id).forEach((child, i) => {
+    const target = targets[i]
+    if (target) pair(child, target)
+  })
+}
+let reopened = 0
+for (const artboard of artboards) {
+  const original = graph.getNode(artboard.id)
+  const copy = [...saved.getAllNodes()].find(
+    (node) =>
+      node.name === artboard.name &&
+      node.parentId &&
+      saved.getNode(node.parentId)?.type === 'CANVAS',
+  )
+  if (!original || !copy) continue
+  pair(original, copy)
+  const report = await checkLayout(saved, copy.id, savedMeasured, {
+    fallBack: false,
+  })
+  reopened += report.fallbacks.length
+  if (report.fallbacks.length)
+    console.warn(
+      `${artboard.name}: ${report.fallbacks.length} frames off after reopening`,
+    )
+}
+console.log(`reopened ${OUTPUT}: ${reopened} frames off`)

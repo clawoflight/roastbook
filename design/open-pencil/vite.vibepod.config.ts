@@ -29,7 +29,7 @@ if (!publicOrigin)
 
 // In a browser, MCP open_file fetches the file's absolute path from this origin.
 // Serve read-only design files under OPENPENCIL_FILES_ROOT at those paths, and
-// at /views/<name>.fig for links; a bare / opens the overview view.
+// at /views/<name>.fig for links; a bare / opens the Roastbook document.
 function designFiles(root: string): Plugin {
   async function install(middlewares: Connect.Server) {
     const realRoot = await realpath(root)
@@ -66,7 +66,7 @@ function designFiles(root: string): Plugin {
     middlewares.use(async (request, response, next) => {
       const url = new URL(request.url ?? '/', 'http://x')
       if (request.method === 'GET' && url.pathname === '/' && !url.search) {
-        const file = `${publicOrigin}/views/overview.fig`
+        const file = `${publicOrigin}/views/roastbook.fig`
         response.writeHead(302, {
           location: `/?file=${encodeURIComponent(file)}`,
         })

@@ -1,0 +1,12 @@
+{
+  "font": {
+    "display": {
+      "$type": "fontFamily",
+      "$value": "Bricolage Grotesque"
+    },
+    "body": {
+      "$type": "fontFamily",
+      "$value": "Hanken Grotesk"
+    }
+  }
+}

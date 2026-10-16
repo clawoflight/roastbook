@@ -1,0 +1,1904 @@
+{
+  "shadow": {
+    "coffee": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": "#3c2a1e73",
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 8,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 24,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -18,
+            "unit": "px"
+          }
+        }
+      ]
+    },
+    "coffee-inline": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": "#3c2a1e80",
+          "offsetX": {
+            "value": -8,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 0,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 16,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -10,
+            "unit": "px"
+          }
+        }
+      ]
+    },
+    "coffee-strong": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": "#3c2a1e8c",
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 10,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 30,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -18,
+            "unit": "px"
+          }
+        }
+      ]
+    },
+    "control": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": "#3c2a1e14",
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 1,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 1,
+            "unit": "px"
+          },
+          "spread": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        {
+          "color": "#3c2a1e73",
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 3,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 10,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -7,
+            "unit": "px"
+          }
+        }
+      ]
+    }
+  },
+  "Small": {
+    "Regular": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 400,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Semibold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Medium": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 500,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Medium 14": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": {
+          "value": 14,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 500,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 14,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Semibold 22.75": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 22.75,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 22.75,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold caps": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 1.4,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 1.4,
+            "textDecoration": "NONE",
+            "textCase": "UPPER"
+          }
+        }
+      }
+    },
+    "Medium 21": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": {
+          "value": 21,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 500,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 21,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Medium 44": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": {
+          "value": 44,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 500,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 44,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold 22.75": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 22.75,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 22.75,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Medium 20": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 500,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 500,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "TITLE"
+          }
+        }
+      }
+    },
+    "Bold caps 1.96": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 20,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 1.96,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 20,
+            "letterSpacing": 1.96,
+            "textDecoration": "NONE",
+            "textCase": "UPPER"
+          }
+        }
+      }
+    },
+    "Regular 22.75": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 14,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": {
+          "value": 22.75,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 400,
+            "italic": false,
+            "fontSize": 14,
+            "lineHeight": 22.75,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    }
+  },
+  "Navigation caption": {
+    "Semibold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 10,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 15,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 10,
+            "lineHeight": 15,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 10,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 15,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 1.2,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 10,
+            "lineHeight": 15,
+            "letterSpacing": 1.2,
+            "textDecoration": "NONE",
+            "textCase": "UPPER"
+          }
+        }
+      }
+    }
+  },
+  "Section title": {
+    "Bold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 18,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 24.75,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.45,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 18,
+            "lineHeight": 24.75,
+            "letterSpacing": -0.45,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold 28": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 18,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 28,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.36,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 18,
+            "lineHeight": 28,
+            "letterSpacing": -0.36,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold 28 -0.45": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 18,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 28,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.45,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 18,
+            "lineHeight": 28,
+            "letterSpacing": -0.45,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    }
+  },
+  "Display": {
+    "12": {
+      "Semibold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0.12,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0.12,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.24,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": -0.24,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Regular": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.24,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": -0.24,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Regular 16": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0.12,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0.12,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Semibold 16": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0.12,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0.12,
+              "textDecoration": "NONE",
+              "textCase": "TITLE"
+            }
+          }
+        }
+      }
+    },
+    "13": {
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 13,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 19.5,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.26,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 13,
+              "lineHeight": 19.5,
+              "letterSpacing": -0.26,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold 18.57": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 13,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 18.57,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.26,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 13,
+              "lineHeight": 18.57,
+              "letterSpacing": -0.26,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "14": {
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 14,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 20,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.28,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 14,
+              "lineHeight": 20,
+              "letterSpacing": -0.28,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "16": {
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 24,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.32,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 16,
+              "lineHeight": 24,
+              "letterSpacing": -0.32,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold 24": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 24,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.4,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 16,
+              "lineHeight": 24,
+              "letterSpacing": -0.4,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "20": {
+      "Extrabold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 800,
+          "lineHeight": {
+            "value": 28,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.5,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 800,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 28,
+              "letterSpacing": -0.5,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 28,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.5,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 28,
+              "letterSpacing": -0.5,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold 20": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 20,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.4,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 20,
+              "letterSpacing": -0.4,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Extrabold 22": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 800,
+          "lineHeight": {
+            "value": 22,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.5,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 800,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 22,
+              "letterSpacing": -0.5,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Extrabold 28": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 800,
+          "lineHeight": {
+            "value": 28,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.32,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 800,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 28,
+              "letterSpacing": -0.32,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "24": {
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 24,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 32,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.48,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 24,
+              "lineHeight": 32,
+              "letterSpacing": -0.48,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Extrabold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 24,
+            "unit": "px"
+          },
+          "fontWeight": 800,
+          "lineHeight": {
+            "value": 32,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.6,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 800,
+              "italic": false,
+              "fontSize": 24,
+              "lineHeight": 32,
+              "letterSpacing": -0.6,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Semibold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 24,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 32,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.48,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 24,
+              "lineHeight": 32,
+              "letterSpacing": -0.48,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "21.6": {
+      "Extrabold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.display}",
+          "fontSize": {
+            "value": 21.6,
+            "unit": "px"
+          },
+          "fontWeight": 800,
+          "lineHeight": {
+            "value": 23.76,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": -0.54,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Bricolage Grotesque",
+              "fontWeight": 800,
+              "italic": false,
+              "fontSize": 21.6,
+              "lineHeight": 23.76,
+              "letterSpacing": -0.54,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Meta": {
+    "12": {
+      "Regular": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Medium": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 500,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Semibold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0.48,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0.48,
+              "textDecoration": "NONE",
+              "textCase": "UPPER"
+            }
+          }
+        }
+      },
+      "Bold caps": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 1.68,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 1.68,
+              "textDecoration": "NONE",
+              "textCase": "UPPER"
+            }
+          }
+        }
+      },
+      "Regular 12": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 12,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 12,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Regular 18": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 18,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 18,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    }
+  },
+  "Body": {
+    "Regular": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        },
+        "fontWeight": 400,
+        "lineHeight": {
+          "value": 24,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 400,
+            "italic": false,
+            "fontSize": 16,
+            "lineHeight": 24,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Semibold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 16,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 24,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 16,
+            "lineHeight": 24,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    }
+  },
+  "Page title": {
+    "Mobile": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 30,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "lineHeight": {
+          "value": 36,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.75,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 800,
+            "italic": false,
+            "fontSize": 30,
+            "lineHeight": 36,
+            "letterSpacing": -0.75,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Desktop": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 48,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "lineHeight": {
+          "value": 48,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -1.2,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 800,
+            "italic": false,
+            "fontSize": 48,
+            "lineHeight": 48,
+            "letterSpacing": -1.2,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Mobile 36": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 30,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 36,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.6,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 30,
+            "lineHeight": 36,
+            "letterSpacing": -0.6,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Desktop 48": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 48,
+          "unit": "px"
+        },
+        "fontWeight": 800,
+        "lineHeight": {
+          "value": 48,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.32,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 800,
+            "italic": false,
+            "fontSize": 48,
+            "lineHeight": 48,
+            "letterSpacing": -0.32,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Mobile 36 -0.6": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.display}",
+        "fontSize": {
+          "value": 30,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 36,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": -0.6,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Bricolage Grotesque",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 30,
+            "lineHeight": 36,
+            "letterSpacing": -0.6,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    }
+  },
+  "Text": {
+    "20": {
+      "Semibold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 28,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 20,
+              "lineHeight": 28,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    },
+    "24": {
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 24,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 32,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 24,
+              "lineHeight": 32,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    }
+  }
+}
