@@ -9,7 +9,7 @@ set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 op_dir="${OPENPENCIL_DIR:-$HOME/workspaces/open-pencil}"
-op_ref="${OPENPENCIL_REF:-14a2738}"
+op_ref="${OPENPENCIL_REF:-de913ce}"
 token_file="${OPENPENCIL_TOKEN_FILE:-$HOME/.config/vibepod/open-pencil/token}"
 
 case "${1:-}" in
