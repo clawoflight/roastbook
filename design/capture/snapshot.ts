@@ -514,8 +514,14 @@ export async function snapshotPage(props: {
     if (node.childNodes.length && isTextOnly(node)) {
       const runs: TextRun[] = []
       collectRuns(node, runs)
-      // Ellipsis text the browser fits whole should not truncate in a slightly wider font.
-      if (node.scrollWidth <= node.clientWidth)
+      // An element as narrow as its text, which the browser fits whole, hugs it rather than
+      // truncate when a slightly wider font measures it; wider elements keep their ellipsis.
+      const fits = document.createRange()
+      fits.selectNodeContents(node)
+      if (
+        node.scrollWidth <= node.clientWidth &&
+        node.clientWidth - fits.getBoundingClientRect().width < 2
+      )
         for (const run of runs) run.style['text-overflow'] = 'clip'
       const leaf = textLeaf(Array.from(node.childNodes), runs)
       if (leaf) element.children.push(leaf)

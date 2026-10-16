@@ -73,12 +73,26 @@ function misplacedChild(
       node.borderLeftWeight,
       node.strokes[0]?.weight ?? 0,
     ) * 2
+  // A growing child takes up what its content-sized siblings' font drift frees or claims.
+  let siblingDrift = 0
+  for (const child of children) {
+    const box = measured.get(child.id)
+    if (box && stacks && hugs(child, axis))
+      siblingDrift += Math.min(
+        Math.abs(
+          axis === 'x' ? child.width - box.width : child.height - box.height,
+        ),
+        TOLERANCE + (axis === 'x' ? box.width : box.height) * SIZE_DRIFT,
+      )
+  }
   for (const child of children) {
     const box = measured.get(child.id)
     const at = box && placed(graph, child.id, rootId)
     if (!box || !at) continue
     const got = { ...at, x: at.x - frameAt.x, y: at.y - frameAt.y }
     const want = { ...box, x: box.x - frameBox.x, y: box.y - frameBox.y }
+    const grown = (a: 'x' | 'y') =>
+      stacks && a === axis && child.layoutGrow > 0 ? siblingDrift : 0
     const drift = (a: 'x' | 'y') => {
       const difference = Math.abs(
         a === 'x' ? got.width - want.width : got.height - want.height,
@@ -94,8 +108,16 @@ function misplacedChild(
     if (
       !near(got.x, want.x, tolerance('x')) ||
       !near(got.y, want.y, tolerance('y')) ||
-      !near(got.width, want.width, TOLERANCE + border + drift('x')) ||
-      !near(got.height, want.height, TOLERANCE + border + drift('y'))
+      !near(
+        got.width,
+        want.width,
+        TOLERANCE + border + drift('x') + grown('x'),
+      ) ||
+      !near(
+        got.height,
+        want.height,
+        TOLERANCE + border + drift('y') + grown('y'),
+      )
     )
       return child
     if (stacks && child.layoutPositioning !== 'ABSOLUTE') slack += drift(axis)
