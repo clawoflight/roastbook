@@ -5,6 +5,7 @@ import {
   type CollectionEntry,
   CollectionList,
 } from '@/components/collection/collection-list'
+import { CollectionViewToggle } from '@/components/collection/collection-view-toggle'
 import { CollectionToolbar } from '@/components/collection-toolbar'
 import { EmptyState } from '@/components/empty-state'
 import { ImageWithFallback } from '@/components/image-with-fallback'
@@ -22,6 +23,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { StarRating } from '@/components/ui/star-rating'
+import { useCollectionView } from '@/hooks/use-collection-view'
 import { useDateFormatter } from '@/hooks/use-date-formatter'
 import { useNumberFormatter } from '@/hooks/use-number-formatter'
 import { useTasteProfile } from '@/hooks/use-taste-profile'
@@ -29,6 +31,7 @@ import { nextSortDirection } from '@/lib/collection-sort'
 import { thumbnailUrl } from '@/lib/image-url'
 import { searchEnum } from '@/lib/search-params'
 import { SHOT_SORT_VALUES } from '@/modules/brews/read-models'
+import { BrewCard } from '@/routes/brews/-components/brew-card'
 import type { BrewsSearch } from '@/routes/brews/-lib/brews-search'
 import type { BrewsPageData } from '@/routes/brews/-lib/load-brews-page'
 
@@ -53,6 +56,7 @@ export function BrewsPage({
   const formatDate = useDateFormatter()
   const formatNumber = useNumberFormatter()
   const showRating = useTasteProfile().overallRating
+  const { view, setView, isReady } = useCollectionView('brews')
   const grouped = data.view === 'grouped'
   const totalItems = data.result.totalItems
   const resultLabel = grouped
@@ -193,6 +197,14 @@ export function BrewsPage({
         resultLabel={resultLabel}
         actions={
           <>
+            {totalItems > 0 && !grouped && (
+              <CollectionViewToggle
+                value={view}
+                onValueChange={setView}
+                disabled={!isReady}
+                label="Brew list view"
+              />
+            )}
             {totalItems > 0 && (
               <ShotsViewToggle
                 grouped={grouped}
@@ -357,20 +369,30 @@ export function BrewsPage({
               </Button>
             </div>
           ) : null}
-          <CollectionList
-            view="table"
-            items={data.result.items}
-            getEntry={getEntry}
-            columns={columns}
-            titleHeader="Date"
-            titleSortKey="date"
-            sort={{
-              key: search.sort,
-              direction: search.direction,
-              onSort: (sort) =>
-                handleSort(searchEnum(sort, SHOT_SORT_VALUES, search.sort)),
-            }}
-          />
+          {view === 'cards' ? (
+            <ul className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {data.result.items.map((shot) => (
+                <li key={shot.id}>
+                  <BrewCard shot={shot} showRating={showRating} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <CollectionList
+              view="table"
+              items={data.result.items}
+              getEntry={getEntry}
+              columns={columns}
+              titleHeader="Date"
+              titleSortKey="date"
+              sort={{
+                key: search.sort,
+                direction: search.direction,
+                onSort: (sort) =>
+                  handleSort(searchEnum(sort, SHOT_SORT_VALUES, search.sort)),
+              }}
+            />
+          )}
           {data.result.totalPages > 1 ? (
             <PaginationControls
               page={data.result.page}

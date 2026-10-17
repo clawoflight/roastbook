@@ -33,6 +33,7 @@ export const COLLECTION_KEYS = [
   'roasters',
   'recipes',
   'brewing-methods',
+  'brews',
 ] as const
 
 export type CollectionKey = (typeof COLLECTION_KEYS)[number]

@@ -184,11 +184,25 @@ async function loadShotPage(data: Omit<ShotListInput, 'beanId'>, scope?: SQL) {
       brewedAt: true,
       doseGrams: true,
       yieldGrams: true,
+      brewWaterGrams: true,
+      ratioBasis: true,
+      grindSetting: true,
+      brewTemperatureCelsius: true,
       shotTimeSeconds: true,
       rating: true,
     },
     with: {
-      bean: { columns: { id: true, name: true }, with: { images: true } },
+      bean: {
+        columns: {
+          id: true,
+          name: true,
+          roaster: true,
+          origin: true,
+          region: true,
+          process: true,
+        },
+        with: { images: true, roasterRef: { columns: { name: true } } },
+      },
       brewingMethod: { columns: { id: true, name: true } },
     },
   })
