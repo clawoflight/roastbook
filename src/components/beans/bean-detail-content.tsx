@@ -433,9 +433,7 @@ export function BeanReadOnlyContent({
                       beanName={bean.name}
                       visionEnabled={false}
                       purchase={purchase}
-                      images={bean.images.filter(
-                        (image) => image.beanPurchaseId === purchase.id,
-                      )}
+                      images={bean.images}
                       onSaved={onImagesChange}
                     />
                     <Button

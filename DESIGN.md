@@ -191,8 +191,10 @@ shop (name and optional URL), and On shelf/Archived state. “Add another bag”
 the repeat-purchase action; it must not create a duplicate profile. It starts
 from the latest bag's weight, price, and shop but leaves the roast date empty
 and optional. Pictures added there are only read for details unless the user
-opts to save them. Brew pickers distinguish active bags by roast date and
-remaining weight while keeping the coffee name primary.
+opts to save them with the coffee. Pictures are never bag-specific: the bag
+editor shows the coffee's pictures, and any picture added there joins them.
+Brew pickers distinguish active bags by roast date and remaining weight while
+keeping the coffee name primary.
 
 ### Image with fallback
 

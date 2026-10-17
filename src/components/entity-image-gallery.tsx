@@ -190,7 +190,7 @@ export function EntityImageGallery({
     }
   }
 
-  const entityLabel = entityType === 'bean-purchases' ? 'Bag' : 'Gear'
+  const entityLabel = entityType === 'bean-purchases' ? 'Coffee' : 'Gear'
   const lightboxImage =
     lightboxIndex === null ? undefined : images[lightboxIndex]
 
@@ -391,10 +391,12 @@ export function EntityImageGallery({
             onOpenFilePicker={openFilePicker}
             prompt={
               entityType === 'bean-purchases'
-                ? 'Add pictures for the current bag'
+                ? 'Add pictures of this coffee'
                 : 'Add equipment pictures'
             }
-            previewAltPrefix={entityType === 'bean-purchases' ? 'Bag' : 'Gear'}
+            previewAltPrefix={
+              entityType === 'bean-purchases' ? 'Coffee' : 'Gear'
+            }
             isBusy={isUploading}
             statusText={isUploading ? 'Uploading pictures' : undefined}
             imageErrors={uploadFailures.map(({ image, error }) => ({

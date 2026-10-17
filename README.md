@@ -94,9 +94,10 @@ desktop where you dig through the numbers afterwards.
 - 🫘 **One coffee, every bag.** Buying the same beans again adds a new bag to
   the existing coffee profile, prefilled with the weight, price, and shop of the
   latest bag. Roast date, starting weight, price, shop (name and optional URL),
-  shelf state, and remaining-weight estimates stay bag-specific, while brew history
-  and AI recommendations learn across every purchase of that coffee. Edit an
-  existing bag to update its roast and purchase details or manage its photos.
+  shelf state, and remaining-weight estimates stay bag-specific, while brew
+  history and AI recommendations learn across every purchase of that coffee.
+  Edit an existing bag to update its roast and purchase details. Pictures
+  belong to the coffee, not the bag, so every bag shows the same photos.
 - 📱 **Mobile and desktop, both first-class.** Large touch targets and compact
   cards next to the machine; full data tables, charts, and maps at the desk,
   plus a <kbd>⌘</kbd> <kbd>K</kbd> command palette for jumping anywhere without
