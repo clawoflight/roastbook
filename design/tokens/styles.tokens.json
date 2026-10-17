@@ -716,6 +716,241 @@
       }
     }
   },
+  "Meta": {
+    "12": {
+      "Regular": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Medium": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 500,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Semibold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 600,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Bold": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0.48,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 0.48,
+              "textDecoration": "NONE",
+              "textCase": "UPPER"
+            }
+          }
+        }
+      },
+      "Bold caps": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 700,
+          "lineHeight": {
+            "value": 16,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 1.68,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 700,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 16,
+              "letterSpacing": 1.68,
+              "textDecoration": "NONE",
+              "textCase": "UPPER"
+            }
+          }
+        }
+      },
+      "Regular 12": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 12,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 12,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      },
+      "Regular 18": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.body}",
+          "fontSize": {
+            "value": 12,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": {
+            "value": 18,
+            "unit": "px"
+          },
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        },
+        "$extensions": {
+          "dev.openpencil": {
+            "text": {
+              "fontFamily": "Hanken Grotesk",
+              "fontWeight": 400,
+              "italic": false,
+              "fontSize": 12,
+              "lineHeight": 18,
+              "letterSpacing": 0,
+              "textDecoration": "NONE",
+              "textCase": "ORIGINAL"
+            }
+          }
+        }
+      }
+    }
+  },
   "Display": {
     "12": {
       "Semibold": {
@@ -1351,241 +1586,6 @@
               "fontSize": 21.6,
               "lineHeight": 23.76,
               "letterSpacing": -0.54,
-              "textDecoration": "NONE",
-              "textCase": "ORIGINAL"
-            }
-          }
-        }
-      }
-    }
-  },
-  "Meta": {
-    "12": {
-      "Regular": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": {
-            "value": 16,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 400,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 16,
-              "letterSpacing": 0,
-              "textDecoration": "NONE",
-              "textCase": "ORIGINAL"
-            }
-          }
-        }
-      },
-      "Medium": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": {
-            "value": 16,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 500,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 16,
-              "letterSpacing": 0,
-              "textDecoration": "NONE",
-              "textCase": "ORIGINAL"
-            }
-          }
-        }
-      },
-      "Semibold": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": {
-            "value": 16,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 600,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 16,
-              "letterSpacing": 0,
-              "textDecoration": "NONE",
-              "textCase": "ORIGINAL"
-            }
-          }
-        }
-      },
-      "Bold": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 700,
-          "lineHeight": {
-            "value": 16,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0.48,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 700,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 16,
-              "letterSpacing": 0.48,
-              "textDecoration": "NONE",
-              "textCase": "UPPER"
-            }
-          }
-        }
-      },
-      "Bold caps": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 700,
-          "lineHeight": {
-            "value": 16,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 1.68,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 700,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 16,
-              "letterSpacing": 1.68,
-              "textDecoration": "NONE",
-              "textCase": "UPPER"
-            }
-          }
-        }
-      },
-      "Regular 12": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": {
-            "value": 12,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 400,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 12,
-              "letterSpacing": 0,
-              "textDecoration": "NONE",
-              "textCase": "ORIGINAL"
-            }
-          }
-        }
-      },
-      "Regular 18": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.body}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": {
-            "value": 18,
-            "unit": "px"
-          },
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        },
-        "$extensions": {
-          "dev.openpencil": {
-            "text": {
-              "fontFamily": "Hanken Grotesk",
-              "fontWeight": 400,
-              "italic": false,
-              "fontSize": 12,
-              "lineHeight": 18,
-              "letterSpacing": 0,
               "textDecoration": "NONE",
               "textCase": "ORIGINAL"
             }
