@@ -225,21 +225,21 @@ async function cover(
       width: 1200,
       height: fontSize,
     })
-  line('Roastbook', 96, 800, 'Bricolage Grotesque')
+  line('Roastbook', 128, 800, 'Bricolage Grotesque')
   line(
     'Every view of the app, desktop (1440×900) and mobile (390×844), with its tokens and components.',
-    28,
+    40,
     500,
   )
   line(
     `${views} views · ${components.components} components · variables for color (Light and Dark), spacing, radius and fonts.`,
-    20,
+    28,
     400,
   )
   line(
     `Generated ${new Date().toISOString().slice(0, 10)} by design/capture.ts from the running app (src/). ` +
       'Re-running the capture replaces this file: change the app, or copy what you design into a new file.',
-    20,
+    28,
     400,
   )
   // Wrapped lines need measured heights, or the next line overlaps them.
