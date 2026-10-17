@@ -85,7 +85,7 @@ export function BrewCard({
   ].filter((metric): metric is Metric => metric.value !== null)
 
   return (
-    <Card className="relative gap-0 overflow-visible p-0">
+    <Card className="relative h-full gap-0 overflow-visible p-0">
       <Link
         to="/brews/$shotId"
         params={{ shotId: String(shot.id) }}
