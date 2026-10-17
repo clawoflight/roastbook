@@ -57,6 +57,7 @@ const beanCreateSchema = z.object({
   weight: decimalStringSchema.optional(),
   price: decimalStringSchema.optional(),
   priceCurrency: currencySchema.optional(),
+  shopName: shortTextSchema.optional(),
   shopUrl: optionalUrlSchema,
   isArchived: z.boolean().optional(),
 })
@@ -143,6 +144,7 @@ function flattenBeanPurchase<
     weight: purchase?.initialWeightGrams ?? null,
     price: purchase?.price ?? null,
     priceCurrency: purchase?.priceCurrency ?? null,
+    shopName: purchase?.shopName ?? null,
     shopUrl: purchase?.shopUrl ?? null,
     isArchived:
       purchases.length > 0 && purchases.every((item) => item.isArchived),
@@ -312,6 +314,7 @@ export const getActiveBeanPurchases = createServerFn({ method: 'GET' }).handler(
       weight: purchase.initialWeightGrams,
       price: purchase.price,
       priceCurrency: purchase.priceCurrency,
+      shopName: purchase.shopName,
       shopUrl: purchase.shopUrl,
       isArchived: purchase.isArchived,
       usedWeightGrams: usage.get(purchase.id) ?? '0',
@@ -327,6 +330,7 @@ export const createBean = createServerFn({ method: 'POST' })
       weight,
       price,
       priceCurrency,
+      shopName,
       shopUrl,
       isArchived,
       ...profile
@@ -339,6 +343,7 @@ export const createBean = createServerFn({ method: 'POST' })
         initialWeightGrams: weight,
         price,
         priceCurrency,
+        shopName,
         shopUrl,
         isArchived,
       })
@@ -355,6 +360,7 @@ export const updateBean = createServerFn({ method: 'POST' })
       weight: _weight,
       price: _price,
       priceCurrency: _priceCurrency,
+      shopName: _shopName,
       shopUrl: _shopUrl,
       isArchived,
       ...values

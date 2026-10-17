@@ -70,6 +70,7 @@ type Bean = {
     initialWeightGrams: string | null
     price: string | null
     priceCurrency: string | null
+    shopName: string | null
     shopUrl: string | null
     isArchived: boolean
     createdAt: Date | string
@@ -422,8 +423,10 @@ export function BeanReadOnlyContent({
                         rel="noopener noreferrer"
                         className="font-medium text-link hover:underline"
                       >
-                        Shop
+                        {purchase.shopName || 'Shop'}
                       </a>
+                    ) : purchase.shopName ? (
+                      <span className="font-medium">{purchase.shopName}</span>
                     ) : null}
                     <BeanPurchaseDialog
                       beanId={bean.id}

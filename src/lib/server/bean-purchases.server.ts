@@ -9,6 +9,7 @@ export type BeanPurchaseValues = {
   readonly initialWeightGrams?: string | null
   readonly price?: string | null
   readonly priceCurrency?: string | null
+  readonly shopName?: string | null
   readonly shopUrl?: string | null
   readonly isArchived?: boolean
 }

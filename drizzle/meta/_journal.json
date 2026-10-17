@@ -372,6 +372,13 @@
       "when": 1792234333993,
       "tag": "0053_recipe_drink_options",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1792241980197,
+      "tag": "0054_bean_purchase_shop_name",
+      "breakpoints": true
     }
   ]
 }

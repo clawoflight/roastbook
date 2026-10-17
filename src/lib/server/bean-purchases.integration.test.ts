@@ -68,6 +68,7 @@ integrationDescribe('editing an existing bag', () => {
       initialWeightGrams: '500',
       price: '24.50',
       priceCurrency: 'EUR',
+      shopName: 'Example Roasters',
       shopUrl: 'https://example.com/coffee',
     })
     expect(updated).toMatchObject({
@@ -77,6 +78,7 @@ integrationDescribe('editing an existing bag', () => {
       initialWeightGrams: '500.00',
       price: '24.50',
       priceCurrency: 'EUR',
+      shopName: 'Example Roasters',
       shopUrl: 'https://example.com/coffee',
       isArchived: true,
     })
@@ -113,11 +115,13 @@ integrationDescribe('editing an existing bag', () => {
       await updateBeanPurchaseOperation(purchaseId, beanId, {
         roastDate: null,
         price: null,
+        shopName: null,
         shopUrl: null,
       }),
     ).toMatchObject({
       roastDate: null,
       price: null,
+      shopName: null,
       shopUrl: null,
       isArchived: true,
     })

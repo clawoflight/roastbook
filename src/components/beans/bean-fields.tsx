@@ -118,8 +118,15 @@ export function BeanFields({
                 />
               </div>
               <InputField
+                id={id('shopName')}
+                label="Shop"
+                placeholder="e.g., Roaster webshop"
+                value={values.shopName}
+                onChange={(value) => onChange('shopName', value)}
+              />
+              <InputField
                 id={id('shopUrl')}
-                label="Shop URL"
+                label="Shop URL (optional)"
                 type="url"
                 placeholder="https://…"
                 value={values.shopUrl}

@@ -11,6 +11,7 @@ import {
   decimalStringSchema,
   optionalUrlSchema,
   positiveIdSchema,
+  shortTextSchema,
 } from '@/lib/server-validation'
 
 export const beanPurchaseValuesSchema = z.object({
@@ -19,6 +20,7 @@ export const beanPurchaseValuesSchema = z.object({
   initialWeightGrams: decimalStringSchema.nullable().optional(),
   price: decimalStringSchema.nullable().optional(),
   priceCurrency: currencySchema.nullable().optional(),
+  shopName: shortTextSchema.nullable().optional(),
   shopUrl: optionalUrlSchema.nullable().optional(),
   isArchived: z.boolean().optional(),
 })

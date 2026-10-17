@@ -9,7 +9,10 @@ describe('bean form payloads', () => {
   test('creates a first bag but keeps bag fields out of profile updates', () => {
     const values = createEmptyBeanFormValues('  House blend  ')
 
-    expect(beanCreatePayload(values)).toMatchObject({
+    expect(
+      beanCreatePayload({ ...values, shopName: 'Roaster webshop' }),
+    ).toMatchObject({
+      shopName: 'Roaster webshop',
       name: '  House blend  ',
       type: undefined,
       priceCurrency: 'EUR',
@@ -31,6 +34,7 @@ describe('bean form payloads', () => {
       notes: null,
     })
     expect(update).not.toHaveProperty('priceCurrency')
+    expect(update).not.toHaveProperty('shopName')
     expect(update).not.toHaveProperty('roastDate')
   })
 

@@ -347,6 +347,7 @@ export const beanPurchases = pgTable(
     }),
     price: decimal('price', { precision: 8, scale: 2 }),
     priceCurrency: text('price_currency').default('EUR'),
+    shopName: text('shop_name'),
     shopUrl: text('shop_url'),
     ...archiveState(),
   },

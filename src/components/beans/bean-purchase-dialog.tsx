@@ -16,6 +16,7 @@ import {
   InputField,
 } from '@/components/form/form-field'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogBody,
@@ -26,6 +27,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { useAppSettings } from '@/hooks/use-app-settings'
 import { useImageUpload } from '@/hooks/use-image-upload'
 import { getErrorMessage } from '@/lib/error-message'
@@ -40,6 +42,14 @@ import {
   uploadEntityImages,
 } from '@/lib/upload-entity-images'
 
+type BagDetails = {
+  readonly initialWeightGrams: string | null
+  readonly price: string | null
+  readonly priceCurrency: string | null
+  readonly shopName: string | null
+  readonly shopUrl: string | null
+}
+
 export function BeanPurchaseDialog({
   beanId,
   beanName,
@@ -47,15 +57,14 @@ export function BeanPurchaseDialog({
   onSaved,
   purchase,
   images = [],
+  previous,
 }: {
-  readonly purchase?: {
+  readonly purchase?: BagDetails & {
     readonly id: number
     readonly roastDate: Date | string | null
-    readonly initialWeightGrams: string | null
-    readonly price: string | null
-    readonly priceCurrency: string | null
-    readonly shopUrl: string | null
   }
+  /** The latest bag of this coffee; a new bag starts from its details, except the roast date. */
+  readonly previous?: BagDetails
   readonly images?: readonly EntityImage[]
   readonly beanId: number
   readonly beanName: string
@@ -77,7 +86,9 @@ export function BeanPurchaseDialog({
   const [weight, setWeight] = useState('')
   const [price, setPrice] = useState('')
   const [currency, setCurrency] = useState<string>(defaultCurrency)
+  const [shopName, setShopName] = useState('')
   const [shopUrl, setShopUrl] = useState('')
+  const [savePictures, setSavePictures] = useState(false)
   const imageUpload = useImageUpload()
 
   const reset = () => {
@@ -86,10 +97,13 @@ export function BeanPurchaseDialog({
         ? new Date(purchase.roastDate).toISOString().slice(0, 10)
         : '',
     )
-    setWeight(purchase?.initialWeightGrams ?? '')
-    setPrice(purchase?.price ?? '')
-    setCurrency(purchase?.priceCurrency ?? defaultCurrency)
-    setShopUrl(purchase?.shopUrl ?? '')
+    const details = purchase ?? previous
+    setWeight(details?.initialWeightGrams ?? '')
+    setPrice(details?.price ?? '')
+    setCurrency(details?.priceCurrency ?? defaultCurrency)
+    setShopName(details?.shopName ?? '')
+    setShopUrl(details?.shopUrl ?? '')
+    setSavePictures(false)
     setCreatedPurchaseId(null)
     setUploadFailures([])
     imageUpload.clearImages()
@@ -144,6 +158,7 @@ export function BeanPurchaseDialog({
         initialWeightGrams: weight || null,
         price: price || null,
         priceCurrency: currency,
+        shopName: shopName.trim() || null,
         shopUrl: shopUrl || null,
       }
       const savedPurchase = purchase
@@ -153,7 +168,7 @@ export function BeanPurchaseDialog({
       const uploadResult = await uploadEntityImages(
         'bean-purchases',
         savedPurchase.id,
-        imageUpload.images,
+        savePictures ? imageUpload.images : [],
       )
       imageUpload.removeImages(uploadResult.uploaded)
       setUploadFailures(uploadResult.failures)
@@ -286,9 +301,14 @@ export function BeanPurchaseDialog({
                   />
                 </div>
                 <InputField
-                  className="sm:col-span-2"
+                  id="new-bag-shop-name"
+                  label="Shop"
+                  value={shopName}
+                  onChange={setShopName}
+                />
+                <InputField
                   id="new-bag-shop"
-                  label="Shop URL"
+                  label="Shop URL (optional)"
                   type="url"
                   value={shopUrl}
                   onChange={setShopUrl}
@@ -309,7 +329,7 @@ export function BeanPurchaseDialog({
                   previewAltPrefix="Bag"
                   helperText={
                     visionEnabled
-                      ? 'AI can read the roast date and bag weight'
+                      ? 'AI can read the roast date and bag weight. Pictures are only used for that unless you save them.'
                       : undefined
                   }
                   isBusy={saving}
@@ -335,6 +355,18 @@ export function BeanPurchaseDialog({
                   }
                 />
               )}
+              {!purchase && imageUpload.images.length > 0 ? (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="new-bag-save-pictures"
+                    checked={savePictures}
+                    onCheckedChange={(checked) => setSavePictures(checked)}
+                  />
+                  <Label htmlFor="new-bag-save-pictures">
+                    Also save these pictures with this coffee
+                  </Label>
+                </div>
+              ) : null}
             </>
           )}
         </DialogBody>

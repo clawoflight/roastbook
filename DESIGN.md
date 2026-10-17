@@ -187,9 +187,12 @@ the taller reference geometry. Long names clamp to two lines.
 
 Bean pages represent a stable coffee profile. Acquisition details belong to
 bag records shown newest first: roast date, initial and remaining weight, price,
-shop, and On shelf/Archived state. “Add another bag” is the repeat-purchase action;
-it must not create a duplicate profile. Brew pickers distinguish active bags by
-roast date and remaining weight while keeping the coffee name primary.
+shop (name and optional URL), and On shelf/Archived state. “Add another bag” is
+the repeat-purchase action; it must not create a duplicate profile. It starts
+from the latest bag's weight, price, and shop but leaves the roast date empty
+and optional. Pictures added there are only read for details unless the user
+opts to save them. Brew pickers distinguish active bags by roast date and
+remaining weight while keeping the coffee name primary.
 
 ### Image with fallback
 

@@ -10,6 +10,7 @@ export type BeanFormValues = {
   readonly weight: string
   readonly price: string
   readonly priceCurrency: string
+  readonly shopName: string
   readonly shopUrl: string
   readonly origin: string
   readonly region: string
@@ -29,6 +30,7 @@ type BeanFormValueSource = {
   readonly weight: string | null
   readonly price: string | null
   readonly priceCurrency: string | null
+  readonly shopName?: string | null
   readonly shopUrl: string | null
   readonly origin: string | null
   readonly region: string | null
@@ -49,6 +51,7 @@ export function createEmptyBeanFormValues(initialName = ''): BeanFormValues {
     weight: '',
     price: '',
     priceCurrency: 'EUR',
+    shopName: '',
     shopUrl: '',
     origin: '',
     region: '',
@@ -70,6 +73,7 @@ export function toBeanFormValues(bean: BeanFormValueSource): BeanFormValues {
     weight: bean.weight ?? '',
     price: bean.price ?? '',
     priceCurrency: bean.priceCurrency ?? 'EUR',
+    shopName: bean.shopName ?? '',
     shopUrl: bean.shopUrl ?? '',
     origin: bean.origin ?? '',
     region: bean.region ?? '',
@@ -100,6 +104,7 @@ export function beanCreatePayload(
     priceCurrency: isCurrency(values.priceCurrency)
       ? values.priceCurrency
       : undefined,
+    shopName: blankToUndefined(values.shopName),
     shopUrl: blankToUndefined(values.shopUrl),
     origin: blankToUndefined(values.origin),
     region: blankToUndefined(values.region),

@@ -92,8 +92,9 @@ desktop where you dig through the numbers afterwards.
   consistency, timing, gear, and cost, while parameter charts show what a change
   to grind, dose, or pressure actually did.
 - 🫘 **One coffee, every bag.** Buying the same beans again adds a new bag to
-  the existing coffee profile. Roast date, starting weight, price, shop, shelf
-  state, and remaining-weight estimates stay bag-specific, while brew history
+  the existing coffee profile, prefilled with the weight, price, and shop of the
+  latest bag. Roast date, starting weight, price, shop (name and optional URL),
+  shelf state, and remaining-weight estimates stay bag-specific, while brew history
   and AI recommendations learn across every purchase of that coffee. Edit an
   existing bag to update its roast and purchase details or manage its photos.
 - 📱 **Mobile and desktop, both first-class.** Large touch targets and compact

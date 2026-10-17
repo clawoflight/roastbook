@@ -250,6 +250,7 @@ export function BeanDetailPage() {
             beanId={bean.id}
             beanName={bean.name}
             visionEnabled={visionEnabled}
+            previous={bean.purchases[0]}
             onSaved={() => router.invalidate()}
           />
         </div>

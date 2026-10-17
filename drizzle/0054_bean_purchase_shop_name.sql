@@ -1,0 +1,1 @@
+ALTER TABLE "bean_purchases" ADD COLUMN "shop_name" text;
