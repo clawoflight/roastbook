@@ -154,7 +154,7 @@ export function BeanDetailHeader({
       }
       actions={
         <>
-          {bean.isArchived && <Badge variant="secondary">Past</Badge>}
+          {bean.isArchived && <Badge variant="secondary">Archived</Badge>}
           <Button variant="outline" size="sm" onClick={onToggleArchive}>
             {bean.isArchived ? (
               <>
@@ -164,7 +164,7 @@ export function BeanDetailHeader({
             ) : (
               <>
                 <Archive />
-                Move to past
+                Archive
               </>
             )}
           </Button>
@@ -224,7 +224,7 @@ export function BeanDetailHeader({
           )}
           <DeleteConfirmation
             title="Remove this coffee?"
-            description="Unused coffees are deleted. If this coffee appears in brews, recipes, or café visits, its bags move to Past so your history stays intact."
+            description="Unused coffees are deleted. If this coffee appears in brews, recipes, or café visits, its bags move to the archive so your history stays intact."
             onConfirm={onDelete}
             trigger={
               <Button variant="ghost" size="icon-sm" aria-label="Delete bean">
@@ -413,7 +413,7 @@ export function BeanReadOnlyContent({
                   </div>
                   <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
                     <Badge variant="secondary">
-                      {purchase.isArchived ? 'Past' : 'On shelf'}
+                      {purchase.isArchived ? 'Archived' : 'On shelf'}
                     </Badge>
                     {purchase.shopUrl ? (
                       <a
@@ -442,7 +442,7 @@ export function BeanReadOnlyContent({
                         onTogglePurchase(purchase.id, !purchase.isArchived)
                       }
                     >
-                      {purchase.isArchived ? 'Put on shelf' : 'Move to Past'}
+                      {purchase.isArchived ? 'Put on shelf' : 'Archive'}
                     </Button>
                   </div>
                 </div>

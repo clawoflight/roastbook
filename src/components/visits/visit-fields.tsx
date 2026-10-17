@@ -68,7 +68,7 @@ export function VisitFields({
           value={values.beanId}
           onChange={(value) => onFieldChange('beanId', value)}
           beans={choices.beans}
-          createAsPast
+          createAsArchived
         />
         <DateTimeField
           id="visitedAt"

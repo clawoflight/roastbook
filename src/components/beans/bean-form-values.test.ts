@@ -34,7 +34,7 @@ describe('bean form payloads', () => {
     expect(update).not.toHaveProperty('roastDate')
   })
 
-  test('can create café beans directly in Past', () => {
+  test('can create café beans directly in the archive', () => {
     const payload = beanCreatePayload(
       createEmptyBeanFormValues('Guest roast'),
       {

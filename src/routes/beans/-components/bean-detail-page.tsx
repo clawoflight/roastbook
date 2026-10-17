@@ -237,7 +237,7 @@ export function BeanDetailPage() {
           await router.invalidate()
           if (result.archived) {
             toast.success(
-              'This coffee is in your history, so it was moved to Past',
+              'This coffee is in your history, so it was moved to the archive',
             )
           } else {
             await navigate({ to: '/beans' })
