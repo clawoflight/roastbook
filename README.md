@@ -131,9 +131,11 @@ desktop where you dig through the numbers afterwards.
   good, or proposes one explained adjustment or controlled experiment. The
   prompt accounts for human entry errors and subjective taste-profile outliers,
   and favors bean-appropriate classic starting recipes for unbrewed drafts
-  without reliable matching taste evidence. Ask follow-up questions in a chat
-  beside the recommendation, for example whether another setting such as the
-  grind could help; the conversation is not saved.
+  without reliable matching taste evidence. The recommendation also
+  suggests three follow-up questions that open a chat beside it, where you can
+  ask, for example, whether another setting such as the grind could help.
+  Answers reuse the recommendation's blocks, with parameter chips, change cards,
+  and keep-constant cards; the conversation is not saved.
 - **Request debugging** — review lifetime token usage and estimated token cost,
   then inspect every raw AI input, response event, error, and unparsed output
   from Settings.

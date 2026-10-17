@@ -6,6 +6,12 @@ import {
   useRef,
   useState,
 } from 'react'
+import {
+  ChangeBlock,
+  KeepConstantBlock,
+  NoteBlock,
+  RichText,
+} from '@/components/shots/recommendation-blocks'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
@@ -18,15 +24,47 @@ import type {
 import {
   SHOT_RECOMMENDATION_CHAT_MAX_MESSAGES,
   SHOT_RECOMMENDATION_CHAT_MAX_QUESTION_LENGTH,
-  type ShotRecommendationChatMessage,
+  type ShotRecommendationAnswer,
+  shotRecommendationAnswerToText,
 } from '@/lib/shot-recommendation-chat'
 import { cn } from '@/lib/utils'
 
-const SUGGESTED_QUESTIONS = [
-  'Could I change the grind setting instead?',
-  'Why this change and not another one?',
-  'How big should the step be?',
-] as const
+type ChatEntry =
+  | { readonly role: 'user'; readonly content: string }
+  | { readonly role: 'assistant'; readonly answer: ShotRecommendationAnswer }
+
+function AnswerBlocks({
+  answer,
+}: {
+  readonly answer: ShotRecommendationAnswer
+}) {
+  return (
+    <div className="mr-auto w-full max-w-[95%] space-y-2">
+      <span className="sr-only">Assistant: </span>
+      {answer.blocks.map((block, index) => {
+        // The blocks never change once received, so the position is a stable key.
+        const key = index
+        switch (block.type) {
+          case 'text':
+            return (
+              <p
+                key={key}
+                className="w-fit max-w-full rounded-2xl bg-muted px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap"
+              >
+                <RichText text={block.text} />
+              </p>
+            )
+          case 'change':
+            return <ChangeBlock key={key} change={block} />
+          case 'keep':
+            return <KeepConstantBlock key={key} item={block} />
+          default:
+            return <NoteBlock key={key} text={block.text} />
+        }
+      })}
+    </div>
+  )
+}
 
 /**
  * Follow-up questions about one recommendation. The conversation lives only in
@@ -42,29 +80,49 @@ export function RecommendationChat({
   readonly recommendation: ShotRecommendation
   readonly className?: string
 }) {
-  const [messages, setMessages] = useState<
-    ReadonlyArray<ShotRecommendationChatMessage>
-  >([])
+  const [entries, setEntries] = useState<ReadonlyArray<ChatEntry>>([])
   const [draft, setDraft] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
-  const limitReached = messages.length >= SHOT_RECOMMENDATION_CHAT_MAX_MESSAGES
+  const limitReached = entries.length >= SHOT_RECOMMENDATION_CHAT_MAX_MESSAGES
+  const unaskedQuestions = recommendation.followUpQuestions.filter(
+    (question) =>
+      !entries.some(
+        (entry) => entry.role === 'user' && entry.content === question,
+      ),
+  )
+  const showSuggestions =
+    !pending &&
+    !error &&
+    !limitReached &&
+    unaskedQuestions.length > 0 &&
+    entries.at(-1)?.role !== 'user'
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: scroll whenever the thread or its status changes
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' })
-  }, [messages, pending, error])
+  }, [entries, pending, error])
 
-  const ask = async (thread: ReadonlyArray<ShotRecommendationChatMessage>) => {
-    setMessages(thread)
+  const ask = async (thread: ReadonlyArray<ChatEntry>) => {
+    setEntries(thread)
     setPending(true)
     setError(null)
     try {
-      const { reply } = await chatAboutShotRecommendation({
-        data: { request, recommendation, messages: [...thread] },
+      const { answer } = await chatAboutShotRecommendation({
+        data: {
+          request,
+          recommendation,
+          messages: thread.map((entry) => ({
+            role: entry.role,
+            content:
+              entry.role === 'user'
+                ? entry.content
+                : shotRecommendationAnswerToText(entry.answer),
+          })),
+        },
       })
-      setMessages([...thread, { role: 'assistant', content: reply }])
+      setEntries([...thread, { role: 'assistant', answer }])
     } catch (caught) {
       setError(getErrorMessage(caught, 'Could not get an answer'))
     } finally {
@@ -76,7 +134,7 @@ export function RecommendationChat({
     const content = question.trim()
     if (!content || pending || limitReached) return
     setDraft('')
-    void ask([...messages, { role: 'user', content }])
+    void ask([...entries, { role: 'user', content }])
   }
 
   const onSubmit = (event: FormEvent) => {
@@ -119,47 +177,28 @@ export function RecommendationChat({
         viewportClassName="px-5 py-4 sm:px-6"
       >
         <div role="log" aria-live="polite" className="space-y-3">
-          {messages.length === 0 ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Ask about the reasoning, another setting you could change, or
-                how to test the suggestion.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTED_QUESTIONS.map((question) => (
-                  <Button
-                    key={question}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-auto min-h-11 whitespace-normal py-1.5 text-left font-normal"
-                    disabled={pending}
-                    onClick={() => send(question)}
-                  >
-                    {question}
-                  </Button>
-                ))}
-              </div>
-            </div>
+          {entries.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Ask about the reasoning, another setting you could change, or how
+              to test the suggestion.
+            </p>
           ) : null}
-          {messages.map((message, index) => (
-            <div
-              // The thread is append-only, so the position is a stable key.
+          {entries.map((entry, index) =>
+            entry.role === 'user' ? (
+              <div
+                // The thread is append-only, so the position is a stable key.
+                // biome-ignore lint/suspicious/noArrayIndexKey: see above
+                key={index}
+                className="ml-auto w-fit max-w-[90%] rounded-2xl bg-primary/12 px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+              >
+                <span className="sr-only">You: </span>
+                {entry.content}
+              </div>
+            ) : (
               // biome-ignore lint/suspicious/noArrayIndexKey: see above
-              key={index}
-              className={cn(
-                'max-w-[90%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
-                message.role === 'user'
-                  ? 'ml-auto bg-primary/12 text-foreground'
-                  : 'mr-auto bg-muted',
-              )}
-            >
-              <span className="sr-only">
-                {message.role === 'user' ? 'You: ' : 'Assistant: '}
-              </span>
-              {message.content}
-            </div>
-          ))}
+              <AnswerBlocks key={index} answer={entry.answer} />
+            ),
+          )}
           {pending ? (
             <div className="mr-auto flex items-center gap-2 rounded-2xl bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
               <Loader2 aria-hidden className="size-4 animate-spin" />
@@ -176,11 +215,27 @@ export function RecommendationChat({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => void ask(messages)}
+                onClick={() => void ask(entries)}
               >
                 <RefreshCw />
                 Try again
               </Button>
+            </div>
+          ) : null}
+          {showSuggestions ? (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {unaskedQuestions.map((question) => (
+                <Button
+                  key={question}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto min-h-11 py-1.5 text-left font-normal whitespace-normal"
+                  onClick={() => send(question)}
+                >
+                  {question}
+                </Button>
+              ))}
             </div>
           ) : null}
           <div ref={endRef} />

@@ -146,6 +146,11 @@ describe('brew recommendation evidence', () => {
       historyInsight: 'Ratings improved as yield increased.',
       keepConstant: [],
       caveat: 'Taste the next brew before changing another variable.',
+      followUpQuestions: [
+        'Why this change?',
+        'Could I adjust the grind instead?',
+        'How do I test it?',
+      ],
     }
     const change = {
       parameter: 'yieldGrams' as const,
@@ -164,5 +169,37 @@ describe('brew recommendation evidence', () => {
         changes: [change, change, change, change],
       }).success,
     ).toBe(false)
+  })
+
+  test('requires exactly three follow-up questions', () => {
+    const base = {
+      diagnosis: 'balanced' as const,
+      confidence: 'high' as const,
+      headline: 'Repeat this brew',
+      summary: 'The latest brew is the strongest result.',
+      historyInsight: 'Ratings improved as yield increased.',
+      changes: [],
+      keepConstant: [],
+      caveat: 'Taste the next brew before changing another variable.',
+    }
+    const questions = [
+      'Why this change?',
+      'Could I grind finer?',
+      'How to test?',
+    ]
+
+    expect(
+      shotRecommendationSchema.safeParse({
+        ...base,
+        followUpQuestions: questions,
+      }).success,
+    ).toBe(true)
+    expect(
+      shotRecommendationSchema.safeParse({
+        ...base,
+        followUpQuestions: questions.slice(0, 2),
+      }).success,
+    ).toBe(false)
+    expect(shotRecommendationSchema.safeParse(base).success).toBe(false)
   })
 })

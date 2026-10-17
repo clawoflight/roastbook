@@ -365,12 +365,12 @@ export const chatAboutShotRecommendation = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     assertRecommendationEnabled()
     const { context } = await loadRecommendationEvidence(data.request)
-    const reply = await withResourceLimits('shot-recommendation-chat', () =>
+    const answer = await withResourceLimits('shot-recommendation-chat', () =>
       answerShotRecommendationQuestion(
         context,
         data.recommendation,
         data.messages,
       ),
     )
-    return { reply }
+    return { answer }
   })

@@ -2,7 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import type { ShotRecommendation } from '@/lib/shot-recommendation'
 import {
   buildShotRecommendationChatMessages,
+  parseShotRecommendationAnswer,
   SHOT_RECOMMENDATION_CHAT_MAX_MESSAGES,
+  shotRecommendationAnswerSchema,
+  shotRecommendationAnswerToText,
   shotRecommendationChatRequestSchema,
 } from '@/lib/shot-recommendation-chat'
 
@@ -15,6 +18,11 @@ const recommendation: ShotRecommendation = {
   changes: [],
   keepConstant: [],
   caveat: 'Only three rated brews.',
+  followUpQuestions: [
+    'Why this change?',
+    'Could I adjust the grind instead?',
+    'How do I test it?',
+  ],
 }
 
 const context = {
@@ -86,5 +94,101 @@ describe('recommendation follow-up chat', () => {
     expect(messages[0]?.content).toContain('"name": "Test bean"')
     expect(messages[1]?.content).toBe(JSON.stringify(recommendation))
     expect(messages[2]?.content).toBe(question.content)
+  })
+
+  test('accepts structured answers and renders them as history text', () => {
+    const answer = shotRecommendationAnswerSchema.parse({
+      blocks: [
+        { type: 'text', text: 'A finer [[grindSetting]] extracts more.' },
+        {
+          type: 'change',
+          parameter: 'grindSetting',
+          currentValue: '12',
+          recommendedValue: 'one step finer',
+          reason: 'Test one variable.',
+        },
+        {
+          type: 'keep',
+          parameter: 'doseGrams',
+          currentValue: '18 g',
+          reason: 'Fixed.',
+        },
+        { type: 'note', text: 'Taste before changing more.' },
+      ],
+    })
+
+    expect(shotRecommendationAnswerToText(answer)).toBe(
+      [
+        'A finer [[grindSetting]] extracts more.',
+        'Change [[grindSetting]] from 12 to one step finer: Test one variable.',
+        'Keep [[doseGrams]] at 18 g: Fixed.',
+        'Note: Taste before changing more.',
+      ].join('\n\n'),
+    )
+  })
+
+  test('rejects empty answers and unknown block types or parameters', () => {
+    const parse = (blocks: unknown) =>
+      shotRecommendationAnswerSchema.safeParse({ blocks }).success
+
+    expect(parse([])).toBe(false)
+    expect(parse([{ type: 'table', text: 'x' }])).toBe(false)
+    expect(
+      parse([
+        {
+          type: 'change',
+          parameter: 'beanId',
+          currentValue: '1',
+          recommendedValue: '2',
+          reason: 'x',
+        },
+      ]),
+    ).toBe(false)
+  })
+
+  test('turns the flat model answer into typed blocks and drops broken ones', () => {
+    const empty = {
+      text: null,
+      parameter: null,
+      currentValue: null,
+      recommendedValue: null,
+      reason: null,
+    }
+
+    expect(
+      parseShotRecommendationAnswer({
+        blocks: [
+          { ...empty, type: 'text', text: 'Try a finer grind.' },
+          {
+            ...empty,
+            type: 'change',
+            parameter: 'grindSetting',
+            currentValue: '12',
+          },
+          {
+            ...empty,
+            type: 'change',
+            parameter: 'grindSetting',
+            currentValue: '12',
+            recommendedValue: 'one step finer',
+            reason: 'One variable.',
+          },
+        ],
+      }).blocks,
+    ).toEqual([
+      { type: 'text', text: 'Try a finer grind.' },
+      {
+        type: 'change',
+        parameter: 'grindSetting',
+        currentValue: '12',
+        recommendedValue: 'one step finer',
+        reason: 'One variable.',
+      },
+    ])
+    expect(() =>
+      parseShotRecommendationAnswer({
+        blocks: [{ ...empty, type: 'keep', parameter: 'doseGrams' }],
+      }),
+    ).toThrow()
   })
 })

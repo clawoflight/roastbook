@@ -19,6 +19,23 @@ export const SHOT_RECOMMENDATION_PARAMETER_KEYS = [
   'tampForceKg',
 ] as const
 
+export const shotRecommendationParameterSchema = z.enum(
+  SHOT_RECOMMENDATION_PARAMETER_KEYS,
+)
+
+export const recommendationChangeSchema = z.object({
+  parameter: shotRecommendationParameterSchema,
+  currentValue: z.string().trim().min(1).max(100),
+  recommendedValue: z.string().trim().min(1).max(100),
+  reason: z.string().trim().min(1).max(500),
+})
+
+export const recommendationKeepConstantSchema = z.object({
+  parameter: shotRecommendationParameterSchema,
+  currentValue: z.string().trim().min(1).max(100),
+  reason: z.string().trim().min(1).max(300),
+})
+
 export const shotRecommendationSchema = z.object({
   diagnosis: z.enum([
     'under_extracted_and_strong',
@@ -33,26 +50,10 @@ export const shotRecommendationSchema = z.object({
   headline: z.string().trim().min(1).max(120),
   summary: z.string().trim().min(1).max(1_000),
   historyInsight: z.string().trim().min(1).max(1_000),
-  changes: z
-    .array(
-      z.object({
-        parameter: z.enum(SHOT_RECOMMENDATION_PARAMETER_KEYS),
-        currentValue: z.string().trim().min(1).max(100),
-        recommendedValue: z.string().trim().min(1).max(100),
-        reason: z.string().trim().min(1).max(500),
-      }),
-    )
-    .max(3),
-  keepConstant: z
-    .array(
-      z.object({
-        parameter: z.enum(SHOT_RECOMMENDATION_PARAMETER_KEYS),
-        currentValue: z.string().trim().min(1).max(100),
-        reason: z.string().trim().min(1).max(300),
-      }),
-    )
-    .max(4),
+  changes: z.array(recommendationChangeSchema).max(3),
+  keepConstant: z.array(recommendationKeepConstantSchema).max(4),
   caveat: z.string().trim().min(1).max(500),
+  followUpQuestions: z.array(z.string().trim().min(1).max(100)).length(3),
 })
 
 export type ShotRecommendation = z.infer<typeof shotRecommendationSchema>
@@ -69,7 +70,7 @@ const shotRecommendationDraftSchema = z.object({
   basketId: z.number().int().positive().nullable(),
   accessoryGearIds: z.array(z.number().int().positive()).max(100),
   parameters: z.partialRecord(
-    z.enum(SHOT_RECOMMENDATION_PARAMETER_KEYS),
+    shotRecommendationParameterSchema,
     shotRecommendationParameterValueSchema,
   ),
 })
@@ -180,6 +181,8 @@ Decision rules:
 - Exploration is optional, not a required action. Suggest one small, controlled exploratory parameter change only when it could plausibly add value despite an already good baseline, such as testing an unresolved preference, a rating plateau, or a nearby setting not covered by the history. Offer it only when the recent comparable rated brews are consistently well balanced; do not use exploration to bypass unresolved sour, bitter, weak, harsh, or otherwise contradictory ratings. State clearly that the current brew is already good and the change is an experiment rather than a fix. In the change reason, explain the hypothesis, what the user could learn or improve, and that the current setting remains the fallback if the experiment is worse. Never suggest exploration merely to avoid returning no changes.
 - currentValue must describe the focused shot when focusedShot is present. Otherwise it must describe the current draft when that parameter is populated, then fall back to the newest matching brew, or say that it is not set. recommendedValue must be directly actionable for the next brew.
 - Every keepConstant item must name one parameter, copy its human-readable value from the current baseline, and explain why it should stay fixed. Never return a raw field key as prose.
+- Write followUpQuestions as exactly three short questions the user is likely to ask next about this specific recommendation, phrased in the first person as the user would type them (for example “Could I adjust the grind instead?”). Make them distinct and tied to this recommendation: the reasoning behind a change, an alternative parameter or a trade-off, or how to test the change. Each must be answerable from the supplied evidence and general coffee knowledge, and must not repeat the headline.
+- Inline formatting: when text in summary, historyInsight, or a reason mentions one of the parameters, write it as [[parameterKey]] using the exact key from the allowed parameter list (for example [[grindSetting]]) instead of its name. It is rendered as a labelled chip. Never put these markers inside currentValue or recommendedValue.
 - Lead with the conclusion. When focusedShot is present, make historyInsight explain where that brew sits in the observed progression. Otherwise, make historyInsight describe the observed progression. Never replace it with generic coffee advice.
 
 Exact filtered evidence (JSON):

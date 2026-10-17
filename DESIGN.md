@@ -515,6 +515,11 @@ splits its body into two panes from `lg`: the conversation on the left, with its
 input pinned below, and the result on the right. Below `lg` the panes become
 tabs, with the result first. Loading and error states keep the single-pane body.
 
+AI text can mention a setting as a parameter chip: its icon and label inline in
+the sentence. The recommendation's change, keep-constant, and caveat blocks are
+shared components, so chat answers show a concrete suggestion the same way
+instead of as plain prose.
+
 ### Responsive behavior
 
 - Use `100dvh`-aware dialog limits and preserve safe-area padding.

@@ -1,12 +1,11 @@
-import {
-  ArrowRight,
-  History,
-  Info,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-} from 'lucide-react'
+import { History, Loader2, RefreshCw, Sparkles } from 'lucide-react'
 import { useState } from 'react'
+import {
+  ChangeBlock,
+  KeepConstantBlock,
+  NoteBlock,
+  RichText,
+} from '@/components/shots/recommendation-blocks'
 import { RecommendationChat } from '@/components/shots/recommendation-chat'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,7 +29,6 @@ import {
 import { useDateFormatter } from '@/hooks/use-date-formatter'
 import { getErrorMessage } from '@/lib/error-message'
 import { getShotRecommendation } from '@/lib/server/shot-recommendations'
-import { SHOT_PARAMETER_META } from '@/lib/shot-parameters'
 import {
   isFocusedShotRecommendationRequest,
   type ShotRecommendationRequest,
@@ -287,7 +285,9 @@ function RecommendationResultView({
         <h3 className="font-display text-lg font-bold">
           {result.recommendation.headline}
         </h3>
-        <p className="leading-relaxed">{result.recommendation.summary}</p>
+        <p className="leading-relaxed">
+          <RichText text={result.recommendation.summary} />
+        </p>
       </section>
 
       <section className="rounded-xl border border-border bg-muted/35 p-4">
@@ -298,7 +298,7 @@ function RecommendationResultView({
             : 'How this setup developed'}
         </h3>
         <p className="mt-2 leading-relaxed text-muted-foreground">
-          {result.recommendation.historyInsight}
+          <RichText text={result.recommendation.historyInsight} />
         </p>
       </section>
 
@@ -307,28 +307,8 @@ function RecommendationResultView({
         {result.recommendation.changes.length > 0 ? (
           <ol className="space-y-3">
             {result.recommendation.changes.map((change) => (
-              <li
-                key={change.parameter}
-                className="rounded-xl border border-border p-4"
-              >
-                <p className="font-medium">
-                  {SHOT_PARAMETER_META[change.parameter].label}
-                </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-                  <span className="rounded-md bg-muted px-2 py-1">
-                    {change.currentValue}
-                  </span>
-                  <ArrowRight
-                    aria-hidden
-                    className="size-4 text-muted-foreground"
-                  />
-                  <span className="rounded-md bg-primary/12 px-2 py-1 font-semibold text-foreground">
-                    {change.recommendedValue}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {change.reason}
-                </p>
+              <li key={change.parameter}>
+                <ChangeBlock change={change} />
               </li>
             ))}
           </ol>
@@ -344,24 +324,17 @@ function RecommendationResultView({
       {result.recommendation.keepConstant.length > 0 ? (
         <section className="space-y-2">
           <h3 className="font-semibold">Keep constant</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <ul className="space-y-2">
             {result.recommendation.keepConstant.map((item) => (
               <li key={item.parameter}>
-                <span className="font-medium text-foreground">
-                  {SHOT_PARAMETER_META[item.parameter].label}:{' '}
-                  {item.currentValue}
-                </span>{' '}
-                — {item.reason}
+                <KeepConstantBlock item={item} />
               </li>
             ))}
           </ul>
         </section>
       ) : null}
 
-      <div className="flex gap-2 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
-        <Info className="mt-0.5 size-4 shrink-0" />
-        <p>{result.recommendation.caveat}</p>
-      </div>
+      <NoteBlock text={result.recommendation.caveat} />
 
       <p className="text-xs text-muted-foreground">
         Based on {result.basis.historyIncluded} of{' '}
