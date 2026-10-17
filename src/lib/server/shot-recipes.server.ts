@@ -7,6 +7,7 @@ import {
   replaceRecipeAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
+import { replaceRecipeDrinkOptions } from '@/lib/server/drink-options.server'
 import {
   projectAccessoryGearIds,
   projectShotParameters,
@@ -23,6 +24,7 @@ export async function saveShotToRecipeInTransaction(
     where: eq(shots.id, shotId),
     with: {
       brewingMethod: true,
+      drinkOptions: true,
       accessoryGearLinks: { columns: { gearId: true } },
     },
   })
@@ -66,6 +68,12 @@ export async function saveShotToRecipeInTransaction(
     tx,
     recipe.id,
     projectAccessoryGearIds(shotValues, shot.brewingMethod.enabledParameters),
+  )
+
+  await replaceRecipeDrinkOptions(
+    tx,
+    recipe.id,
+    shot.drinkOptions.map(({ optionValueId }) => optionValueId),
   )
 
   return recipe

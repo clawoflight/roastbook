@@ -32,7 +32,7 @@ describe('new brew payload', () => {
     expect(payload).not.toHaveProperty('recipeId')
   })
 
-  test('stores an optional drink type on a recipe without drink options', () => {
+  test('stores a recipe drink type and its milk option', () => {
     const values = {
       ...EMPTY_SHOT_FORM_VALUES,
       brewingMethodId: '1',
@@ -44,7 +44,7 @@ describe('new brew payload', () => {
       brewingMethodId: 1,
       drinkTypeId: 4,
     })
-    expect(recipePayload(values)).not.toHaveProperty('drinkOptionValueIds')
+    expect(recipePayload(values).drinkOptionValueIds).toEqual([7])
   })
 
   test('normalizes cleared sensory intensities to null', () => {

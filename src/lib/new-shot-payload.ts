@@ -49,7 +49,7 @@ export function recipePayload(values: ShotFormValues) {
     shotParameterPayload(values)
   return {
     ...parameters,
-    drinkTypeId: values.drinkTypeId ? Number(values.drinkTypeId) : null,
+    ...shotDrinkPayload(values),
   }
 }
 

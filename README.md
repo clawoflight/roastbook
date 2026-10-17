@@ -154,6 +154,8 @@ as MIME type and byte count, not the image payload itself.
 - Load a recipe as editable template values, create recipes from scratch,
   duplicate variants, or reuse a brew's values in a new or existing recipe.
   Brews keep their own snapshot and are never linked back to the template.
+- Recipes preserve drink options such as milk type. Loading a recipe also
+  selects a gear set when its equipment matches.
 - A recipe can set a target brew time, which the brew timer then counts against.
 - Optionally receive brew times from a Wi-Fi
   [shottimer](https://github.com/michidk/shottimer) and share the target time

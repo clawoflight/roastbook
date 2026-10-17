@@ -11,7 +11,11 @@ import {
   replaceRecipeAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
-import { assertDrinkTypeAvailableForBrewingMethod } from '@/lib/server/drink-options.server'
+import {
+  assertDrinkSelection,
+  assertDrinkTypeAvailableForBrewingMethod,
+  replaceRecipeDrinkOptions,
+} from '@/lib/server/drink-options.server'
 import {
   projectAccessoryGearIds,
   projectShotParameters,
@@ -74,7 +78,14 @@ function projectRecipeWrite(
   data: RecipeCreateInput,
   enabledParameters: readonly string[],
 ) {
-  const { name, brewingMethodId, beanId, drinkTypeId, ...parameters } = data
+  const {
+    name,
+    brewingMethodId,
+    beanId,
+    drinkTypeId,
+    drinkOptionValueIds: _drinkOptionValueIds,
+    ...parameters
+  } = data
   return {
     values: {
       name,
@@ -91,6 +102,7 @@ function projectRecipeWrite(
 const recipeRelations = {
   bean: { with: { images: true, roasterRef: true } },
   drinkType: true,
+  drinkOptions: { with: { optionValue: true } },
   machine: true,
   grinder: true,
   basket: true,
@@ -196,6 +208,7 @@ export const updateRecipe = createServerFn({ method: 'POST' })
   .handler(async ({ data }) =>
     db.transaction(async (tx) => {
       const method = await getBrewingMethod(tx, data.brewingMethodId)
+      await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
       await assertDrinkTypeAvailableForBrewingMethod(
         tx,
         data.brewingMethodId,
@@ -210,6 +223,11 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         .returning()
       const persistedRecipe = expectReturnedRow(recipe, 'Recipe')
       await replaceRecipeAccessoryGear(tx, id, projected.accessoryGearIds)
+      await replaceRecipeDrinkOptions(
+        tx,
+        persistedRecipe.id,
+        data.drinkOptionValueIds ?? [],
+      )
       return persistedRecipe
     }),
   )
@@ -219,6 +237,7 @@ export const createRecipe = createServerFn({ method: 'POST' })
   .handler(async ({ data }) =>
     db.transaction(async (tx) => {
       const method = await getBrewingMethod(tx, data.brewingMethodId)
+      await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
       await assertDrinkTypeAvailableForBrewingMethod(
         tx,
         data.brewingMethodId,
@@ -235,6 +254,11 @@ export const createRecipe = createServerFn({ method: 'POST' })
         persistedRecipe.id,
         projected.accessoryGearIds,
       )
+      await replaceRecipeDrinkOptions(
+        tx,
+        persistedRecipe.id,
+        data.drinkOptionValueIds ?? [],
+      )
       return persistedRecipe
     }),
   )
@@ -245,11 +269,14 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
     db.transaction(async (tx) => {
       const source = await tx.query.recipes.findFirst({
         where: eq(recipes.id, id),
-        with: { accessoryGearLinks: { columns: { gearId: true } } },
+        with: {
+          accessoryGearLinks: { columns: { gearId: true } },
+          drinkOptions: true,
+        },
       })
       if (!source) throw new RecipeInputError('Recipe not found')
 
-      const { accessoryGearLinks, ...sourceRecipe } = source
+      const { accessoryGearLinks, drinkOptions, ...sourceRecipe } = source
       const {
         id: _sourceId,
         createdAt: _sourceCreatedAt,
@@ -269,6 +296,11 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
         tx,
         persistedRecipe.id,
         accessoryGearLinks.map(({ gearId }) => gearId),
+      )
+      await replaceRecipeDrinkOptions(
+        tx,
+        persistedRecipe.id,
+        drinkOptions.map(({ optionValueId }) => optionValueId),
       )
       return persistedRecipe
     }),

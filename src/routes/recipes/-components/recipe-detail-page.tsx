@@ -303,6 +303,12 @@ function RecipeSummary({
               {recipe.drinkType?.name ?? 'Any drink type'}
             </p>
           </div>
+          {recipe.drinkOptions.map(({ optionValue }) => (
+            <div key={optionValue.id}>
+              <p className="text-sm text-muted-foreground">Drink option</p>
+              <p className="font-medium">{optionValue.name}</p>
+            </div>
+          ))}
         </CardContent>
       </Card>
       <Card>

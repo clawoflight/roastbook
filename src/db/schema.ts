@@ -1249,6 +1249,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     relationName: 'recipeBasket',
   }),
   accessoryGearLinks: many(recipeAccessoryGear),
+  drinkOptions: many(recipeDrinkOptions),
 }))
 
 export const coffeeShops = pgTable(
@@ -1470,6 +1471,40 @@ export const shotDrinkOptionsRelations = relations(
     }),
     optionValue: one(drinkOptionValues, {
       fields: [shotDrinkOptions.optionValueId],
+      references: [drinkOptionValues.id],
+    }),
+  }),
+)
+
+export const recipeDrinkOptions = pgTable(
+  'recipe_drink_options',
+  {
+    id: serial('id').primaryKey(),
+    recipeId: integer('recipe_id')
+      .references(() => recipes.id, { onDelete: 'cascade' })
+      .notNull(),
+    optionValueId: integer('option_value_id')
+      .references(() => drinkOptionValues.id, { onDelete: 'restrict' })
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('recipe_drink_options_recipe_value_idx').on(
+      table.recipeId,
+      table.optionValueId,
+    ),
+    index('recipe_drink_options_value_id_idx').on(table.optionValueId),
+  ],
+)
+
+export const recipeDrinkOptionsRelations = relations(
+  recipeDrinkOptions,
+  ({ one }) => ({
+    recipe: one(recipes, {
+      fields: [recipeDrinkOptions.recipeId],
+      references: [recipes.id],
+    }),
+    optionValue: one(drinkOptionValues, {
+      fields: [recipeDrinkOptions.optionValueId],
       references: [drinkOptionValues.id],
     }),
   }),

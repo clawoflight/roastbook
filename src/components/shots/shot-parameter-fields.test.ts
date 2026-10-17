@@ -3,6 +3,7 @@ import { DISTRIBUTION_METHOD_OPTIONS } from '@/lib/shot-parameters'
 import {
   EMPTY_SHOT_FORM_VALUES,
   gearByEquipmentRole,
+  matchingGearSetId,
   shotFormValuesFrom,
   shotFormValuesWithGearSet,
   shotFormValuesWithRecipe,
@@ -148,5 +149,53 @@ describe('shot form values', () => {
     expect(
       shotFormValuesWithGearSet(current, gearSet).accessoryGearIds,
     ).toEqual([5, 6])
+  })
+})
+
+describe('recipe drink and gear prefilling', () => {
+  test('restores milk options and clears options left by another recipe', () => {
+    const current = {
+      ...EMPTY_SHOT_FORM_VALUES,
+      drinkTypeId: '1',
+      drinkOptionValueIds: { '2': '9' },
+    }
+    const recipe = {
+      ...shotParameters(null),
+      drinkTypeId: 3,
+      drinkOptions: [{ optionValueId: 7, optionValue: { groupId: 2 } }],
+    }
+    const loaded = shotFormValuesWithRecipe(current, recipe)
+    expect(loaded.drinkTypeId).toBe('3')
+    expect(loaded.drinkOptionValueIds).toEqual({ '2': '7' })
+    expect(
+      shotFormValuesWithRecipe(loaded, { ...recipe, drinkOptions: [] })
+        .drinkOptionValueIds,
+    ).toEqual({})
+  })
+
+  test('selects the gear set matching restored equipment regardless of accessory order', () => {
+    const gearSets = [
+      {
+        id: 4,
+        machineId: 1,
+        grinderId: 2,
+        basketId: null,
+        accessoryGearIds: [8, 9],
+      },
+    ]
+    const loaded = shotFormValuesWithRecipe(EMPTY_SHOT_FORM_VALUES, {
+      ...shotParameters(null),
+      machineId: 1,
+      grinderId: 2,
+      accessoryGearIds: [9, 8],
+    })
+    expect(matchingGearSetId(loaded, gearSets)).toBe('4')
+    expect(matchingGearSetId({ ...loaded, grinderId: '3' }, gearSets)).toBe('')
+    expect(
+      matchingGearSetId({ ...loaded, accessoryGearIds: [8] }, gearSets),
+    ).toBe('')
+    expect(
+      matchingGearSetId({ ...loaded, accessoryGearIds: [8, 9, 10] }, gearSets),
+    ).toBe('')
   })
 })

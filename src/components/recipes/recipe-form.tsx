@@ -15,6 +15,7 @@ import { createRecipe } from '@/lib/server/recipes'
 import { getShotUpdateErrors } from '@/lib/update-validation'
 import {
   EMPTY_SHOT_FORM_VALUES,
+  matchingGearSetId,
   type ShotFormValues,
   shotFormValuesWithGearSet,
 } from '@/modules/brews/shot-form-values'
@@ -45,7 +46,6 @@ export function RecipeForm({
 }: RecipeFormProps) {
   const [name, setName] = useState('')
   const [values, setValues] = useState<ShotFormValues>(EMPTY_SHOT_FORM_VALUES)
-  const [gearSetId, setGearSetId] = useState('')
   const [fieldErrors, setFieldErrors] = useState<
     Readonly<Record<string, string>>
   >({})
@@ -55,7 +55,6 @@ export function RecipeForm({
   ) => setValues((current) => ({ ...current, [key]: value }))
 
   const loadGearSet = (id: string) => {
-    setGearSetId(id)
     const gearSet = gearSets.find((item) => String(item.id) === id)
     if (!gearSet) return
     setValues((current) => shotFormValuesWithGearSet(current, gearSet))
@@ -109,7 +108,7 @@ export function RecipeForm({
           gearSets.length > 0 ? (
             <GearSetPicker
               id="recipe-gear-set"
-              value={gearSetId}
+              value={matchingGearSetId(values, gearSets)}
               gearSets={gearSets}
               onChange={loadGearSet}
             />

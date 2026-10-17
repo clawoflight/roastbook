@@ -5,6 +5,7 @@ import {
   cafeVisitDrinkOptions,
   drinkOptionValues,
   drinkTypeOptionGroups,
+  recipeDrinkOptions,
   shotDrinkOptions,
 } from '@/db/schema'
 
@@ -100,4 +101,19 @@ export async function replaceCafeVisitDrinkOptions(
     .values(
       selectedIds.map((optionValueId) => ({ cafeVisitId, optionValueId })),
     )
+}
+
+export async function replaceRecipeDrinkOptions(
+  tx: DrinkOptionTransaction,
+  recipeId: number,
+  optionValueIds: readonly number[],
+) {
+  await tx
+    .delete(recipeDrinkOptions)
+    .where(eq(recipeDrinkOptions.recipeId, recipeId))
+  const selectedIds = [...new Set(optionValueIds)]
+  if (selectedIds.length === 0) return
+  await tx
+    .insert(recipeDrinkOptions)
+    .values(selectedIds.map((optionValueId) => ({ recipeId, optionValueId })))
 }

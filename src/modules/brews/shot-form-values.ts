@@ -176,7 +176,10 @@ export function shotFormValuesWithRecipe(
   recipe: ShotParameterSource,
 ): ShotFormValues {
   const recipeValues = shotFormValuesFrom(recipe)
-  const next = { ...current }
+  const next = {
+    ...current,
+    drinkOptionValueIds: recipeValues.drinkOptionValueIds,
+  }
 
   for (const key of RECIPE_FORM_KEYS) {
     const value = recipeValues[key]
@@ -258,4 +261,22 @@ export function gearByEquipmentRole(gear: readonly GearOption[]) {
         item.type !== 'basket',
     ),
   }
+}
+
+export function matchingGearSetId(
+  values: EquipmentSelection,
+  gearSets: readonly (GearSetSource & { readonly id: number })[],
+): string {
+  const selectedAccessories = new Set(values.accessoryGearIds)
+  const match = gearSets.find(
+    (gearSet) =>
+      values.machineId ===
+        (gearSet.machineId ? String(gearSet.machineId) : '') &&
+      values.grinderId ===
+        (gearSet.grinderId ? String(gearSet.grinderId) : '') &&
+      values.basketId === (gearSet.basketId ? String(gearSet.basketId) : '') &&
+      selectedAccessories.size === gearSet.accessoryGearIds.length &&
+      gearSet.accessoryGearIds.every((id) => selectedAccessories.has(id)),
+  )
+  return match ? String(match.id) : ''
 }

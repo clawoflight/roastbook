@@ -1,11 +1,22 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { brewingMethods, shots } from '@/db/schema'
+import {
+  brewingMethods,
+  drinkOptionGroups,
+  drinkOptionValues,
+  drinkTypes,
+  recipes,
+  shotDrinkOptions,
+  shots,
+} from '@/db/schema'
+import { replaceRecipeDrinkOptions } from '@/lib/server/drink-options.server'
+import { saveShotToRecipeInTransaction } from '@/lib/server/shot-recipes.server'
 import {
   createShotOperation,
   updateShotOperation,
 } from '@/lib/server/shots-operations.server'
+import { shotFormValuesFrom } from '@/modules/brews/shot-form-values'
 
 const integrationDescribe = process.env.TEST_DATABASE_URL
   ? describe
@@ -72,5 +83,75 @@ integrationDescribe('brew operations contract', () => {
     await expect(
       createShotOperation({ brewingMethodId: 2_147_483_647 }),
     ).rejects.toThrow('Brewing method not found')
+  })
+  test('saving a brew as a recipe preserves milk options on create and overwrite', async () => {
+    if (!brewingMethodId) throw new Error('Missing contract method')
+    const methodId = brewingMethodId
+    await db.transaction(async (tx) => {
+      const [drink] = await tx
+        .insert(drinkTypes)
+        .values({ name: `milk-drink-${crypto.randomUUID()}` })
+        .returning()
+      const [group] = await tx
+        .insert(drinkOptionGroups)
+        .values({ name: `milk-${crypto.randomUUID()}` })
+        .returning()
+      if (!drink || !group) throw new Error('Missing drink fixtures')
+      const [milk] = await tx
+        .insert(drinkOptionValues)
+        .values({ groupId: group.id, name: 'Oat' })
+        .returning()
+      const [brew] = await tx
+        .insert(shots)
+        .values({ brewingMethodId: methodId, drinkTypeId: drink.id })
+        .returning()
+      if (!milk || !brew) throw new Error('Missing brew fixtures')
+      await tx
+        .insert(shotDrinkOptions)
+        .values({ shotId: brew.id, optionValueId: milk.id })
+      const recipe = await saveShotToRecipeInTransaction(tx, brew.id, {
+        name: 'Milk recipe',
+      })
+      const readRecipe = () =>
+        tx.query.recipes.findFirst({
+          where: eq(recipes.id, recipe.id),
+          with: {
+            accessoryGearLinks: true,
+            drinkOptions: { with: { optionValue: true } },
+          },
+        })
+      const saved = await readRecipe()
+      expect(saved?.drinkTypeId).toBe(drink.id)
+      expect(
+        saved?.drinkOptions.map(({ optionValue }) => optionValue.name),
+      ).toEqual(['Oat'])
+      if (!saved) throw new Error('Missing saved recipe')
+      expect(
+        shotFormValuesFrom({ ...saved, accessoryGearIds: [] })
+          .drinkOptionValueIds,
+      ).toEqual({ [String(group.id)]: String(milk.id) })
+      await replaceRecipeDrinkOptions(tx, recipe.id, [])
+      expect((await readRecipe())?.drinkOptions).toEqual([])
+      await saveShotToRecipeInTransaction(tx, brew.id, { recipeId: recipe.id })
+      expect(
+        (await readRecipe())?.drinkOptions.map(
+          ({ optionValue }) => optionValue.name,
+        ),
+      ).toEqual(['Oat'])
+      await tx
+        .delete(shotDrinkOptions)
+        .where(eq(shotDrinkOptions.shotId, brew.id))
+      await saveShotToRecipeInTransaction(tx, brew.id, { recipeId: recipe.id })
+      expect((await readRecipe())?.drinkOptions).toEqual([])
+      await tx.delete(recipes).where(eq(recipes.id, recipe.id))
+      await tx.delete(shots).where(eq(shots.id, brew.id))
+      await tx
+        .delete(drinkOptionValues)
+        .where(eq(drinkOptionValues.id, milk.id))
+      await tx
+        .delete(drinkOptionGroups)
+        .where(eq(drinkOptionGroups.id, group.id))
+      await tx.delete(drinkTypes).where(eq(drinkTypes.id, drink.id))
+    })
   })
 })

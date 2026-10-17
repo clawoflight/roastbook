@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { BeanPicker } from '@/components/beans/bean-picker'
-import { DrinkTypePicker } from '@/components/drinks/drink-type-picker'
+import { DrinkSelectionFields } from '@/components/drinks/drink-selection-fields'
 import { InputField, SelectField } from '@/components/form/form-field'
 import { FormSection } from '@/components/form/form-shell'
 import { ShotParameterFields } from '@/components/shots/shot-parameter-fields'
@@ -102,16 +102,18 @@ export function RecipeFields({
               onChange={(value) => onChange('beanId', value)}
               beans={beans}
             />
-            <DrinkTypePicker
-              id="recipe-drink-type"
-              value={values.drinkTypeId}
-              drinkTypes={availableDrinks.drinkTypes}
+            <DrinkSelectionFields
+              values={values}
+              configuration={availableDrinks}
               suggestions={drinkTypeSuggestions.filter((suggestion) =>
                 availableDrinks.drinkTypes.some(
                   (type) => type.id === suggestion.id,
                 ),
               )}
-              onChange={(value) => onChange('drinkTypeId', value)}
+              onChange={(next) => {
+                onChange('drinkTypeId', next.drinkTypeId)
+                onChange('drinkOptionValueIds', next.drinkOptionValueIds)
+              }}
             />
           </FormSection>
           <ShotParameterFields

@@ -90,6 +90,7 @@ import { getShotUpdateErrors } from '@/lib/update-validation'
 import {
   availableGearForShot,
   EMPTY_SHOT_FORM_VALUES,
+  matchingGearSetId,
   type ShotFormValues,
   shotFormValuesFrom,
   shotFormValuesWithGearSet,
@@ -212,7 +213,6 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
     () => requestedBeanSelection(beans, initialBean) !== undefined,
   )
   const [loadedRecipeId, setLoadedRecipeId] = useState('')
-  const [gearSetId, setGearSetId] = useState('')
   const [brewedAt, setBrewedAt] = useLocalDateTimeInput(defaultBrewedAt)
   const latestBrewedAt = useCurrentLocalDateTimeLimit()
   const [selectedTags, setSelectedTags] = useState<number[]>([])
@@ -340,7 +340,6 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
   }
 
   const loadGearSet = (id: string) => {
-    setGearSetId(id)
     const gearSet = gearSets.find((item) => String(item.id) === id)
     if (!gearSet) return
     setIsDirty(true)
@@ -638,7 +637,7 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
             selectedMethod && gearSets.length > 0 ? (
               <GearSetPicker
                 id="shot-gear-set"
-                value={gearSetId}
+                value={matchingGearSetId(values, gearSets)}
                 gearSets={gearSets}
                 onChange={loadGearSet}
               />
