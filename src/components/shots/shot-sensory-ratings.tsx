@@ -65,21 +65,28 @@ export function ShotSensoryRatingFields({
                 <Icon aria-hidden className="size-4 shrink-0 text-link" />
                 <p className="text-sm font-semibold">{meta.label}</p>
               </div>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    aria-label={`About ${meta.label.toLowerCase()}`}
-                  >
-                    <Info aria-hidden />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="leading-relaxed">
-                  {meta.hint}
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center gap-1">
+                {readOnly ? null : (
+                  <span className="shrink-0 whitespace-nowrap text-xs font-medium text-muted-foreground">
+                    {value === 0 ? 'Not rated' : `${value}/5`}
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`About ${meta.label.toLowerCase()}`}
+                    >
+                      <Info aria-hidden />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="leading-relaxed">
+                    {meta.hint}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
 
             {readOnly ? (
@@ -87,7 +94,7 @@ export function ShotSensoryRatingFields({
             ) : (
               <fieldset className="min-w-0 border-0 p-0">
                 <legend className="sr-only">{meta.label} intensity</legend>
-                <div className="flex items-center gap-0.5">
+                <div className="grid max-w-56 grid-cols-5 justify-items-center">
                   {Array.from({ length: 5 }, (_, index) => index + 1).map(
                     (level) => {
                       const filled = level <= value
@@ -101,7 +108,7 @@ export function ShotSensoryRatingFields({
                           aria-label={`Set ${meta.label.toLowerCase()} to ${level} out of 5`}
                           aria-pressed={level === value}
                           className={cn(
-                            'flex size-11 shrink-0 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 [@media(hover:hover)_and_(pointer:fine)]:size-8',
+                            'flex size-11 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 [@media(hover:hover)_and_(pointer:fine)]:size-8',
                             filled
                               ? 'bg-primary/20 text-link'
                               : 'text-muted-foreground hover:bg-secondary',
@@ -119,10 +126,10 @@ export function ShotSensoryRatingFields({
                     },
                   )}
                 </div>
-                <div className="mt-1 flex max-w-[12.5rem] justify-between text-xs text-muted-foreground">
-                  <span>Low</span>
-                  <span>{value === 0 ? 'Not rated' : `${value}/5`}</span>
-                  <span>High</span>
+                {/* Same five columns as the icons, so Low and High sit under the first and last. */}
+                <div className="mt-1 grid max-w-56 grid-cols-5 justify-items-center text-xs text-muted-foreground">
+                  <span className="col-start-1">Low</span>
+                  <span className="col-start-5">High</span>
                 </div>
               </fieldset>
             )}

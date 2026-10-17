@@ -734,11 +734,11 @@ export function NewShotForm({ data, initialBean, onSaved }: NewShotFormProps) {
               from the brew.
             </DialogDescription>
           </DialogHeader>
-          <DialogBody>
+          <DialogBody className="space-y-4">
             {tasteProfile.overallRating ||
             showSensoryRatings ||
             showExtractionBalance ? (
-              <div className="space-y-1">
+              <div className="space-y-3">
                 {tasteProfile.overallRating ? (
                   <div className="space-y-1">
                     <span className="block text-sm font-medium">

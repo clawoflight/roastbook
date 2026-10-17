@@ -33,31 +33,34 @@ export function ExtractionBalanceField({
     <div className="min-w-0 rounded-xl border border-border bg-secondary/35 p-3">
       <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
         <p className="text-sm font-semibold">{EXTRACTION_BALANCE_META.label}</p>
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              aria-label={`About ${EXTRACTION_BALANCE_META.label.toLowerCase()}`}
-            >
-              <Info aria-hidden />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className="leading-relaxed">
-            {EXTRACTION_BALANCE_META.hint}
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-1">
+          {readOnly ? null : (
+            <span className="shrink-0 whitespace-nowrap text-xs font-medium text-muted-foreground">
+              {selectedLabel ?? 'Not recorded'}
+            </span>
+          )}
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                aria-label={`About ${EXTRACTION_BALANCE_META.label.toLowerCase()}`}
+              >
+                <Info aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="leading-relaxed">
+              {EXTRACTION_BALANCE_META.hint}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       {readOnly ? (
         <ExtractionBalanceReadout value={value} label={selectedLabel} />
       ) : (
-        <BalancePicker
-          value={value}
-          label={selectedLabel}
-          onChange={onChange}
-        />
+        <BalancePicker value={value} onChange={onChange} />
       )}
     </div>
   )
@@ -101,55 +104,60 @@ export function ExtractionBalanceReadout({
 
 function BalancePicker({
   value,
-  label,
   onChange,
 }: {
   readonly value: number
-  readonly label: string | null
   readonly onChange?: (value: number) => void
 }) {
   return (
     <fieldset className="min-w-0 border-0 p-0">
       <legend className="sr-only">{EXTRACTION_BALANCE_META.label}</legend>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         <Citrus aria-hidden className="size-4 shrink-0 text-link" />
-        {EXTRACTION_BALANCE_LEVELS.map((level) => {
-          const isSelected = level === value
-          return (
-            <button
-              key={level}
-              type="button"
-              onClick={() => onChange?.(isSelected ? 0 : level)}
-              aria-label={`Set the balance to ${extractionBalanceLabel(level)?.toLowerCase()}`}
-              aria-pressed={isSelected}
-              className={cn(
-                'flex size-11 shrink-0 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 [@media(hover:hover)_and_(pointer:fine)]:size-8',
-                isSelected
-                  ? 'bg-primary/20 text-link'
-                  : 'text-muted-foreground hover:bg-secondary',
-              )}
-            >
-              <span
-                aria-hidden
+        <div className="grid min-w-0 flex-1 grid-cols-5 justify-items-center">
+          {EXTRACTION_BALANCE_LEVELS.map((level) => {
+            const isSelected = level === value
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => onChange?.(isSelected ? 0 : level)}
+                aria-label={`Set the balance to ${extractionBalanceLabel(level)?.toLowerCase()}`}
+                aria-pressed={isSelected}
                 className={cn(
-                  'rounded-full',
+                  'flex size-11 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 [@media(hover:hover)_and_(pointer:fine)]:size-8',
                   isSelected
-                    ? 'size-3.5 bg-link'
-                    : 'size-2.5 bg-current opacity-40',
-                  level === EXTRACTION_BALANCE_BALANCED &&
-                    !isSelected &&
-                    'opacity-70',
+                    ? 'bg-primary/20 text-link'
+                    : 'text-muted-foreground hover:bg-secondary',
                 )}
-              />
-            </button>
-          )
-        })}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    'rounded-full',
+                    isSelected
+                      ? 'size-3.5 bg-link'
+                      : 'size-2.5 bg-current opacity-40',
+                    level === EXTRACTION_BALANCE_BALANCED &&
+                      !isSelected &&
+                      'opacity-70',
+                  )}
+                />
+              </button>
+            )
+          })}
+        </div>
         <Leaf aria-hidden className="size-4 shrink-0 text-link" />
       </div>
-      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>{EXTRACTION_BALANCE_META.sourLabel}</span>
-        <span className="font-medium">{label ?? 'Not recorded'}</span>
-        <span>{EXTRACTION_BALANCE_META.bitterLabel}</span>
+      {/* Same inset and five columns as the dots, so each label sits under its own dot. */}
+      <div className="mt-1 grid grid-cols-5 justify-items-center px-6 text-xs text-muted-foreground">
+        <span className="col-start-1">{EXTRACTION_BALANCE_META.sourLabel}</span>
+        <span className="col-start-3">
+          {EXTRACTION_BALANCE_META.balancedLabel}
+        </span>
+        <span className="col-start-5">
+          {EXTRACTION_BALANCE_META.bitterLabel}
+        </span>
       </div>
     </fieldset>
   )

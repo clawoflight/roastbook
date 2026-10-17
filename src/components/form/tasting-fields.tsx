@@ -107,7 +107,7 @@ export function TastingFields({
       </CardHeader>
       <CardContent className="space-y-4">
         {showRating || showSensory || showBalance ? (
-          <div className="space-y-1">
+          <div className="space-y-3">
             {showRating ? (
               <div className="space-y-1">
                 <span className="block text-sm font-medium">
