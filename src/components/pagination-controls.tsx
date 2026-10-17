@@ -19,12 +19,9 @@ export function PaginationControls({
 
   return (
     <nav
-      className="flex flex-col items-center gap-3 border-t border-border/70 pt-4 sm:flex-row sm:justify-between"
+      className="flex justify-center border-t border-border/70 pt-4"
       aria-label="Pagination"
     >
-      <p className="text-sm text-muted-foreground">
-        Page {page} of {totalPages}
-      </p>
       <div className="flex max-w-full items-center justify-center gap-1">
         <Button
           type="button"
