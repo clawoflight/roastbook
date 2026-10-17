@@ -1,7 +1,6 @@
 import { getRouteApi, useNavigate, useRouter } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { AddBeanPurchaseDialog } from '@/components/beans/add-bean-purchase-dialog'
 import {
   BeanDetailHeader,
   BeanEditContent,
@@ -16,6 +15,7 @@ import {
   type BeanFormData,
   BeanInfoDiffModal,
 } from '@/components/beans/bean-info-diff-modal'
+import { BeanPurchaseDialog } from '@/components/beans/bean-purchase-dialog'
 import type { EntityImage } from '@/components/entity-image-gallery'
 import { EntityNotFound } from '@/components/entity-not-found'
 import { Page } from '@/components/page-layout'
@@ -246,11 +246,11 @@ export function BeanDetailPage() {
       />
       {!isEditing ? (
         <div className="flex justify-end">
-          <AddBeanPurchaseDialog
+          <BeanPurchaseDialog
             beanId={bean.id}
             beanName={bean.name}
             visionEnabled={visionEnabled}
-            onCreated={() => router.invalidate()}
+            onSaved={() => router.invalidate()}
           />
         </div>
       ) : null}

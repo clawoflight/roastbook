@@ -4,6 +4,7 @@ import { db } from '@/db'
 import {
   archiveBeanPurchaseOperation,
   createBeanPurchaseOperation,
+  updateBeanPurchaseOperation,
 } from '@/lib/server/bean-purchases.server'
 import {
   currencySchema,
@@ -45,3 +46,14 @@ export const setBeanPurchaseArchived = createServerFn({ method: 'POST' })
   .handler(({ data }) =>
     archiveBeanPurchaseOperation(data.id, data.beanId, data.isArchived),
   )
+
+export const updateBeanPurchase = createServerFn({ method: 'POST' })
+  .validator(
+    beanPurchaseValuesSchema
+      .omit({ isArchived: true })
+      .extend({ id: positiveIdSchema, beanId: positiveIdSchema }),
+  )
+  .handler(({ data }) => {
+    const { id, beanId, ...values } = data
+    return updateBeanPurchaseOperation(id, beanId, values)
+  })

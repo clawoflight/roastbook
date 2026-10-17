@@ -1,6 +1,10 @@
-import { Loader2, Plus, Sparkles } from 'lucide-react'
+import { Loader2, Pencil, Plus, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import {
+  type EntityImage,
+  EntityImageGallery,
+} from '@/components/entity-image-gallery'
 import { DateField } from '@/components/form/date-field'
 import {
   EntityImageUploadRecovery,
@@ -26,23 +30,37 @@ import { useAppSettings } from '@/hooks/use-app-settings'
 import { useImageUpload } from '@/hooks/use-image-upload'
 import { getErrorMessage } from '@/lib/error-message'
 import type { ImageFile } from '@/lib/image-file'
-import { createBeanPurchase } from '@/lib/server/bean-purchases'
+import {
+  createBeanPurchase,
+  updateBeanPurchase,
+} from '@/lib/server/bean-purchases'
 import { extractBeanInfo } from '@/lib/server/beans'
 import {
   type EntityImageUploadFailure,
   uploadEntityImages,
 } from '@/lib/upload-entity-images'
 
-export function AddBeanPurchaseDialog({
+export function BeanPurchaseDialog({
   beanId,
   beanName,
   visionEnabled,
-  onCreated,
+  onSaved,
+  purchase,
+  images = [],
 }: {
+  readonly purchase?: {
+    readonly id: number
+    readonly roastDate: Date | string | null
+    readonly initialWeightGrams: string | null
+    readonly price: string | null
+    readonly priceCurrency: string | null
+    readonly shopUrl: string | null
+  }
+  readonly images?: readonly EntityImage[]
   readonly beanId: number
   readonly beanName: string
   readonly visionEnabled: boolean
-  readonly onCreated: () => Promise<void>
+  readonly onSaved: () => void | Promise<void>
 }) {
   const { defaultCurrency } = useAppSettings()
   const [open, setOpen] = useState(false)
@@ -63,11 +81,15 @@ export function AddBeanPurchaseDialog({
   const imageUpload = useImageUpload()
 
   const reset = () => {
-    setRoastDate('')
-    setWeight('')
-    setPrice('')
-    setCurrency(defaultCurrency)
-    setShopUrl('')
+    setRoastDate(
+      purchase?.roastDate
+        ? new Date(purchase.roastDate).toISOString().slice(0, 10)
+        : '',
+    )
+    setWeight(purchase?.initialWeightGrams ?? '')
+    setPrice(purchase?.price ?? '')
+    setCurrency(purchase?.priceCurrency ?? defaultCurrency)
+    setShopUrl(purchase?.shopUrl ?? '')
     setCreatedPurchaseId(null)
     setUploadFailures([])
     imageUpload.clearImages()
@@ -116,30 +138,35 @@ export function AddBeanPurchaseDialog({
   const save = async () => {
     setSaving(true)
     try {
-      const purchase = await createBeanPurchase({
-        data: {
-          beanId,
-          roastDate: roastDate ? new Date(roastDate) : null,
-          initialWeightGrams: weight || null,
-          price: price || null,
-          priceCurrency: currency,
-          shopUrl: shopUrl || null,
-          isArchived: false,
-        },
-      })
-      setCreatedPurchaseId(purchase.id)
+      const values = {
+        beanId,
+        roastDate: roastDate ? new Date(roastDate) : null,
+        initialWeightGrams: weight || null,
+        price: price || null,
+        priceCurrency: currency,
+        shopUrl: shopUrl || null,
+      }
+      const savedPurchase = purchase
+        ? await updateBeanPurchase({ data: { ...values, id: purchase.id } })
+        : await createBeanPurchase({ data: { ...values, isArchived: false } })
+      setCreatedPurchaseId(savedPurchase.id)
       const uploadResult = await uploadEntityImages(
         'bean-purchases',
-        purchase.id,
+        savedPurchase.id,
         imageUpload.images,
       )
       imageUpload.removeImages(uploadResult.uploaded)
       setUploadFailures(uploadResult.failures)
-      await onCreated()
-      toast.success('Bag added')
+      await onSaved()
+      toast.success(purchase ? 'Bag updated' : 'Bag added')
       if (uploadResult.failures.length === 0) finish()
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Could not add this bag'))
+      toast.error(
+        getErrorMessage(
+          error,
+          purchase ? 'Could not update this bag' : 'Could not add this bag',
+        ),
+      )
     } finally {
       setSaving(false)
     }
@@ -156,7 +183,7 @@ export function AddBeanPurchaseDialog({
       )
       imageUpload.removeImages(result.uploaded)
       setUploadFailures(result.failures)
-      if (result.uploaded.length > 0) await onCreated()
+      if (result.uploaded.length > 0) await onSaved()
       if (result.failures.length === 0) finish()
     } finally {
       setIsRetryingPictures(false)
@@ -177,20 +204,24 @@ export function AddBeanPurchaseDialog({
     <Dialog
       open={open}
       onOpenChange={(nextOpen) => {
+        if (saving || isExtracting || isRetryingPictures) return
+        reset()
         setOpen(nextOpen)
-        if (!nextOpen) reset()
       }}
     >
-      <DialogTrigger render={<Button size="sm" />}>
-        <Plus />
-        Add another bag
+      <DialogTrigger
+        render={<Button size="sm" variant={purchase ? 'outline' : 'default'} />}
+      >
+        {purchase ? <Pencil /> : <Plus />}
+        {purchase ? 'Edit bag' : 'Add another bag'}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add another bag</DialogTitle>
+          <DialogTitle>{purchase ? 'Edit bag' : 'Add another bag'}</DialogTitle>
           <DialogDescription>
-            Record the new roast and purchase details for {beanName}. Existing
-            brew history stays attached to the same coffee.
+            {purchase
+              ? `Update the bag details for ${beanName}. Brew history stays linked to this bag. Picture changes are saved immediately.`
+              : `Record the new roast and purchase details for ${beanName}. Existing brew history stays attached to the same coffee.`}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="space-y-5">
@@ -237,7 +268,7 @@ export function AddBeanPurchaseDialog({
                   value={weight}
                   onChange={setWeight}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 sm:col-span-2">
                   <CurrencyInputField
                     id="new-bag-price"
                     label="Price"
@@ -255,6 +286,7 @@ export function AddBeanPurchaseDialog({
                   />
                 </div>
                 <InputField
+                  className="sm:col-span-2"
                   id="new-bag-shop"
                   label="Shop URL"
                   type="url"
@@ -262,45 +294,61 @@ export function AddBeanPurchaseDialog({
                   onChange={setShopUrl}
                 />
               </div>
-              <EntityImageUploadSection
-                upload={imageUpload}
-                prompt="Add pictures of this bag"
-                previewAltPrefix="Bag"
-                helperText={
-                  visionEnabled
-                    ? 'AI can read the roast date and bag weight'
-                    : undefined
-                }
-                isBusy={saving}
-                statusText={saving ? 'Saving bag pictures' : undefined}
-                footer={
-                  visionEnabled ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={extractDetails}
-                      disabled={isExtracting || imageUpload.images.length === 0}
-                    >
-                      {isExtracting ? (
-                        <Loader2 className="animate-spin" />
-                      ) : (
-                        <Sparkles />
-                      )}
-                      {isExtracting ? 'Reading…' : 'Extract bag details'}
-                    </Button>
-                  ) : undefined
-                }
-              />
+              {purchase ? (
+                <EntityImageGallery
+                  entityType="bean-purchases"
+                  entityId={purchase.id}
+                  images={images}
+                  onImagesChange={onSaved}
+                  editable
+                />
+              ) : (
+                <EntityImageUploadSection
+                  upload={imageUpload}
+                  prompt="Add pictures of this bag"
+                  previewAltPrefix="Bag"
+                  helperText={
+                    visionEnabled
+                      ? 'AI can read the roast date and bag weight'
+                      : undefined
+                  }
+                  isBusy={saving}
+                  statusText={saving ? 'Saving bag pictures' : undefined}
+                  footer={
+                    visionEnabled ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={extractDetails}
+                        disabled={
+                          isExtracting || imageUpload.images.length === 0
+                        }
+                      >
+                        {isExtracting ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <Sparkles />
+                        )}
+                        {isExtracting ? 'Reading…' : 'Extract bag details'}
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              )}
             </>
           )}
         </DialogBody>
         {!createdPurchaseId ? (
           <DialogFooter>
-            <Button variant="outline" onClick={finish}>
+            <Button
+              variant="outline"
+              onClick={finish}
+              disabled={saving || isExtracting}
+            >
               Cancel
             </Button>
             <Button onClick={save} disabled={saving || isExtracting}>
-              {saving ? 'Adding…' : 'Add bag'}
+              {saving ? 'Saving…' : purchase ? 'Save changes' : 'Add bag'}
             </Button>
           </DialogFooter>
         ) : null}

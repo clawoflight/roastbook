@@ -13,6 +13,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { AiActionHelp } from '@/components/ai-action-help'
 import { BeanFields } from '@/components/beans/bean-fields'
 import type { BeanFormValues } from '@/components/beans/bean-form-values'
+import { BeanPurchaseDialog } from '@/components/beans/bean-purchase-dialog'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
 import {
   type EntityImage,
@@ -381,7 +382,7 @@ export function BeanReadOnlyContent({
               return (
                 <div
                   key={purchase.id}
-                  className="grid gap-2 rounded-lg border p-3 sm:grid-cols-4"
+                  className="grid gap-3 rounded-lg border p-3 sm:grid-cols-3"
                 >
                   <div>
                     <p className="text-xs text-muted-foreground">Roast date</p>
@@ -410,7 +411,7 @@ export function BeanReadOnlyContent({
                         : '—'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 sm:justify-end">
+                  <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
                     <Badge variant="secondary">
                       {purchase.isArchived ? 'Past' : 'On shelf'}
                     </Badge>
@@ -424,6 +425,16 @@ export function BeanReadOnlyContent({
                         Shop
                       </a>
                     ) : null}
+                    <BeanPurchaseDialog
+                      beanId={bean.id}
+                      beanName={bean.name}
+                      visionEnabled={false}
+                      purchase={purchase}
+                      images={bean.images.filter(
+                        (image) => image.beanPurchaseId === purchase.id,
+                      )}
+                      onSaved={onImagesChange}
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
