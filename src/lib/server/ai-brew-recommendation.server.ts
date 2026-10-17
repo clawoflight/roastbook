@@ -13,6 +13,10 @@ import {
   type ShotRecommendationContext,
   shotRecommendationSchema,
 } from '@/lib/shot-recommendation'
+import {
+  buildShotRecommendationChatMessages,
+  type ShotRecommendationChatMessage,
+} from '@/lib/shot-recommendation-chat'
 
 export async function recommendShotFromHistory(
   context: ShotRecommendationContext,
@@ -54,6 +58,52 @@ export async function recommendShotFromHistory(
       ],
       stream: false,
     })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export async function answerShotRecommendationQuestion(
+  context: ShotRecommendationContext,
+  recommendation: ShotRecommendation,
+  conversation: readonly ShotRecommendationChatMessage[],
+): Promise<string> {
+  const config = getOpenAIConfig()
+  if (!config.apiKey) {
+    throw new Error('OPENAI_API_KEY is not configured')
+  }
+
+  const { systemPrompts, messages } = buildShotRecommendationChatMessages(
+    context,
+    recommendation,
+    conversation,
+  )
+  const requestLogId = await startAiRequestLog({
+    requestType: 'shot-recommendation-chat',
+    model: config.researchModel,
+    requestPayload: {
+      model: config.researchModel,
+      systemPrompts,
+      messages,
+      stream: false,
+    },
+  })
+  const abortController = new AbortController()
+  const timeout = setTimeout(() => abortController.abort(), 45_000)
+
+  try {
+    const { text } = await chat({
+      adapter: createAiAdapter(config.researchModel, config),
+      systemPrompts,
+      messages,
+      abortController,
+      middleware: [
+        createAiRequestLogMiddleware(requestLogId, config.researchModel),
+      ],
+      stream: false,
+    })
+    if (!text.trim()) throw new Error('The assistant returned an empty answer')
+    return text.trim()
   } finally {
     clearTimeout(timeout)
   }

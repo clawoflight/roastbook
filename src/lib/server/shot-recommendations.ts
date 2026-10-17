@@ -9,6 +9,7 @@ import {
   shots,
 } from '@/db/schema'
 import {
+  answerShotRecommendationQuestion,
   isResearchEnabled,
   recommendShotFromHistory,
 } from '@/lib/server/ai-operations.server'
@@ -23,8 +24,10 @@ import {
   haveSameAccessoryGear,
   isFocusedShotRecommendationRequest,
   type ShotRecommendationContext,
+  type ShotRecommendationRequest,
   shotRecommendationRequestSchema,
 } from '@/lib/shot-recommendation'
+import { shotRecommendationChatRequestSchema } from '@/lib/shot-recommendation-chat'
 
 const RECOMMENDATION_HISTORY_LIMIT = 50
 
@@ -185,167 +188,189 @@ export const checkShotRecommendationEnabled = createServerFn({
   method: 'GET',
 }).handler(async () => ({ enabled: isResearchEnabled() }))
 
-export const getShotRecommendation = createServerFn({ method: 'POST' })
-  .validator(shotRecommendationRequestSchema)
-  .handler(async ({ data: request }) => {
-    if (!isResearchEnabled()) {
-      throw new ShotRecommendationError('AI recommendations are not configured')
-    }
-
-    const setup = await resolveSetup(request)
-    const currentDraft = isFocusedShotRecommendationRequest(request)
-      ? null
-      : (request.currentDraft ?? null)
-    const candidateShots = await db.query.shots.findMany({
-      where: setupConditions(setup),
-      orderBy: [desc(shots.brewedAt), desc(shots.id)],
-      columns: { id: true },
-      with: { accessoryGearLinks: { columns: { gearId: true } } },
-    })
-    const matchingShots = candidateShots.filter((shot) =>
-      haveSameAccessoryGear(
-        shot.accessoryGearLinks.map((link) => link.gearId),
-        setup.accessoryGearIds,
-      ),
+async function loadRecommendationEvidence(request: ShotRecommendationRequest) {
+  const setup = await resolveSetup(request)
+  const currentDraft = isFocusedShotRecommendationRequest(request)
+    ? null
+    : (request.currentDraft ?? null)
+  const candidateShots = await db.query.shots.findMany({
+    where: setupConditions(setup),
+    orderBy: [desc(shots.brewedAt), desc(shots.id)],
+    columns: { id: true },
+    with: { accessoryGearLinks: { columns: { gearId: true } } },
+  })
+  const matchingShots = candidateShots.filter((shot) =>
+    haveSameAccessoryGear(
+      shot.accessoryGearLinks.map((link) => link.gearId),
+      setup.accessoryGearIds,
+    ),
+  )
+  if (matchingShots.length === 0 && !currentDraft) {
+    throw new ShotRecommendationError(
+      'No previous brews match this bean, method, and exact gear setup.',
     )
-    if (matchingShots.length === 0 && !currentDraft) {
-      throw new ShotRecommendationError(
-        'No previous brews match this bean, method, and exact gear setup.',
-      )
-    }
-    if (
-      setup.focusedShotId !== null &&
-      !matchingShots.some((shot) => shot.id === setup.focusedShotId)
-    ) {
-      throw new ShotRecommendationError(
-        'The selected brew no longer matches its recorded equipment setup.',
-      )
-    }
-
-    const includedIds = recommendationHistoryIds(
-      matchingShots,
-      setup.focusedShotId,
-      RECOMMENDATION_HISTORY_LIMIT,
+  }
+  if (
+    setup.focusedShotId !== null &&
+    !matchingShots.some((shot) => shot.id === setup.focusedShotId)
+  ) {
+    throw new ShotRecommendationError(
+      'The selected brew no longer matches its recorded equipment setup.',
     )
-    const gearIds = normalizedAccessoryIds(
-      [setup.machineId, setup.grinderId, setup.basketId]
-        .filter((id): id is number => id !== null)
-        .concat(setup.accessoryGearIds),
-    )
-    const [bean, purchase, brewingMethod, matchingHistory, selectedGear] =
-      await Promise.all([
-        db.query.beans.findFirst({
-          where: (beans, { eq }) => eq(beans.id, setup.beanId),
-          with: { roasterRef: true },
-        }),
-        setup.beanPurchaseId === null
-          ? Promise.resolve(null)
-          : db.query.beanPurchases.findFirst({
-              where: and(
-                eq(beanPurchases.id, setup.beanPurchaseId),
-                eq(beanPurchases.beanId, setup.beanId),
-              ),
-            }),
-        db.query.brewingMethods.findFirst({
-          where: eq(brewingMethods.id, setup.brewingMethodId),
-        }),
-        includedIds.length === 0
-          ? Promise.resolve([])
-          : db.query.shots.findMany({
-              where: inArray(shots.id, includedIds),
-              orderBy: [asc(shots.brewedAt), asc(shots.id)],
-              with: recommendationShotRelations,
-            }),
-        gearIds.length === 0
-          ? Promise.resolve([])
-          : db.query.gear.findMany({
-              where: inArray(gear.id, gearIds),
-              with: recommendationGearRelations,
-            }),
-      ])
-    if (!bean || !brewingMethod) {
-      throw new ShotRecommendationError(
-        'The bean or brewing method is no longer available.',
-      )
-    }
+  }
 
-    const gearById = new Map(selectedGear.map((item) => [item.id, item]))
-    const gearEvidence = (id: number | null) => {
-      if (id === null) return null
-      return recommendationGearEvidence(id, gearById.get(id))
-    }
-
-    const shotsEvidence = matchingHistory.map((shot) =>
-      recommendationShotEvidence(shot, brewingMethod.enabledParameters),
-    )
-    const focusedShot =
-      setup.focusedShotId === null
-        ? null
-        : (shotsEvidence.find((shot) => shot.id === setup.focusedShotId) ??
-          null)
-    if (setup.focusedShotId !== null && !focusedShot) {
-      throw new ShotRecommendationError(
-        'The selected brew could not be included in its recommendation history.',
-      )
-    }
-
-    const context: ShotRecommendationContext = {
-      bean: recommendationBeanEvidence(bean, purchase),
-      brewingMethod: {
-        id: brewingMethod.id,
-        name: brewingMethod.name,
-        description: brewingMethod.description,
-      },
-      exactGear: {
-        machineOrBrewer: gearEvidence(setup.machineId),
-        grinder: gearEvidence(setup.grinderId),
-        basket: gearEvidence(setup.basketId),
-        accessories: setup.accessoryGearIds.map(gearEvidence),
-      },
-      focusedShot,
-      currentDraft: currentDraft
-        ? {
-            parameters: Object.fromEntries(
-              Object.entries(currentDraft.parameters).filter(([key]) =>
-                brewingMethod.enabledParameters.includes(key),
-              ),
+  const includedIds = recommendationHistoryIds(
+    matchingShots,
+    setup.focusedShotId,
+    RECOMMENDATION_HISTORY_LIMIT,
+  )
+  const gearIds = normalizedAccessoryIds(
+    [setup.machineId, setup.grinderId, setup.basketId]
+      .filter((id): id is number => id !== null)
+      .concat(setup.accessoryGearIds),
+  )
+  const [bean, purchase, brewingMethod, matchingHistory, selectedGear] =
+    await Promise.all([
+      db.query.beans.findFirst({
+        where: (beans, { eq }) => eq(beans.id, setup.beanId),
+        with: { roasterRef: true },
+      }),
+      setup.beanPurchaseId === null
+        ? Promise.resolve(null)
+        : db.query.beanPurchases.findFirst({
+            where: and(
+              eq(beanPurchases.id, setup.beanPurchaseId),
+              eq(beanPurchases.beanId, setup.beanId),
             ),
-          }
-        : null,
-      enabledParameters: brewingMethod.enabledParameters,
+          }),
+      db.query.brewingMethods.findFirst({
+        where: eq(brewingMethods.id, setup.brewingMethodId),
+      }),
+      includedIds.length === 0
+        ? Promise.resolve([])
+        : db.query.shots.findMany({
+            where: inArray(shots.id, includedIds),
+            orderBy: [asc(shots.brewedAt), asc(shots.id)],
+            with: recommendationShotRelations,
+          }),
+      gearIds.length === 0
+        ? Promise.resolve([])
+        : db.query.gear.findMany({
+            where: inArray(gear.id, gearIds),
+            with: recommendationGearRelations,
+          }),
+    ])
+  if (!bean || !brewingMethod) {
+    throw new ShotRecommendationError(
+      'The bean or brewing method is no longer available.',
+    )
+  }
+
+  const gearById = new Map(selectedGear.map((item) => [item.id, item]))
+  const gearEvidence = (id: number | null) => {
+    if (id === null) return null
+    return recommendationGearEvidence(id, gearById.get(id))
+  }
+
+  const shotsEvidence = matchingHistory.map((shot) =>
+    recommendationShotEvidence(shot, brewingMethod.enabledParameters),
+  )
+  const focusedShot =
+    setup.focusedShotId === null
+      ? null
+      : (shotsEvidence.find((shot) => shot.id === setup.focusedShotId) ?? null)
+  if (setup.focusedShotId !== null && !focusedShot) {
+    throw new ShotRecommendationError(
+      'The selected brew could not be included in its recommendation history.',
+    )
+  }
+
+  const context: ShotRecommendationContext = {
+    bean: recommendationBeanEvidence(bean, purchase),
+    brewingMethod: {
+      id: brewingMethod.id,
+      name: brewingMethod.name,
+      description: brewingMethod.description,
+    },
+    exactGear: {
+      machineOrBrewer: gearEvidence(setup.machineId),
+      grinder: gearEvidence(setup.grinderId),
+      basket: gearEvidence(setup.basketId),
+      accessories: setup.accessoryGearIds.map(gearEvidence),
+    },
+    focusedShot,
+    currentDraft: currentDraft
+      ? {
+          parameters: Object.fromEntries(
+            Object.entries(currentDraft.parameters).filter(([key]) =>
+              brewingMethod.enabledParameters.includes(key),
+            ),
+          ),
+        }
+      : null,
+    enabledParameters: brewingMethod.enabledParameters,
+    matchingShotCount: matchingShots.length,
+    historyIncluded: matchingHistory.length,
+    historyTruncated: matchingShots.length > matchingHistory.length,
+    shotsOldestToNewest: shotsEvidence,
+  }
+
+  const gearNames = [
+    gearById.get(setup.machineId ?? -1)?.name,
+    gearById.get(setup.grinderId ?? -1)?.name,
+    gearById.get(setup.basketId ?? -1)?.name,
+    ...setup.accessoryGearIds.map((id) => gearById.get(id)?.name),
+  ].filter((name): name is string => Boolean(name))
+  const latestShot = matchingHistory.at(-1)
+  const focusedShotRecord =
+    setup.focusedShotId === null
+      ? null
+      : (matchingHistory.find((shot) => shot.id === setup.focusedShotId) ??
+        null)
+
+  return {
+    context,
+    basis: {
+      beanName: bean.name,
+      brewingMethodName: brewingMethod.name,
+      gearNames,
       matchingShotCount: matchingShots.length,
       historyIncluded: matchingHistory.length,
       historyTruncated: matchingShots.length > matchingHistory.length,
-      shotsOldestToNewest: shotsEvidence,
-    }
+      focusedShotAt: focusedShotRecord?.brewedAt ?? null,
+      latestShotAt: latestShot?.brewedAt ?? null,
+    },
+  }
+}
 
+function assertRecommendationEnabled() {
+  if (!isResearchEnabled()) {
+    throw new ShotRecommendationError('AI recommendations are not configured')
+  }
+}
+
+export const getShotRecommendation = createServerFn({ method: 'POST' })
+  .validator(shotRecommendationRequestSchema)
+  .handler(async ({ data: request }) => {
+    assertRecommendationEnabled()
+    const { context, basis } = await loadRecommendationEvidence(request)
     const recommendation = await withResourceLimits('shot-recommendation', () =>
       recommendShotFromHistory(context),
     )
-    const gearNames = [
-      gearById.get(setup.machineId ?? -1)?.name,
-      gearById.get(setup.grinderId ?? -1)?.name,
-      gearById.get(setup.basketId ?? -1)?.name,
-      ...setup.accessoryGearIds.map((id) => gearById.get(id)?.name),
-    ].filter((name): name is string => Boolean(name))
-    const latestShot = matchingHistory.at(-1)
-    const focusedShotRecord =
-      setup.focusedShotId === null
-        ? null
-        : (matchingHistory.find((shot) => shot.id === setup.focusedShotId) ??
-          null)
+    return { recommendation, basis }
+  })
 
-    return {
-      recommendation,
-      basis: {
-        beanName: bean.name,
-        brewingMethodName: brewingMethod.name,
-        gearNames,
-        matchingShotCount: matchingShots.length,
-        historyIncluded: matchingHistory.length,
-        historyTruncated: matchingShots.length > matchingHistory.length,
-        focusedShotAt: focusedShotRecord?.brewedAt ?? null,
-        latestShotAt: latestShot?.brewedAt ?? null,
-      },
-    }
+export const chatAboutShotRecommendation = createServerFn({ method: 'POST' })
+  .validator(shotRecommendationChatRequestSchema)
+  .handler(async ({ data }) => {
+    assertRecommendationEnabled()
+    const { context } = await loadRecommendationEvidence(data.request)
+    const reply = await withResourceLimits('shot-recommendation-chat', () =>
+      answerShotRecommendationQuestion(
+        context,
+        data.recommendation,
+        data.messages,
+      ),
+    )
+    return { reply }
   })

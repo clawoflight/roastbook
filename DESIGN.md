@@ -509,6 +509,12 @@ the workflow genuinely needs more room.
 - Change shared spacing in the primitive.
 - Reserve one-off padding for intentionally immersive workflows.
 
+A dialog that pairs a result with a conversation, such as the AI recommendation,
+is such a workflow. It gets a definite height so the chat cannot resize it, and
+splits its body into two panes from `lg`: the conversation on the left, with its
+input pinned below, and the result on the right. Below `lg` the panes become
+tabs, with the result first. Loading and error states keep the single-pane body.
+
 ### Responsive behavior
 
 - Use `100dvh`-aware dialog limits and preserve safe-area padding.
