@@ -171,7 +171,7 @@ function loadImage(url: string) {
 }
 
 /** The first page: what the document is, where it comes from, and how it is laid out. */
-function cover(
+async function cover(
   graph: SceneGraph,
   pageId: string,
   views: number,
@@ -242,6 +242,8 @@ function cover(
     20,
     400,
   )
+  // Wrapped lines need measured heights, or the next line overlaps them.
+  await checkLayout(graph, frame.id, new Map(), { fallBack: false })
 }
 
 const graph = new SceneGraph()
@@ -356,7 +358,7 @@ const components = extractComponents(
   measured,
 )
 // The cover leads; the library pages follow the views.
-cover(graph, firstPage.id, viewPages.length, components)
+await cover(graph, firstPage.id, viewPages.length, components)
 for (const name of ['Components', 'Primitives', 'Icons']) {
   const libraryPage = graph
     .getPages()
