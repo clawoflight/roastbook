@@ -8,6 +8,7 @@ import {
   addAiTokenUsage,
   EMPTY_AI_TOKEN_TOTALS,
 } from '@/lib/ai-token-usage'
+import { DEMO_MODE } from '@/lib/build-mode'
 import type { JsonValue } from '@/lib/json-value'
 import {
   getAiTelemetryPolicy,
@@ -97,13 +98,16 @@ async function updateLogSafely(
 
 export async function scrubExpiredAiRequestPayloads({
   force = false,
-  policy = getAiTelemetryPolicy(),
+  policy,
   now = new Date(),
 }: {
   force?: boolean
   policy?: ReturnType<typeof getAiTelemetryPolicy>
   now?: Date
 } = {}): Promise<number> {
+  if (DEMO_MODE) return 0
+  policy ??= getAiTelemetryPolicy()
+
   const hasDetailedPayload = sql<boolean>`(
     ${aiRequestLogs.requestPayload} <> ${JSON.stringify(REDACTED_AI_PAYLOAD)}::jsonb
     or ${aiRequestLogs.responsePayload} is not null
