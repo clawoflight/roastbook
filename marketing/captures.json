@@ -1,0 +1,63 @@
+[
+  {
+    "id": "brew",
+    "path": "/brews/1",
+    "width": 390,
+    "height": 844,
+    "heading": "Moonrise Lot 17"
+  },
+  {
+    "id": "brew-taste",
+    "path": "/brews/1",
+    "width": 390,
+    "height": 844,
+    "heading": "Moonrise Lot 17",
+    "focus": "Extraction"
+  },
+  {
+    "id": "beans",
+    "path": "/beans",
+    "width": 1280,
+    "height": 800,
+    "heading": "Beans"
+  },
+  {
+    "id": "bean",
+    "path": "/beans/1",
+    "width": 390,
+    "height": 844,
+    "heading": "Moonrise Lot 17",
+    "focus": "Bags"
+  },
+  {
+    "id": "stats",
+    "path": "/stats",
+    "width": 1280,
+    "height": 800,
+    "heading": "Statistics",
+    "scrollTo": "Brewing and quality trend"
+  },
+  {
+    "id": "stats-chart",
+    "path": "/stats",
+    "width": 768,
+    "height": 900,
+    "heading": "Statistics",
+    "focus": "Brewing and quality trend"
+  },
+  {
+    "id": "visit",
+    "path": "/visits/1",
+    "width": 390,
+    "height": 844,
+    "heading": null
+  },
+  {
+    "id": "places",
+    "path": "/places?display=map",
+    "width": 768,
+    "height": 1000,
+    "heading": "Caf\u00e9s",
+    "waitSelector": ".maplibregl-marker"
+  }
+]

@@ -1,0 +1,132 @@
+{
+  "brew": {
+    "path": "/brews/1",
+    "framing": "viewport",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:13:48.589Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "22f67aeae2024a68a3444df27641ad70936bea5bec2c42bf77c72b1481db2187",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nMoonrise Lot 17\n\nEspresso · 18/10/2026, 07:42\n\nAI Recommendation\nSave to recipe\nEdit\nExtraction\n\nDose\n\n18.20 g\n\nYield\n\n40.80 g\n\nRatio\n\n1:2.2\n\nTime\n\n29.00 s\n\nTarget time\n\n30.00 s\n\nGrind\n\n12\n\nTemperature\n\n93.0 °C\n\nTasting\n4/5\n\nBitterness\n\n2/5\n\nAcidity\n\n4/5\n\nSweetness\n\n4/5\n\nBody\n\n3/5\n\nAstringency / dryness\n\n1/5\nFruity\n\nNotes\n\nSweet, balanced, and easy to drink."
+  },
+  "brew-taste": {
+    "path": "/brews/1",
+    "framing": "focused element",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:13:50.683Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "45baba9050341757d400820c9ba619c8d16a9449dcf6f5e93f30d31491fcc90e",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nMoonrise Lot 17\n\nEspresso · 18/10/2026, 07:42\n\nAI Recommendation\nSave to recipe\nEdit\nExtraction\n\nDose\n\n18.20 g\n\nYield\n\n40.80 g\n\nRatio\n\n1:2.2\n\nTime\n\n29.00 s\n\nTarget time\n\n30.00 s\n\nGrind\n\n12\n\nTemperature\n\n93.0 °C\n\nTasting\n4/5\n\nBitterness\n\n2/5\n\nAcidity\n\n4/5\n\nSweetness\n\n4/5\n\nBody\n\n3/5\n\nAstringency / dryness\n\n1/5\nFruity\n\nNotes\n\nSweet, balanced, and easy to drink."
+  },
+  "beans": {
+    "path": "/beans",
+    "framing": "viewport",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:13:53.911Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "dd6866d0bc7694017cf2edcb17cee58f3937680c697597c6d58fada1f0fa9467",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCafé visits\nCafés\nMore\nNew\nBeans\n\nKeep track of the coffee beans you brew.\n\n5 coffees · 5 bags\n\nAdd beans\nOn shelf · 4\nLIGHT\n\nNORTHSTAR ROASTWORKS\n\nNorthwind Peaberry\n\nNorthwind Hills, Kisiwa Plateau · Washed\n29/09/2026\n250 g\nMEDIUM\n\nJUNIPER & COIL\n\nGlasshouse Bloom\n\nGlasshouse District, Verdant Reach · Washed\n03/10/2026\n250 g\nMEDIUM LIGHT\n\nQUIET CURRENT\n\nCoral Ridge Honey\n\nCoral Ridge, San Aurelio · Natural\n07/10/2026\n250 g\nLIGHT\n\nEMBER ATLAS\n\nMoonrise Lot 17\n\nMoonrise Valley, Luma Highlands · Washed\n11/10/2026\n250 g\nArchive (1)"
+  },
+  "bean": {
+    "path": "/beans/1",
+    "framing": "focused element",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:06.126Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "bb6705006b7fbc2d7bf95b21839163492fed24937db2474f2f5cb0e56525a29d",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nMoonrise Lot 17\n\nby Ember Atlas\n\nArchive\nAI Recommendation\nEdit\nLog a brew\nAdd another bag\nBags\n\nRoast date\n\n11/10/2026\n\nRemaining\n\n70 g\n\nPrice\n\n€14\n\nOn shelf\nEdit bag\nArchive\nOrigin\n\nCountry\n\nLuma Highlands\n\nRegion\n\nMoonrise Valley\n\nFarm/Producer\n\n-\n\nVariety\n\n-\n\nProcessing\n\nType\n\n-\n\nCaffeine\n\nRegular\n\nProcess\n\nWashed\n\nRoast Level\n\nLight\n\nRoast Date\n\n11/10/2026\n\nNotes\n\nA polished demo coffee with a clear, sweet specialty profile.\n\nEstimate\n70 g remaining\n28% of 250 g\nx\n\n179.7 g used across 10 brews\n\nTaste profile\n\nMost used taste tags across all shots\n\nFruity\n4\nFloral\n3\nChocolate\n2\nNutty\n1\nPictures\nBrew parameters over time\n10 brews\n\nDose & yield\n\n22/09/2026\n01/10/2026\n18/10/2026\n14\n21\n28\n35\n42\n\nGrind setting\n\n22/09/2026\n01/10/2026\n18/10/2026\n10.8\n11.7\n12.6\n13.5\n14.4\n\nBrew time\n\n22/09/2026\n01/10/2026\n18/10/2026\n24s\n26s\n28s\n30s\n32s\nBrew history\n\n18/10/2026\n\n4/5\n\n18.20 g → 40.80 g · 29.00 s\n\n17/10/2026\n\n4/5\n\n18.10 g → 40.20 g · 28.00 s\n\n11/10/2026\n\n4/5\n\n18.10 g → 39.60 g · 32.00 s\n\n07/10/2026\n\n4/5\n\n18.00 g → 39.20 g · 27.00 s\n\n06/10/2026\n\n4/5\n\n18.00 g → 38.50 g · 28.00 s\n\n01/10/2026\n\n5/5\n\n18.00 g → 38.80 g · 30.00 s\n\n01/10/2026\n\n4/5\n\n17.90 g → 38.10 g · 26.00 s\n\n23/09/2026\n\n3/5\n\n17.80 g → 37.40 g · 25.00 s\n\n22/09/2026\n\n3/5\n\n17.70 g → 36.80 g · 24.00 s\n\n22/09/2026\n\n2/5\n\n17.90 g → 38.00 g · 27.00 s\n\n24"
+  },
+  "stats": {
+    "path": "/stats",
+    "framing": "viewport",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:09.220Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "505225479aa173f656ab0235ab4c444ea33e6572d965e387e2b25e54f2326570",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCafé visits\nCafés\nMore\nNew\nStatistics\n\n19/09/2026–18/10/2026 · Calendar boundaries use UTC\n\nPeriod *\nLast 30 days\nBrewing method\nAll methods\nBean\nAll beans\nReset\nCoffee activity\n\n33 brews across 29 days in 2026. Busiest day: 22/09/2026 with 2 brews. Darker tiles mean more brews that day.\n\nJan\nFeb\nMar\nApr\nMay\nJun\nJul\nAug\nSep\nOct\nMon\nWed\nFri\nLess\nMore\n\nBrews\n\n33\n\n1.1/day · No comparable previous period\n\nBeans used\n\n0.6 kg\n\n4 beans · No comparable previous period\n\nAverage rating\n\n3.76/5\n\nNo comparable previous rating\n\nRated brews\n\n100%\n\n33 of 33 brews\n\nBrewing and quality trend\n\n33 brews across 30 days; 33 include a rating.\n\n24/09/2026\n02/10/2026\n10/10/2026\n18/10/2026\n0\n1\n2\n3\n4\n1\n2\n3\n4\n5\nRating distribution\n3.76/5\n\n33 rated brews; 22 are four or five stars.\n\n1\n2\n3\n4\n5\n0\n5\n10\n20\nBrewing parameters\nChoose one brewing method before comparing dose, ratio, yield, time, or consistency. Combining methods would make these values misleading.\nDial-in explorer\n\nObserved patterns only; ratings do not prove that a parameter caused the result.\n\nChoose both a brewing method and a bean to compare like-for-like brews.\nTaste profile\n\nThe most frequently recorded sensations and their average ratings.\n\nFruity\n3.78/5\n9\nx\nChocolate\n3.88/5\n8\nx\nFloral\n3.5/5\n8\nx\nNutty\n3.88/5\n8\nx\n\nExtraction map\n\nUnder\nOver\nStrong\nLight\nBrewing method mix\n\nA text summary accompanies the usage bars and average ratings.\n\nEspresso\n3.44/5\n18 brews\nx\nPour over\n4.13/5\n8 brews\nx\nAeroPress\n4.14/5\n7 brews\nx\nBrew rhythm\n\nTue morning is the busiest window with 5 brews. Times use UTC.\n\nCurrent streak\n\n28 days\n\nLongest streak\n\n28 days\n\nDay\tNight\tMorning\tAfternoon\tEvening\nMon\t–\t1\t3\t–\nTue\t–\t5\t–\t–\nWed\t–\t4\t1\t–\nThu\t–\t5\t–\t–\nFri\t–\t3\t2\t–\nSat\t–\t4\t–\t1\nSun\t–\t4\t–\t–\nChange statistics time zone\nMost used beans\n#1\nMoonrise Lot 17\nx\n10 brews\n#2\nCoral Ridge Honey\nx\n8 brews\n#3\nNorthwind Peaberry\nx\n8 brews\n#4\nGlasshouse Bloom\nx\n7 brews\nHighest rated beans\n#1\nGlasshouse Bloom\n\n7 rated brews\n\n4.14/5\n#2\nNorthwind Peaberry\n\n8 rated brews\n\n4.13/5\n#3\nMoonrise Lot 17\n\n10 rated brews\n\n3.7/5\n#4\nCoral Ridge Honey\n\n8 rated brews\n\n3.13/5\nCoffee exploration\n\nUsage and average rating across the bean metadata already in your journal.\n\nRoasters\nEmber Atlas\n3.7/5\n10\nx\nNorthstar Roastworks\n4.13/5\n8\nx\nQuiet Current\n3.13/5\n8\nx\nJuniper & Coil\n4.14/5\n7\nx\nOrigins\nLuma Highlands\n3.7/5\n10\nx\nKisiwa Plateau\n4.13/5\n8\nx\nSan Aurelio\n3.13/5\n8\nx\nVerdant Reach\n4.14/5\n7\nx\nProcesses\nWashed\n3.96/5\n25\nx\nNatural\n3.13/5\n8\nx\nRoast levels\nlight\n3.89/5\n18\nx\nmedium_light\n3.13/5\n8\nx\nmedium\n4.14/5\n7\nx\nDays after roast\n0–6 days\n3.75/5\n8\nx\n15–30 days\n4/5\n1\nx\n7–14 days\n4.13/5\n8\nx\nVisits & cafés\nCafé habits across 4 saved cafés in the selected period\nView visits\n\nVisits\n\n10\n\n+400% vs previous period\n\nCafés explored\n\n4\n\n0 saved favorites\n\nAverage rating\n\n3.9/5\n\n10 rated visits\n\nLongest visit streak\n\n1 days\n\n1-day current streak\n\nVisit trend\n\n10 visits are distributed across the visible periods.\n\n20/09/2026\n23/09/2026\n26/09/2026\n29/09/2026\n02/10/2026\n05/10/2026\n08/10/2026\n11/10/2026\n14/10/2026\n18/10/2026\n0\n1\n2\n3\n4\nMost visited cafés\n#1\nLantern RoomParis\n4/5\n3 visits\nx\n#2\nSoft Current CaféParis\n4/5\n3 visits\nx\n#3\nDaybreak CounterParis\n3.5/5\n2 visits\nx\n#4\nMoss & MetricParis\n4/5\n2 visits\nx\nDrink types\n#1\nEspresso\n4/5\n3\n#2\nFlat White\n4/5\n3\n#3\nCappuccino\n3.5/5\n2\n#4\nFilter\n4/5\n2\nCities\n#1\nParis\n10\nVisit taste tags\n\nNo data in this period.\n\nCoffee cost\n\nCurrencies remain separate. Home cost is estimated from bag price, bag weight, and recorded dose.\n\nHome brewing\n\n€36.22\n\n€1.10 per covered brew · 33 brews\n\nCafé visits\n\n€41.50\n\n€4.15 per priced visit · 10 visits\n\nBrewer usage\n\nArc & Ember Aurora One: 18 · Hario V60 02: 8 · AeroPress Clear: 7\n\n0\n5\n10\n15\n20\nArc & EmberAurora One\nHario V60 02\nAeroPressClear\nGrinder usage\n\nQuiet Mechanics Orbit Mill: 18 · Fieldwork Coffee Cinder Hand Mill: 15\n\n0\n5\n10\n15\n20\nQuietMechanicsOrbit Mill\nFieldworkCoffee CinderHand Mill\nAccessory usage\n\nNorthline Instruments Mica Scale: 33 · Foundry Tools High Flow 18g: 18 · Foundry Tools Presswell 58.5: 18\n\n0\n9\n18\n27\n36\nNorthlineInstrumentsMica Scale\nFoundry ToolsHigh Flow 18g\nFoundry ToolsPresswell 58.5\nQuietMechanicsNeedle NineWDT\nFellow StaggEKG\nNorthline Instruments Mica Scale"
+  },
+  "stats-chart": {
+    "path": "/stats",
+    "framing": "focused element",
+    "viewport": {
+      "width": 768,
+      "height": 900
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:11.756Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "e6d3221a2b457a3db4a939ce3370e6f5e1595bafc846b77f0c9e2a33ad6ef33a",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nStatistics\n\n19/09/2026–18/10/2026 · Calendar boundaries use UTC\n\nPeriod *\nLast 30 days\nBrewing method\nAll methods\nBean\nAll beans\nReset\nCoffee activity\n\n33 brews across 29 days in 2026. Busiest day: 22/09/2026 with 2 brews. Darker tiles mean more brews that day.\n\nJan\nFeb\nMar\nApr\nMay\nJun\nJul\nAug\nSep\nOct\nMon\nWed\nFri\nLess\nMore\n\nBrews\n\n33\n\n1.1/day · No comparable previous period\n\nBeans used\n\n0.6 kg\n\n4 beans · No comparable previous period\n\nAverage rating\n\n3.76/5\n\nNo comparable previous rating\n\nRated brews\n\n100%\n\n33 of 33 brews\n\nBrewing and quality trend\n\n33 brews across 30 days; 33 include a rating.\n\n20/09/2026\n27/09/2026\n04/10/2026\n11/10/2026\n18/10/2026\n0\n1\n2\n3\n4\n1\n2\n3\n4\n5\nRating distribution\n3.76/5\n\n33 rated brews; 22 are four or five stars.\n\n1\n2\n3\n4\n5\n0\n5\n10\n20\nBrewing parameters\nChoose one brewing method before comparing dose, ratio, yield, time, or consistency. Combining methods would make these values misleading.\nDial-in explorer\n\nObserved patterns only; ratings do not prove that a parameter caused the result.\n\nChoose both a brewing method and a bean to compare like-for-like brews.\nTaste profile\n\nThe most frequently recorded sensations and their average ratings.\n\nFruity\n3.78/5\n9\nx\nChocolate\n3.88/5\n8\nx\nFloral\n3.5/5\n8\nx\nNutty\n3.88/5\n8\nx\n\nExtraction map\n\nUnder\nOver\nStrong\nLight\nBrewing method mix\n\nA text summary accompanies the usage bars and average ratings.\n\nEspresso\n3.44/5\n18 brews\nx\nPour over\n4.13/5\n8 brews\nx\nAeroPress\n4.14/5\n7 brews\nx\nBrew rhythm\n\nTue morning is the busiest window with 5 brews. Times use UTC.\n\nCurrent streak\n\n28 days\n\nLongest streak\n\n28 days\n\nDay\tNight\tMorning\tAfternoon\tEvening\nMon\t–\t1\t3\t–\nTue\t–\t5\t–\t–\nWed\t–\t4\t1\t–\nThu\t–\t5\t–\t–\nFri\t–\t3\t2\t–\nSat\t–\t4\t–\t1\nSun\t–\t4\t–\t–\nChange statistics time zone\nMost used beans\n#1\nMoonrise Lot 17\nx\n10 brews\n#2\nCoral Ridge Honey\nx\n8 brews\n#3\nNorthwind Peaberry\nx\n8 brews\n#4\nGlasshouse Bloom\nx\n7 brews\nHighest rated beans\n#1\nGlasshouse Bloom\n\n7 rated brews\n\n4.14/5\n#2\nNorthwind Peaberry\n\n8 rated brews\n\n4.13/5\n#3\nMoonrise Lot 17\n\n10 rated brews\n\n3.7/5\n#4\nCoral Ridge Honey\n\n8 rated brews\n\n3.13/5\nCoffee exploration\n\nUsage and average rating across the bean metadata already in your journal.\n\nRoasters\nEmber Atlas\n3.7/5\n10\nx\nNorthstar Roastworks\n4.13/5\n8\nx\nQuiet Current\n3.13/5\n8\nx\nJuniper & Coil\n4.14/5\n7\nx\nOrigins\nLuma Highlands\n3.7/5\n10\nx\nKisiwa Plateau\n4.13/5\n8\nx\nSan Aurelio\n3.13/5\n8\nx\nVerdant Reach\n4.14/5\n7\nx\nProcesses\nWashed\n3.96/5\n25\nx\nNatural\n3.13/5\n8\nx\nRoast levels\nlight\n3.89/5\n18\nx\nmedium_light\n3.13/5\n8\nx\nmedium\n4.14/5\n7\nx\nDays after roast\n0–6 days\n3.75/5\n8\nx\n15–30 days\n4/5\n1\nx\n7–14 days\n4.13/5\n8\nx\nVisits & cafés\nCafé habits across 4 saved cafés in the selected period\nView visits\n\nVisits\n\n10\n\n+400% vs previous period\n\nCafés explored\n\n4\n\n0 saved favorites\n\nAverage rating\n\n3.9/5\n\n10 rated visits\n\nLongest visit streak\n\n1 days\n\n1-day current streak\n\nVisit trend\n\n10 visits are distributed across the visible periods.\n\n23/09/2026\n29/09/2026\n05/10/2026\n11/10/2026\n18/10/2026\n0\n1\n2\n3\n4\nMost visited cafés\n#1\nLantern RoomParis\n4/5\n3 visits\nx\n#2\nSoft Current CaféParis\n4/5\n3 visits\nx\n#3\nDaybreak CounterParis\n3.5/5\n2 visits\nx\n#4\nMoss & MetricParis\n4/5\n2 visits\nx\nDrink types\n#1\nEspresso\n4/5\n3\n#2\nFlat White\n4/5\n3\n#3\nCappuccino\n3.5/5\n2\n#4\nFilter\n4/5\n2\nCities\n#1\nParis\n10\nVisit taste tags\n\nNo data in this period.\n\nCoffee cost\n\nCurrencies remain separate. Home cost is estimated from bag price, bag weight, and recorded dose.\n\nHome brewing\n\n€36.22\n\n€1.10 per covered brew · 33 brews\n\nCafé visits\n\n€41.50\n\n€4.15 per priced visit · 10 visits\n\nBrewer usage\n\nArc & Ember Aurora One: 18 · Hario V60 02: 8 · AeroPress Clear: 7\n\n0\n5\n10\n15\n20\nArc & EmberAurora One\nHario V60 02\nAeroPressClear\nGrinder usage\n\nQuiet Mechanics Orbit Mill: 18 · Fieldwork Coffee Cinder Hand Mill: 15\n\n0\n5\n10\n15\n20\nQuietMechanicsOrbit Mill\nFieldworkCoffee CinderHand Mill\nAccessory usage\n\nNorthline Instruments Mica Scale: 33 · Foundry Tools High Flow 18g: 18 · Foundry Tools Presswell 58.5: 18\n\n0\n9\n18\n27\n36\nNorthlineInstrumentsMica Scale\nFoundry ToolsHigh Flow 18g\nFoundry ToolsPresswell 58.5\nQuietMechanicsNeedle NineWDT\nFellow StaggEKG\nNorthline Instruments Mica Scale"
+  },
+  "visit": {
+    "path": "/visits/1",
+    "framing": "viewport",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:15.257Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "824f70ab79b3aa421eca3a621bf98b9344fc5e02db88fe162a4126de56f14837",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\n\nCafé visit\n\nFlat White\n\n18/10/2026, 18:00\n3/5\n\nEdit\nDetails\n\nPrice\n\n€3.50\n\nBeans\n\nMoonrise Lot 17\nCafé\nLantern Room\n14 Passage Cuivré, Paris, France\nPrevious visits2\nFlat White\n4/5\n06/10/2026\nFlat White\n5/5\n24/09/2026\n\n© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles."
+  },
+  "places": {
+    "path": "/places?display=map",
+    "framing": "viewport",
+    "viewport": {
+      "width": 768,
+      "height": 1000
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:19.809Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "21d23aa645de4fab7314f3ac37be01978306d4f9062b7d42697d6f0c4e4f7a45",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nCafés\n\nManage 4 saved cafés\n\n4 cafés\n\nCafé lists\nAll · 4\nFavorites · 0\nWant to visit · 0\nCafé list view\nCards\nTable\nMap\nAdd café\n\n© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles."
+  },
+  "scan-before": {
+    "path": "/beans/new",
+    "framing": "viewport",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:22.344Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "ef7c8cc182ca5a3aae9cefb56d87eee7168eae0983a765a06ca1c0fd92c1d029",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nAdd beans\n\nAdd a new bag of coffee to your collection\n\nPictures\nAdd more pictures\nChoose existing photos\n\nImages up to 10 MB\n. Supported formats: JPG, PNG, WebP, HEIC, HEIF, GIF and AVIF.\n\nTake photo\nFrom URL\nAI can extract bean info from your pictures\n1 picture added\nExtract details with AI\nBasic info\nName *\nRoaster\nSelect roaster\nType\nSelect type\n\nCaffeine\n\nDecaf\nBag weight\ng\nPrice\n€\nCurrency\nEUR\nShop\nShop URL (optional)\nOrigin\nCountry\nRegion\nFarm/Producer\nVariety\nProcessing\nProcess\nSelect process\nRoast level\nSelect level\nRoast date\nSelect date\nNotes\nNotes\nCancel\nAdd beans"
+  },
+  "scan-result": {
+    "path": "/beans/new",
+    "framing": "focused element",
+    "viewport": {
+      "width": 768,
+      "height": 1000
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T18:14:27.830Z",
+    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
+    "sha256": "ecf5660c32d519ffc1bc6d1fd554130dc023a1f9582024f65b6148894a5e32d6",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nAdd beans\n\nAdd a new bag of coffee to your collection\n\nPictures\nAdd more pictures\nChoose, drop, or paste\n\nImages up to 10 MB\n. Supported formats: JPG, PNG, WebP, HEIC, HEIF, GIF and AVIF.\n\nFrom URL\nAI can extract bean info from your pictures\n1 picture added\nExtract details with AI\nBasic info\nName *\nRoaster\nSelect roaster\nType\nSelect type\n\nCaffeine\n\nDecaf\nBag weight\ng\nPrice\n€\nCurrency\nEUR\nShop\nShop URL (optional)\nOrigin\nCountry\nRegion\nFarm/Producer\nVariety\nProcessing\nProcess\nSelect process\nRoast level\nSelect level\nRoast date\nSelect date\nNotes\nNotes\nCancel\nAdd beans\nReview extracted info\n\n7 new fields · existing roaster to link\n\nName\nMoonrise Lot 17\nBag weight\n250 g\nCountry\nLuma Highlands\nRegion\nMoonrise Valley\nProcess\nwashed\nRoast Level\nlight\nNotes\nSAMPLE / FICTIONAL COFFEE\n\nExisting roaster found\n\nEMBER ATLAS\n\nYou'll confirm linking this coffee to the existing roaster.\n\nSelect all\nSelect none\nCancel\nApply 7 changes and link roaster\nClose"
+  }
+}

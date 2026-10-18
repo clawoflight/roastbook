@@ -302,6 +302,7 @@ running.
 | [Shottimer API](docs/shottimer.md) | Device integration endpoints |
 | [Design system](DESIGN.md) | Layout contract and UI conventions |
 | [Design files](design/README.md) | Editable OpenPencil views and editor |
+| [Instagram campaign studio](marketing/README.md) | Demo captures, AI scenes, carousel and video exports |
 | [Helm chart reference](charts/README.md) | Chart values and defaults |
 
 ## 📁 Project layout
@@ -315,6 +316,7 @@ src/lib/storage/     Local and S3-compatible storage providers
 src/db/              Drizzle schema and database connection
 drizzle/             Committed migrations and metadata
 charts/              Helm chart
+marketing/           Instagram campaign sources and production scripts
 ```
 
 > [!WARNING]

@@ -33,3 +33,8 @@ logs/
 
 # Serena MCP tool-local state
 .serena/
+
+# Rebuildable marketing exports and original image-generation output
+/marketing/exports/
+/output/imagegen/
+/marketing/__pycache__/

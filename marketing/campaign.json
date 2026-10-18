@@ -1,0 +1,71 @@
+{
+  "name": "Coffee worth remembering",
+  "version": 1,
+  "posts": [
+    {
+      "id": "01-perfect-espresso",
+      "title": "Remember your\nbest espresso.",
+      "eyebrow": "THE MORNING RITUAL",
+      "detail_title": "Keep the recipe.\nRemember the cup.",
+      "end_title": "Make the next cup\na little more yours.",
+      "body": "Dose, yield, time and taste.\nThe details worth remembering.",
+      "device": "phone",
+      "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: warm ivory limestone kitchen counter. At the left edge an espresso cup with dark crema on a small saucer, a bottomless portafilter angled near lower left, a folded oatmeal linen cloth. A cropped stainless steel espresso machine at far upper right. Keep the central-right 55 percent completely clear of objects, especially x 400-900 y 400-1400, to place a portrait phone. Beautiful lived-in home barista morning, intimate and calm.",
+      "captures": ["brew", "brew-taste"],
+      "caption": "That espresso you wish you could make again? Keep the dose, yield, time and what it tasted like. Roastbook gives your next cup a useful starting point.\n\nExplore the demo at roastbook.coffee, linked in our bio.\n\nScreens show fictional demo records. Scene created with AI.\n\n#Roastbook #HomeBarista #Espresso #CoffeeJournal",
+      "alt": "A phone displaying a real Roastbook espresso record beside a cup of espresso on a warm stone counter."
+    },
+    {
+      "id": "02-coffee-shelf",
+      "title": "Your coffee shelf\nhas a memory.",
+      "eyebrow": "EVERY BAG, EVERY BREW",
+      "detail_title": "One coffee.\nEvery bag.",
+      "end_title": "Find your next\nold favourite.",
+      "body": "Keep bag history and brew notes\nwith the coffee they belong to.",
+      "device": "tablet",
+      "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: oak coffee shelf styled as an overhead tabletop. Along far left edge stand-up paper coffee pouches with plain abstract ochre circles and forest-green botanical marks, no writing. A few scattered beans and a metal coffee scoop at lower right edge. A folded cream tea towel at bottom left. Keep the entire central rectangle from x 60 to 970 and y 430 to 1220 completely clear for a landscape tablet. Warm, organized, collected over time.",
+      "captures": ["beans", "bean"],
+      "caption": "Bought those beans again? Keep each bag with the same coffee profile, alongside its brew history. Roast dates and purchase details stay with the bag. Your notes stay easy to find.\n\nTry Roastbook at roastbook.coffee, linked in our bio.\n\nFictional demo records. Scene created with AI.\n\n#Roastbook #SpecialtyCoffee #CoffeeBeans #CoffeeJournal",
+      "alt": "A tablet showing Roastbook’s bean collection on an oak table surrounded by coffee bags and a scoop."
+    },
+    {
+      "id": "03-coffee-experiments",
+      "title": "What changed\nyour coffee?",
+      "eyebrow": "A LITTLE LESS GUESSWORK",
+      "detail_title": "Look back at\nyour experiments.",
+      "end_title": "Your brews.\nA clearer picture.",
+      "body": "Explore patterns in your brews.\nKeep taste part of the story.",
+      "device": "tablet",
+      "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: dark walnut home coffee workbench with small stainless dosing cup and coffee beans at far upper left, cropped matte black grinder at far right edge, a mechanical pencil and blank unlined notebook partly cropped at bottom left, small espresso cup at bottom right. Keep a wide central rectangle x 60 to 970 y 430 to 1220 completely empty for a landscape tablet. Subtle dramatic directional light, warm brown rather than black, premium coffee magazine photography.",
+      "captures": ["stats", "stats-chart"],
+      "caption": "Was it the beans, the method, or a setting you changed? Review your brew history and statistics to spot patterns worth exploring. A chart can help you ask the next question. Your taste decides the answer.\n\nExplore the demo at roastbook.coffee, linked in our bio.\n\nCharts contain fictional demo data. Scene created with AI.\n\n#Roastbook #CoffeeExperiment #HomeBarista #SpecialtyCoffee",
+      "alt": "A tablet showing actual Roastbook statistics on a walnut coffee workbench beside brewing tools."
+    },
+    {
+      "id": "04-cafe-journal",
+      "title": "Keep the café.\nNot just the photo.",
+      "eyebrow": "GOOD COFFEE, SOMEWHERE NEW",
+      "detail_title": "A place worth\nremembering.",
+      "end_title": "Take your coffee\njournal with you.",
+      "body": "Save the café, log the visit,\nand remember what you ordered.",
+      "device": "phone",
+      "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: round pale travertine outdoor café table, overhead view. Cappuccino with delicate rosetta latte art at far left center, linen napkin and small silver spoon near bottom left, partial butter croissant on ceramic plate at upper left edge, faint leafy shadows across bottom right. Keep central-right 55 percent clear, x 400-900 y 400-1400, for a portrait phone. Evoke a quiet European neighbourhood café, no signage, relaxed natural light.",
+      "captures": ["visit", "places"],
+      "caption": "A lovely flat white. A café you want to return to. Keep the visit, the drink and your notes together in Roastbook, then find your places again when you are planning the next stop.\n\nExplore roastbook.coffee, linked in our bio.\n\nCafés and visits shown are fictional demo records. Scene created with AI.\n\n#Roastbook #CafeHopping #CoffeeJournal #SpecialtyCoffee",
+      "alt": "A phone displaying a Roastbook café visit beside a cappuccino on a sunlit café table."
+    },
+    {
+      "id": "05-scan-the-bag",
+      "title": "Photograph the bag.\nKeep the details.",
+      "eyebrow": "LESS TYPING, MORE COFFEE",
+      "detail_title": "Read the label.\nReview the details.",
+      "end_title": "Your coffee story\nstarts with a bag.",
+      "body": "AI reads the label.\nYou review the fields before saving.",
+      "device": "phone",
+      "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: pale warm beige coffee preparation counter. An unbranded kraft coffee pouch lies flat at far left, with a large completely blank cream rectangular label on its face; no text. A small wooden bowl of coffee beans cropped at bottom left and linen cloth in far upper left. Keep central-right 55 percent completely clear, x 400-900 y 400-1400, for a portrait phone. Bright soft studio daylight, tactile paper and stone, editorial simplicity.",
+      "captures": ["scan-before", "scan-result"],
+      "caption": "Photograph a coffee label and let Roastbook extract the details. Review the suggested fields before anything is saved.\n\nThis post shows a real extraction from a fictional sample label in a seeded local instance. AI features require an API key when self-hosting; the public demo is read-only.\n\nExplore roastbook.coffee, linked in our bio.\n\nScene created with AI.\n\n#Roastbook #CoffeeBeans #HomeBarista #CoffeeJournal",
+      "alt": "A phone showing Roastbook’s label-scanning form beside a sample coffee bag on a cream counter."
+    }
+  ]
+}
