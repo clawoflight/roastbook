@@ -136,16 +136,18 @@ def make_video(folder):
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     command = [ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-filter_complex_threads', '1']
     for i in range(1, 4):
-        command += ['-loop', '1', '-framerate', '30', '-i', str(folder / f'reel-{i:02}.png')]
+        command += ['-i', str(folder / f'reel-{i:02}.png')]
+    command += ['-i', str(ASSETS / 'music/jazz-slower.mp3')]
     filters = [
-        f"[{i}:v]scale=1080:1920,trim=duration=5,setpts=PTS-STARTPTS,fps=30,settb=1/30,format=yuv420p[v{i}]"
+        f"[{i}:v]scale=4320:7680,zoompan=z='1+0.03*on/299':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=300:s=1080x1920:fps=60,trim=duration=5,setpts=PTS-STARTPTS,fps=60,settb=1/60,format=yuv420p[v{i}]"
         for i in range(3)
     ]
-    filters += ['[v0][v1]xfade=transition=fade:duration=0.5:offset=4.5,fps=30[v01]',
-                '[v01][v2]xfade=transition=fade:duration=0.5:offset=9[out]']
-    command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-t', '14',
+    filters += ['[v0][v1]xfade=transition=fade:duration=0.5:offset=4.5,fps=60[v01]',
+                '[v01][v2]xfade=transition=fade:duration=0.5:offset=9,fps=60[out]']
+    filters += ['[3:a]atrim=start=8:duration=14,asetpts=PTS-STARTPTS,loudnorm=I=-22:TP=-2:LRA=7,afade=t=in:d=0.7,afade=t=out:st=12.5:d=1.5[audio]']
+    command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-map', '[audio]', '-t', '14',
                 '-c:v', 'libx264', '-threads', '2', '-preset', 'fast', '-crf', '20',
-                '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', str(folder / 'reel.mp4')]
+                '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', str(folder / 'reel.mp4')]
     subprocess.run(command, check=True)
 
 
@@ -169,7 +171,7 @@ def bundle(output, posts):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--video', action='store_true', help='Also encode the five silent Reels')
+    parser.add_argument('--video', action='store_true', help='Also encode the five Reels with CC0 music')
     args = parser.parse_args()
     campaign = json.loads((ROOT / 'campaign.json').read_text())
     provenance = json.loads((ASSETS / 'captures/provenance.json').read_text())
@@ -198,17 +200,17 @@ def main():
                    'ai_generated_scene': True, 'scene_prompt': post['scene_prompt']}
         if args.video:
             package['reel'] = {'path': f"{post['id']}/reel.mp4", 'sha256': digest(folder / 'reel.mp4'),
-                               'width': 1080, 'height': 1920, 'duration_seconds': 14, 'audio': 'none',
-                               'description': 'Animated stills with steady frames and smooth crossfades; not generated live-action footage.'}
+                               'width': 1080, 'height': 1920, 'duration_seconds': 14, 'audio': {'title': 'Jazz Slower', 'creator': 'Alex McCulloch', 'license': 'CC0-1.0', 'source': 'https://opengameart.org/content/jazz-slower'},
+                               'description': 'Animated stills with 60 fps supersampled slow zooms and crossfades; not generated live-action footage.'}
         (folder / 'post.json').write_text(json.dumps(package, indent=2, ensure_ascii=False) + '\n')
         packages.append(package)
         media_html = ''.join(f'<a href="{post["id"]}/carousel-{i:02}.png" download><img src="{post["id"]}/carousel-{i:02}.png" alt="{html.escape(media[i-1]["alt"])}" loading="lazy"></a>' for i in range(1, 4))
         video = f'<video controls preload="none" poster="{post["id"]}/reel-01.png" src="{post["id"]}/reel.mp4"></video>' if args.video else ''
-        status = 'DRAFT · Carousel + 14-second silent Reel' if args.video else 'DRAFT · Carousel preview'
+        status = 'DRAFT · Carousel + 14-second Reel with CC0 music' if args.video else 'DRAFT · Carousel preview'
         cards.append(f'<section><h2>{html.escape(post["title"].replace(chr(10), " "))}</h2><p class="tag">{status}</p><div class="slides">{media_html}</div><details><summary>Video, caption and publishing package</summary><div class="details">{video}<div><pre>{html.escape(post["caption"])}</pre><p><a href="{post["id"]}/reel.mp4" download>Download Reel</a> · <a href="{post["id"]}/caption.txt" download>Caption</a> · <a href="{post["id"]}/post.json" download>Post metadata</a></p></div></div></details></section>')
         print(f"Rendered {post['id']}", flush=True)
     (output / 'campaign.json').write_text(json.dumps({'name': campaign['name'], 'posts': packages}, indent=2, ensure_ascii=False) + '\n')
-    page = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Roastbook campaign review</title><style>body{margin:0;background:#f6efe3;color:#38291f;font:17px system-ui;line-height:1.5}main{max-width:1240px;margin:auto;padding:40px 24px}h1{font-size:clamp(32px,5vw,64px);line-height:1.05;max-width:850px}h2{font-size:28px}.tag{font-size:12px;letter-spacing:.1em;color:#854623}section{padding:28px 0 40px;border-top:1px solid #d5c6b4}.slides{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}img{display:block;width:100%;border-radius:12px}a{color:inherit}details{margin-top:24px}summary{cursor:pointer;padding:12px 0;min-height:24px}.details{display:flex;gap:28px;padding-top:20px}video{width:260px;max-width:100%;border-radius:12px}pre{white-space:pre-wrap;font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid #a75c2e;outline-offset:5px}@media(max-width:600px){main{padding:24px 16px}.slides{grid-template-columns:1fr}.details{display:block}video{width:100%}}</style><main><p>ROASTBOOK / CAMPAIGN 01</p><p><a href="roastbook-campaign.zip" download>Download the complete campaign</a></p><h1>Coffee worth remembering.</h1><p>Five concepts. Real app captures. AI-generated surroundings. All posts are drafts for review; nothing has been published.</p><p>Carousels: 1080 × 1350. Reels: 1080 × 1920, silent, 14 seconds. Click a slide to download it.</p>' + ''.join(cards) + '</main></html>'
+    page = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Roastbook campaign review</title><style>body{margin:0;background:#f6efe3;color:#38291f;font:17px system-ui;line-height:1.5}main{max-width:1240px;margin:auto;padding:40px 24px}h1{font-size:clamp(32px,5vw,64px);line-height:1.05;max-width:850px}h2{font-size:28px}.tag{font-size:12px;letter-spacing:.1em;color:#854623}section{padding:28px 0 40px;border-top:1px solid #d5c6b4}.slides{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}img{display:block;width:100%;border-radius:12px}a{color:inherit}details{margin-top:24px}summary{cursor:pointer;padding:12px 0;min-height:24px}.details{display:flex;gap:28px;padding-top:20px}video{width:260px;max-width:100%;border-radius:12px}pre{white-space:pre-wrap;font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid #a75c2e;outline-offset:5px}@media(max-width:600px){main{padding:24px 16px}.slides{grid-template-columns:1fr}.details{display:block}video{width:100%}}</style><main><p>ROASTBOOK / CAMPAIGN 01</p><p><a href="roastbook-campaign.zip" download>Download the complete campaign</a></p><h1>Coffee worth remembering.</h1><p>Five concepts. Real app captures. AI-generated surroundings. All posts are drafts for review; nothing has been published.</p><p>Carousels: 1080 × 1350. Reels: 1080 × 1920, CC0 jazz soundtrack, 14 seconds. Click a slide to download it.</p>' + ''.join(cards) + '</main></html>'
     (output / 'index.html').write_text(page)
     bundle(output, packages)
 

@@ -33,16 +33,8 @@ for post in campaign['posts']:
     assert info['size'] == (1080, 1920), info
     assert abs(info['duration'] - 14) < 0.1, info
     assert info['codec'] == 'h264', info
-    assert info['fps'] == 30, info
-    held_frames = subprocess.run([
-        imageio_ffmpeg.get_ffmpeg_exe(), '-v', 'error', '-i', str(video),
-        '-vf', 'select=eq(n\\,30)+eq(n\\,90),scale=108:192',
-        '-fps_mode', 'passthrough', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'
-    ], check=True, capture_output=True).stdout
-    frame_bytes = 108 * 192 * 3
-    assert len(held_frames) == frame_bytes * 2
-    difference = sum(abs(a - b) for a, b in zip(held_frames[:frame_bytes], held_frames[frame_bytes:])) / frame_bytes
-    assert difference < 0.2, f'Camera moved during the reading hold: {difference}'
+    assert info['fps'] == 60, info
+    assert info.get('audio_codec') == 'aac', info
     subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), '-v', 'error', '-xerror', '-i', str(video),
                     '-f', 'null', '-'], check=True)
     print(f"Verified {post['id']}: 3 images and 14-second H.264 Reel")

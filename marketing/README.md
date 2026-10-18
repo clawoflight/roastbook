@@ -1,7 +1,7 @@
 # Roastbook campaign studio
 
 Five Instagram concepts live in `campaign.json`. Each produces three 1080 × 1350
-carousel slides, three 1080 × 1920 video frames, an 14-second silent H.264 Reel,
+carousel slides, three 1080 × 1920 video frames, an 14-second H.264 Reel with CC0 jazz,
 a caption, alt text, and a draft publishing manifest. The review gallery is
 `exports/index.html`.
 
@@ -140,9 +140,9 @@ adapter should consume an explicitly reviewed package, upload the media, and
 record the platform result. Keep approval and publishing separate from rendering.
 No credentials or account IDs belong in the manifest.
 
-Videos animate real stills with steady frames and smooth crossfades. They do not simulate
-clicks or claim to be generated live-action footage. Audio is absent so licensed
-music can be selected in Instagram. Captions disclose fictional demo data and
+Videos animate real stills with 60 fps slow zooms and smooth crossfades. They do not simulate
+clicks or claim to be generated live-action footage. Audio uses “Jazz Slower” by Alex McCulloch, released under CC0.
+The source and license are recorded in `assets/music/LICENSE.md`. Captions disclose fictional demo data and
 AI-generated surroundings. Post 5 also explains that AI requires an API key when
 self-hosting and is disabled in the public demo. Confirm that the Instagram bio
 actually links to the demo before using the supplied captions.
@@ -156,4 +156,6 @@ photo with printed fictional packaging. Its prompt is in
 `prompts/coffee-bag.txt`. The extraction fixture remains `sample-label.jpg`
 to preserve the provenance of the real captured extraction. All displayed
 campaign URLs use `www.roastbook.coffee`. Reels hold each card for five seconds
-with half-second crossfades; the camera stays still so UI and text stay sharp.
+with half-second crossfades; a 4× source canvas gives the gentle zoom subpixel movement, avoiding
+whole-pixel stepping at delivery resolution. Audio is mixed at a quiet level
+with entry and exit fades.
