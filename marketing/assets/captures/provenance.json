@@ -92,16 +92,23 @@
   },
   "places": {
     "path": "/places?display=map",
-    "framing": "viewport",
+    "framing": "focused element",
     "viewport": {
       "width": 768,
       "height": 1000
     },
     "source": "canonical demo fixtures in isolated PostgreSQL",
-    "capturedAt": "2026-10-18T18:14:19.809Z",
-    "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
-    "sha256": "21d23aa645de4fab7314f3ac37be01978306d4f9062b7d42697d6f0c4e4f7a45",
-    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nCafés\n\nManage 4 saved cafés\n\n4 cafés\n\nCafé lists\nAll · 4\nFavorites · 0\nWant to visit · 0\nCafé list view\nCards\nTable\nMap\nAdd café\n\n© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles."
+    "capturedAt": "2026-10-18T20:16:24.681Z",
+    "revision": "f3ed19bb6defec5fa2075054cfa7716ee91e9780",
+    "visibleCafes": [
+      "Saved café: Lantern Room, 14 Passage Cuivré",
+      "Saved café: Soft Current Café, 8 Rue du Courant Doux",
+      "Saved café: Moss & Metric, 22 Galerie des Fougères",
+      "Saved café: Daybreak Counter, 5 Allée de l’Aube"
+    ],
+    "selectedCafe": "Saved café: Lantern Room, 14 Passage Cuivré",
+    "sha256": "f8d631f6bb977b5254a9655564fe3e6baa1d030b00869e38a1ea083476f66899",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nCafés\n\nManage 4 saved cafés\n\n4 cafés\n\nCafé lists\nAll · 4\nFavorites · 0\nWant to visit · 0\nCafé list view\nCards\nTable\nMap\nAdd café\n\nLantern Room\nSaved\n\n14 Passage Cuivré\n\n3 visits\nView café\nLog visit\nMap details\n\n© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles."
   },
   "scan-before": {
     "path": "/beans/new",
@@ -128,5 +135,24 @@
     "revision": "98f5a8799eb3233337290bf8aee22433b38d9bba",
     "sha256": "ecf5660c32d519ffc1bc6d1fd554130dc023a1f9582024f65b6148894a5e32d6",
     "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nAdd beans\n\nAdd a new bag of coffee to your collection\n\nPictures\nAdd more pictures\nChoose, drop, or paste\n\nImages up to 10 MB\n. Supported formats: JPG, PNG, WebP, HEIC, HEIF, GIF and AVIF.\n\nFrom URL\nAI can extract bean info from your pictures\n1 picture added\nExtract details with AI\nBasic info\nName *\nRoaster\nSelect roaster\nType\nSelect type\n\nCaffeine\n\nDecaf\nBag weight\ng\nPrice\n€\nCurrency\nEUR\nShop\nShop URL (optional)\nOrigin\nCountry\nRegion\nFarm/Producer\nVariety\nProcessing\nProcess\nSelect process\nRoast level\nSelect level\nRoast date\nSelect date\nNotes\nNotes\nCancel\nAdd beans\nReview extracted info\n\n7 new fields · existing roaster to link\n\nName\nMoonrise Lot 17\nBag weight\n250 g\nCountry\nLuma Highlands\nRegion\nMoonrise Valley\nProcess\nwashed\nRoast Level\nlight\nNotes\nSAMPLE / FICTIONAL COFFEE\n\nExisting roaster found\n\nEMBER ATLAS\n\nYou'll confirm linking this coffee to the existing roaster.\n\nSelect all\nSelect none\nCancel\nApply 7 changes and link roaster\nClose"
+  },
+  "places-overview": {
+    "path": "/places?display=map",
+    "framing": "focused element",
+    "viewport": {
+      "width": 768,
+      "height": 1000
+    },
+    "source": "canonical demo fixtures in isolated PostgreSQL",
+    "capturedAt": "2026-10-18T20:16:15.504Z",
+    "revision": "f3ed19bb6defec5fa2075054cfa7716ee91e9780",
+    "visibleCafes": [
+      "Saved café: Lantern Room, 14 Passage Cuivré",
+      "Saved café: Soft Current Café, 8 Rue du Courant Doux",
+      "Saved café: Moss & Metric, 22 Galerie des Fougères",
+      "Saved café: Daybreak Counter, 5 Allée de l’Aube"
+    ],
+    "sha256": "d131a13fb30c072cb57aea320fffff37022625626b4110b7eeff2ef215b3fa1b",
+    "text": "Skip to content\nRoastbook\nBrews\nBeans\nCreate\nCafé visits\nMore\nCafés\n\nManage 4 saved cafés\n\n4 cafés\n\nCafé lists\nAll · 4\nFavorites · 0\nWant to visit · 0\nCafé list view\nCards\nTable\nMap\nAdd café\n\n© OpenStreetMap contributors · OpenFreeMap · © OpenMapTiles."
   }
 }

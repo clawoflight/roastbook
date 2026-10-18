@@ -23,7 +23,9 @@ uv pip install --python .artifacts/marketing-venv/bin/python -r marketing/requir
 
 FFmpeg comes from the pinned `imageio-ffmpeg` wheel. Rendering uses the committed
 source screenshots and backgrounds, so this command needs neither a running app
-nor an API key. Run without `--video` to iterate on images only. Existing output
+nor an API key. Run without `--video` to iterate on images only. Use
+`--video --only 04-cafe-journal` to rebuild just the café concept and refresh the
+gallery, manifests, and archive without re-encoding the other Reels. Existing output
 files are replaced. Exported manifests always return to draft and unapproved.
 
 To review through a managed preview, check `vibepod-preview list` first and reuse
@@ -91,8 +93,14 @@ ROASTBOOK_URL=http://localhost:43361 bun marketing/capture.mjs
 `captures.json` defines the routes, viewport sizes, expected headings, and focused
 cards. Captures use light mode, UTC, an English locale, and 2× pixels. The script
 waits for fonts, images, and page readiness, records source hashes and the Git
-revision, and fails on failed requests or browser exceptions. It does not replace
-app text, fabricate results, or hide errors. Seed dates are relative to the date
+revision, and fails on failed requests or browser exceptions. Use `--only=places` to retake only the map. Its recipe checks that at least
+three unobscured café markers fit inside the map, saves an overview, selects
+Lantern Room through its marker, and saves the map with café details. It zooms
+out through the real controls after selection to keep the other cafés visible.
+Both captures include map attribution and record the visible cafés in provenance.
+The café Reel shows the overview before the selected state.
+
+It does not replace app text, fabricate results, or hide errors. Seed dates are relative to the date
 the database was first seeded; committed captures preserve this campaign's dates.
 
 To refresh the scanning sequence, explicitly add `--scan`. This makes a paid,

@@ -84,7 +84,7 @@ def scene(post, size, reel):
     return image
 
 
-def render_slide(post, index, reel=False):
+def render_slide(post, index, reel=False, capture_name=None):
     size = (1080, 1920 if reel else 1350)
     image = scene(post, size, reel) if index == 0 else Image.new('RGBA', size, CREAM)
     brand(image, 150 if reel else 54)
@@ -93,7 +93,7 @@ def render_slide(post, index, reel=False):
     text(image, labels[index], 72, top, 23, color=ACCENT, weight=700)
     titles = [post['title'], post['detail_title'], post['end_title']]
     text(image, titles[index], 72, top + 48, 79, True, weight=700)
-    capture = ASSETS / 'captures' / f"{post['captures'][0 if index == 0 else 1]}.png"
+    capture = ASSETS / 'captures' / f"{capture_name or post['captures'][0 if index == 0 else 1]}.png"
     if index == 0:
         if post['device'] == 'phone':
             device(image, capture, 420 if reel else 390, (430 if reel else 480, 530 if reel else 370), -4)
@@ -131,20 +131,32 @@ def render_slide(post, index, reel=False):
     return image.convert('RGB')
 
 
-def make_video(folder):
+def make_video(folder, overview=False):
     import imageio_ffmpeg
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     command = [ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-filter_complex_threads', '1']
-    for i in range(1, 4):
-        command += ['-i', str(folder / f'reel-{i:02}.png')]
+    names = ['reel-01.png', 'reel-02.png', 'reel-03.png']
+    durations = [5, 5, 5]
+    if overview:
+        names.insert(1, 'reel-overview.png')
+        durations = [5, 2.75, 2.75, 5]
+    for name in names:
+        command += ['-i', str(folder / name)]
     command += ['-i', str(ASSETS / 'music/jazz-slower.mp3')]
     filters = [
-        f"[{i}:v]scale=4320:7680,zoompan=z='1+0.03*on/299':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=300:s=1080x1920:fps=60,trim=duration=5,setpts=PTS-STARTPTS,fps=60,settb=1/60,format=yuv420p[v{i}]"
-        for i in range(3)
+        f"[{i}:v]scale=4320:7680,zoompan=z='1+0.03*on/{round(duration * 60) - 1}':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d={round(duration * 60)}:s=1080x1920:fps=60,trim=duration={duration},setpts=PTS-STARTPTS,fps=60,settb=1/60,format=yuv420p[v{i}]"
+        for i, duration in enumerate(durations)
     ]
-    filters += ['[v0][v1]xfade=transition=fade:duration=0.5:offset=4.5,fps=60[v01]',
-                '[v01][v2]xfade=transition=fade:duration=0.5:offset=9,fps=60[out]']
-    filters += ['[3:a]atrim=start=8:duration=14,asetpts=PTS-STARTPTS,loudnorm=I=-22:TP=-2:LRA=7,afade=t=in:d=0.7,afade=t=out:st=12.5:d=1.5[audio]']
+    previous = 'v0'
+    elapsed = durations[0]
+    for i in range(1, len(durations)):
+        result = 'out' if i == len(durations) - 1 else f'fade{i}'
+        offset = elapsed - 0.5
+        filters.append(f'[{previous}][v{i}]xfade=transition=fade:duration=0.5:offset={offset},fps=60[{result}]')
+        elapsed += durations[i] - 0.5
+        previous = result
+    assert elapsed == 14, 'Reel timeline must remain 14 seconds'
+    filters += [f'[{len(names)}:a]atrim=start=8:duration=14,asetpts=PTS-STARTPTS,loudnorm=I=-22:TP=-2:LRA=7,afade=t=in:d=0.7,afade=t=out:st=12.5:d=1.5[audio]']
     command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-map', '[audio]', '-t', '14',
                 '-c:v', 'libx264', '-threads', '2', '-preset', 'fast', '-crf', '20',
                 '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', str(folder / 'reel.mp4')]
@@ -172,8 +184,11 @@ def bundle(output, posts):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--video', action='store_true', help='Also encode the five Reels with CC0 music')
+    parser.add_argument('--only', help='Rebuild one concept, retaining the other verified packages')
     args = parser.parse_args()
     campaign = json.loads((ROOT / 'campaign.json').read_text())
+    if args.only and args.only not in [post['id'] for post in campaign['posts']]:
+        parser.error('Unknown concept')
     provenance = json.loads((ASSETS / 'captures/provenance.json').read_text())
     output = ROOT / 'exports'
     cards = []
@@ -185,11 +200,15 @@ def main():
             capture = ASSETS / 'captures' / f'{name}.png'
             if digest(capture) != provenance[name]['sha256']:
                 raise ValueError(f'Capture provenance does not match {name}')
-        for i in range(3):
-            render_slide(post, i).save(folder / f'carousel-{i+1:02}.png')
-            render_slide(post, i, True).save(folder / f'reel-{i+1:02}.png')
-        if args.video:
-            make_video(folder)
+        rebuild = not args.only or post['id'] == args.only
+        if rebuild:
+            for i in range(3):
+                render_slide(post, i).save(folder / f'carousel-{i+1:02}.png')
+                render_slide(post, i, True).save(folder / f'reel-{i+1:02}.png')
+            if post.get('detail_overview'):
+                render_slide(post, 1, True, post['detail_overview']).save(folder / 'reel-overview.png')
+            if args.video:
+                make_video(folder, bool(post.get('detail_overview')))
         (folder / 'caption.txt').write_text(post['caption'] + '\n')
         media = []
         for i, alt in enumerate([post['alt'], f"Actual Roastbook screen: {post['detail_title'].replace(chr(10), ' ')} Fictional sample data.", f"{post['end_title'].replace(chr(10), ' ')} Explore the Roastbook demo at www.roastbook.coffee."], 1):

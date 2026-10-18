@@ -57,7 +57,11 @@
     "path": "/places?display=map",
     "width": 768,
     "height": 1000,
-    "heading": "Caf\u00e9s",
-    "waitSelector": ".maplibregl-marker"
+    "heading": "Cafés",
+    "waitSelector": ".maplibregl-marker",
+    "map": {
+      "minimumMarkers": 3,
+      "select": "Saved café: Lantern Room, 14 Passage Cuivré"
+    }
   }
 ]

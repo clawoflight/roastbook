@@ -25,6 +25,11 @@ for post in campaign['posts']:
         assert media['alt']
     for name, capture in post['captures'].items():
         assert digest(ASSETS / 'captures' / f'{name}.png') == capture['sha256']
+    if post['id'] == '04-cafe-journal':
+        for name in ['places-overview', 'places']:
+            assert len(post['captures'][name]['visibleCafes']) >= 3
+        assert post['captures']['places']['selectedCafe'].startswith('Saved café: Lantern Room,')
+        assert 'Lantern Room' in post['captures']['places']['text']
     video = output / post['reel']['path']
     assert digest(video) == post['reel']['sha256']
     frames = imageio_ffmpeg.read_frames(str(video))

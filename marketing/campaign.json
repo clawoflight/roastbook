@@ -50,7 +50,8 @@
       "body": "Save the café, log the visit,\nand remember what you ordered.",
       "device": "phone",
       "scene_prompt": "Use case: ads-marketing. Photoreal editorial coffee lifestyle photograph, portrait 2:3. Camera perfectly overhead, looking straight down at a horizontal table, no perspective tilt. Natural morning window light from upper left, soft tactile shadows, restrained warm cream, tobacco brown and burnt orange palette, real materials, fine film grain. Absolutely no phone, tablet, laptop, screen, text, typography, watermarks, logos or people. A real device and headline will be composited later. Reserve the upper 22 percent as clean quiet surface for headline. Scene: round pale travertine outdoor café table, overhead view. Cappuccino with delicate rosetta latte art at far left center, linen napkin and small silver spoon near bottom left, partial butter croissant on ceramic plate at upper left edge, faint leafy shadows across bottom right. Keep central-right 55 percent clear, x 400-900 y 400-1400, for a portrait phone. Evoke a quiet European neighbourhood café, no signage, relaxed natural light.",
-      "captures": ["visit", "places"],
+      "captures": ["visit", "places", "places-overview"],
+      "detail_overview": "places-overview",
       "caption": "A lovely flat white. A café you want to return to. Keep the visit, the drink and your notes together in Roastbook, then find your places again when you are planning the next stop.\n\nExplore www.roastbook.coffee, linked in our bio.\n\nCafés and visits shown are fictional demo records. Scene created with AI.\n\n#Roastbook #CafeHopping #CoffeeJournal #SpecialtyCoffee",
       "alt": "A phone displaying a Roastbook café visit beside a cappuccino on a sunlit café table."
     },

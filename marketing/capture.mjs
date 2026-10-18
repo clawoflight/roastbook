@@ -35,7 +35,7 @@ async function ready(page) {
   await page.waitForTimeout(600)
 }
 
-async function save(page, id, target = page) {
+async function save(page, id, target = page, evidence = {}) {
   await ready(page)
   const bytes = await target.screenshot({ animations: 'disabled' })
   await writeFile(resolve(output, `${id}.png`), bytes)
@@ -46,6 +46,7 @@ async function save(page, id, target = page) {
     source: 'canonical demo fixtures in isolated PostgreSQL',
     capturedAt: new Date().toISOString(),
     revision,
+    ...evidence,
     sha256: createHash('sha256').update(bytes).digest('hex'),
     text: await page.locator('body').innerText(),
   }
@@ -57,7 +58,12 @@ try {
   const recipes = JSON.parse(
     await readFile(resolve(root, 'captures.json'), 'utf8'),
   )
-  for (const recipe of recipes) {
+  const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice(7)
+  if (only && !recipes.some((recipe) => recipe.id === only))
+    throw new Error(`Unknown capture recipe: ${only}`)
+  for (const recipe of recipes.filter(
+    (recipe) => !only || recipe.id === only,
+  )) {
     const context = await browser.newContext({
       viewport: { width: recipe.width, height: recipe.height },
       deviceScaleFactor: 2,
@@ -103,7 +109,66 @@ try {
           has: page.getByRole('heading', { name: recipe.focus, exact: true }),
         })
       : page
-    await save(page, recipe.id, target)
+    if (recipe.map) {
+      const map = page.getByRole('region', {
+        name: 'Map of your saved cafés',
+        exact: true,
+      })
+      const card = map.locator('../../..')
+      await card.scrollIntoViewIfNeeded()
+      const visibleCafes = () =>
+        map.locator('button[aria-label*="café:"]').evaluateAll((markers) =>
+          markers
+            .filter((marker) => {
+              if (marker.hidden) return false
+              const rect = marker.getBoundingClientRect()
+              const bounds = marker.closest('section').getBoundingClientRect()
+              return (
+                rect.left >= bounds.left &&
+                rect.right <= bounds.right &&
+                rect.top >= bounds.top &&
+                rect.bottom <= bounds.bottom &&
+                marker.contains(
+                  document.elementFromPoint(
+                    rect.x + rect.width / 2,
+                    rect.y + rect.height / 2,
+                  ),
+                )
+              )
+            })
+            .map((marker) => marker.getAttribute('aria-label')),
+        )
+      const showCafes = async () => {
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await ready(page)
+          const names = await visibleCafes()
+          if (names.length >= recipe.map.minimumMarkers) return names
+          await page
+            .getByRole('button', { name: 'Zoom out', exact: true })
+            .click()
+          await page.waitForLoadState('networkidle')
+        }
+        throw new Error('Map does not show enough unobscured café markers')
+      }
+      const overview = await showCafes()
+      await save(page, `${recipe.id}-overview`, card, {
+        visibleCafes: overview,
+      })
+      await map
+        .getByRole('button', { name: recipe.map.select, exact: true })
+        .click()
+      await page.locator('#visits-map-place-inspector').waitFor()
+      await card.scrollIntoViewIfNeeded()
+      const selected = await showCafes()
+      if ((await map.locator('button[aria-pressed="true"]').count()) !== 1)
+        throw new Error('Expected exactly one selected café')
+      await save(page, recipe.id, card, {
+        visibleCafes: selected,
+        selectedCafe: recipe.map.select,
+      })
+    } else {
+      await save(page, recipe.id, target)
+    }
     await context.close()
   }
   if (process.argv.includes('--scan')) {
