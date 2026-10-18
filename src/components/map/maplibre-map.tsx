@@ -1,4 +1,5 @@
 import type { StyleSpecification } from 'maplibre-gl'
+import mapWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import {
   createContext,
   type ReactNode,
@@ -96,6 +97,7 @@ export function MapLibreMap({
         ])
         if (disposed) return
 
+        module.setWorkerUrl(mapWorkerUrl)
         instance = new module.Map({
           container,
           style,
