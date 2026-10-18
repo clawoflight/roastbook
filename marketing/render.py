@@ -39,10 +39,9 @@ def text(image, value, x, y, size, display=False, color=INK, weight=500):
 
 def brand(image, y=54):
     logo = Image.open(ROOT.parent / 'public/navbar-logo.png').convert('RGBA')
-    logo.thumbnail((46, 46), Image.Resampling.LANCZOS)
-    image.paste(logo, (72, y - 2), logo)
-    text(image, 'Roastbook', 134, y, 34, True, weight=700)
-    text(image, 'YOUR COFFEE JOURNAL', 390, y + 11, 18, color=ACCENT, weight=600)
+    logo.thumbnail((34, 34), Image.Resampling.LANCZOS)
+    image.paste(logo, (64, y), logo)
+    text(image, 'roastbook', 110, y, 29, True, weight=650)
 
 
 def device(image, screenshot, width, xy, angle=0):
@@ -66,72 +65,61 @@ def device(image, screenshot, width, xy, angle=0):
     image.alpha_composite(frame, xy)
 
 
-def footer(image, number, reel):
-    y = image.height - (285 if reel else 54)
-    text(image, 'www.roastbook.coffee', 72, y, 25, weight=600)
-    text(image, f'{number:02d} / 03', 870, y, 22, color=ACCENT)
-
-
-def scene(post, size, reel):
-    image = ImageOps.fit(Image.open(ASSETS / 'scenes' / f"{post['id']}.webp"), size).convert('RGBA')
-    gradient = Image.new('RGBA', size)
-    draw = ImageDraw.Draw(gradient)
+def scene(post, size, reel, index=0):
+    source = ASSETS / 'scenes' / f"{post['id']}.webp"
+    if index == 2 and post['id'].startswith('05'):
+        source = ASSETS / 'coffee-bag.webp'
+    photo = Image.open(source)
+    image = ImageOps.fit(photo, size, centering=(0.5 if index == 0 else 0.3, 0.5)).convert('RGBA')
+    # Keep the photograph visible; only soften the areas carrying copy.
+    veil = Image.new('RGBA', size)
+    draw = ImageDraw.Draw(veil)
     for y in range(size[1]):
-        top = max(0, min(1, (490 - y) / 190))
-        bottom = max(0, min(1, (y - size[1] + (650 if reel else 280)) / 100))
-        draw.line((0, y, size[0], y), fill=(246, 239, 227, round(255 * max(top, bottom))))
-    image.alpha_composite(gradient)
+        top = max(0, 1 - y / (560 if reel else 430))
+        bottom = max(0, min(1, (y - size[1] + (650 if reel else 480)) / (300 if reel else 250)))
+        draw.line((0, y, size[0], y), fill=(246, 239, 227, round(235 * max(top, bottom))))
+    image.alpha_composite(veil)
     return image
 
 
 def render_slide(post, index, reel=False, capture_name=None):
     size = (1080, 1920 if reel else 1350)
-    image = scene(post, size, reel) if index == 0 else Image.new('RGBA', size, CREAM)
-    brand(image, 150 if reel else 54)
-    top = 244 if reel else 145
-    labels = [post['eyebrow'], 'INSIDE ROASTBOOK', 'TRY THE DEMO']
-    text(image, labels[index], 72, top, 23, color=ACCENT, weight=700)
+    image = scene(post, size, reel, index)
+    brand(image, 150 if reel else 62)
     titles = [post['title'], post['detail_title'], post['end_title']]
-    text(image, titles[index], 72, top + 48, 79, True, weight=700)
+    text(image, titles[index], 64, 235 if reel else 140, 84, True, weight=700)
     capture = ASSETS / 'captures' / f"{capture_name or post['captures'][0 if index == 0 else 1]}.png"
     if index == 0:
         if post['device'] == 'phone':
-            device(image, capture, 420 if reel else 390, (430 if reel else 480, 530 if reel else 370), -4)
+            device(image, capture, 480 if reel else 390,
+                   (410 if reel else 470, 480 if reel else 390), -6)
         else:
-            device(image, capture, 900, (60, 650 if reel else 500), -3)
-            text(image, post['body'], 72, 1400 if reel else 1170, 31)
+            device(image, capture, 920, (48, 620 if reel else 450), -3)
+        text(image, 'Your coffee, remembered.', 64, 1575 if reel else 1240, 30, weight=600)
     elif index == 1:
-        shot = Image.open(capture).convert('RGB')
-        # Preserve every captured pixel; fit within the editorial frame.
-        available = (936, 990 if reel else 760)
-        shot = ImageOps.contain(shot, available, Image.Resampling.LANCZOS)
-        x = (1080 - shot.width) // 2
-        y = (560 if reel else 395) + (available[1] - shot.height) // 2
-        image.paste(shot, (x, y))
-        text(image, 'Real app screens. Fictional demo data.', 72, 1570 if reel else 1214, 25, color=ACCENT)
+        shot = Image.open(capture)
+        available = (936, 1040 if reel else 790)
+        ratio = min(available[0] / shot.width, available[1] / shot.height)
+        width = round(shot.width * ratio) - 32
+        height = round(shot.height * width / shot.width) + 32
+        y = (540 if reel else 390) + (available[1] - height) // 2
+        device(image, capture, width, ((1080 - width - 32) // 2, y))
+        text(image, 'Real screens. Demo coffee.', 64, 1630 if reel else 1240, 26, weight=600)
     else:
-        if post['id'].startswith('05'):
-            picture = Image.open(ASSETS / 'coffee-bag.webp').convert('RGB')
-        else:
-            picture = Image.open(ASSETS / 'scenes' / f"{post['id']}.webp").convert('RGB')
-        fit = ImageOps.pad if post['id'].startswith('05') else ImageOps.fit
-        picture = fit(picture, (936, 650 if reel else 480), centering=(0.5, 0.5), **({'color': CREAM} if post['id'].startswith('05') else {})).convert('RGBA')
         if not post['id'].startswith('05'):
+            primary = ASSETS / 'captures' / f"{post['captures'][0]}.png"
             if post['device'] == 'phone':
-                device(picture, ASSETS / 'captures' / f"{post['captures'][0]}.png", 205 if reel else 190, (570, 30), -3)
+                device(image, primary, 400 if reel else 300,
+                       (470 if reel else 550, 510 if reel else 385), 5)
             else:
-                device(picture, ASSETS / 'captures' / f"{post['captures'][0]}.png", 740 if reel else 650, (80 if reel else 125, 95 if reel else 22), -2)
-        image.paste(picture.convert('RGB'), (72, 530 if reel else 390))
-        text(image, post['body'], 72, 1270 if reel else 935, 35)
-        draw = ImageDraw.Draw(image)
-        y = 1450 if reel else 1095
-        draw.rounded_rectangle((72, y, 1008, y + 88), radius=44, fill=INK)
-        text(image, 'Explore www.roastbook.coffee', 126, y + 25, 34, color=CREAM, weight=600)
-    footer(image, index + 1, reel)
+                device(image, primary, 890, (64, 600 if reel else 420), 3)
+        text(image, 'Try the demo. Make it yours.', 64, 1470 if reel else 1120, 38, True, weight=650)
+        text(image, 'Website + GitHub in our profile', 64, 1530 if reel else 1180, 29, weight=600)
+        text(image, 'www.roastbook.coffee', 64, 1580 if reel else 1230, 28)
     return image.convert('RGB')
 
 
-def make_video(folder, overview=False):
+def make_video(folder, overview=False, audio_start=8):
     import imageio_ffmpeg
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     command = [ffmpeg, '-y', '-hide_banner', '-loglevel', 'error', '-filter_complex_threads', '1']
@@ -156,7 +144,7 @@ def make_video(folder, overview=False):
         elapsed += durations[i] - 0.5
         previous = result
     assert elapsed == 14, 'Reel timeline must remain 14 seconds'
-    filters += [f'[{len(names)}:a]atrim=start=8:duration=14,asetpts=PTS-STARTPTS,loudnorm=I=-22:TP=-2:LRA=7,afade=t=in:d=0.7,afade=t=out:st=12.5:d=1.5[audio]']
+    filters += [f'[{len(names)}:a]atrim=start={audio_start}:duration=14,asetpts=PTS-STARTPTS,loudnorm=I=-22:TP=-2:LRA=7,afade=t=in:d=0.7,afade=t=out:st=12.5:d=1.5[audio]']
     command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-map', '[audio]', '-t', '14',
                 '-c:v', 'libx264', '-threads', '2', '-preset', 'fast', '-crf', '20',
                 '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', str(folder / 'reel.mp4')]
@@ -208,7 +196,7 @@ def main():
             if post.get('detail_overview'):
                 render_slide(post, 1, True, post['detail_overview']).save(folder / 'reel-overview.png')
             if args.video:
-                make_video(folder, bool(post.get('detail_overview')))
+                make_video(folder, bool(post.get('detail_overview')), post['audio_start_seconds'])
         (folder / 'caption.txt').write_text(post['caption'] + '\n')
         media = []
         for i, alt in enumerate([post['alt'], f"Actual Roastbook screen: {post['detail_title'].replace(chr(10), ' ')} Fictional sample data.", f"{post['end_title'].replace(chr(10), ' ')} Explore the Roastbook demo at www.roastbook.coffee."], 1):
@@ -219,7 +207,7 @@ def main():
                    'ai_generated_scene': True, 'scene_prompt': post['scene_prompt']}
         if args.video:
             package['reel'] = {'path': f"{post['id']}/reel.mp4", 'sha256': digest(folder / 'reel.mp4'),
-                               'width': 1080, 'height': 1920, 'duration_seconds': 14, 'audio': {'title': 'Jazz Slower', 'creator': 'Alex McCulloch', 'license': 'CC0-1.0', 'source': 'https://opengameart.org/content/jazz-slower'},
+                               'width': 1080, 'height': 1920, 'duration_seconds': 14, 'audio': {'title': 'Jazz Slower', 'creator': 'Alex McCulloch', 'license': 'CC0-1.0', 'source': 'https://opengameart.org/content/jazz-slower', 'start_seconds': post['audio_start_seconds'], 'duration_seconds': 14},
                                'description': 'Animated stills with 60 fps supersampled slow zooms and crossfades; not generated live-action footage.'}
         (folder / 'post.json').write_text(json.dumps(package, indent=2, ensure_ascii=False) + '\n')
         packages.append(package)
