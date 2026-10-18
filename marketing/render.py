@@ -42,6 +42,7 @@ def brand(image, y=54):
     logo.thumbnail((46, 46), Image.Resampling.LANCZOS)
     image.paste(logo, (72, y - 2), logo)
     text(image, 'Roastbook', 134, y, 34, True, weight=700)
+    text(image, 'YOUR COFFEE JOURNAL', 390, y + 11, 18, color=ACCENT, weight=600)
 
 
 def device(image, screenshot, width, xy, angle=0):
@@ -67,7 +68,7 @@ def device(image, screenshot, width, xy, angle=0):
 
 def footer(image, number, reel):
     y = image.height - (285 if reel else 54)
-    text(image, 'roastbook.coffee', 72, y, 25, weight=600)
+    text(image, 'www.roastbook.coffee', 72, y, 25, weight=600)
     text(image, f'{number:02d} / 03', 870, y, 22, color=ACCENT)
 
 
@@ -110,16 +111,22 @@ def render_slide(post, index, reel=False):
         text(image, 'Real app screens. Fictional demo data.', 72, 1570 if reel else 1214, 25, color=ACCENT)
     else:
         if post['id'].startswith('05'):
-            picture = Image.open(ASSETS / 'sample-label.jpg').convert('RGB')
+            picture = Image.open(ASSETS / 'coffee-bag.webp').convert('RGB')
         else:
             picture = Image.open(ASSETS / 'scenes' / f"{post['id']}.webp").convert('RGB')
-        picture = ImageOps.fit(picture, (936, 650 if reel else 480), centering=(0.3, 0.6))
-        image.paste(picture, (72, 530 if reel else 390))
+        fit = ImageOps.pad if post['id'].startswith('05') else ImageOps.fit
+        picture = fit(picture, (936, 650 if reel else 480), centering=(0.5, 0.5), **({'color': CREAM} if post['id'].startswith('05') else {})).convert('RGBA')
+        if not post['id'].startswith('05'):
+            if post['device'] == 'phone':
+                device(picture, ASSETS / 'captures' / f"{post['captures'][0]}.png", 205 if reel else 190, (570, 30), -3)
+            else:
+                device(picture, ASSETS / 'captures' / f"{post['captures'][0]}.png", 740 if reel else 650, (80 if reel else 125, 95 if reel else 22), -2)
+        image.paste(picture.convert('RGB'), (72, 530 if reel else 390))
         text(image, post['body'], 72, 1270 if reel else 935, 35)
         draw = ImageDraw.Draw(image)
         y = 1450 if reel else 1095
         draw.rounded_rectangle((72, y, 1008, y + 88), radius=44, fill=INK)
-        text(image, 'Explore roastbook.coffee', 126, y + 25, 34, color=CREAM, weight=600)
+        text(image, 'Explore www.roastbook.coffee', 126, y + 25, 34, color=CREAM, weight=600)
     footer(image, index + 1, reel)
     return image.convert('RGB')
 
@@ -131,12 +138,12 @@ def make_video(folder):
     for i in range(1, 4):
         command += ['-loop', '1', '-framerate', '30', '-i', str(folder / f'reel-{i:02}.png')]
     filters = [
-        f"[{i}:v]scale=1080:1920,zoompan=z='1+0.025*on/119':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=120:s=1080x1920:fps=30,trim=duration=4,setpts=PTS-STARTPTS,fps=30,settb=1/30,format=yuv420p[v{i}]"
+        f"[{i}:v]scale=1080:1920,trim=duration=5,setpts=PTS-STARTPTS,fps=30,settb=1/30,format=yuv420p[v{i}]"
         for i in range(3)
     ]
-    filters += ['[v0][v1]xfade=transition=fade:duration=0.5:offset=3.5,fps=30[v01]',
-                '[v01][v2]xfade=transition=fade:duration=0.5:offset=7[out]']
-    command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-t', '11',
+    filters += ['[v0][v1]xfade=transition=fade:duration=0.5:offset=4.5,fps=30[v01]',
+                '[v01][v2]xfade=transition=fade:duration=0.5:offset=9[out]']
+    command += ['-filter_complex', ';'.join(filters), '-map', '[out]', '-t', '14',
                 '-c:v', 'libx264', '-threads', '2', '-preset', 'fast', '-crf', '20',
                 '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', str(folder / 'reel.mp4')]
     subprocess.run(command, check=True)
@@ -183,7 +190,7 @@ def main():
             make_video(folder)
         (folder / 'caption.txt').write_text(post['caption'] + '\n')
         media = []
-        for i, alt in enumerate([post['alt'], f"Actual Roastbook screen: {post['detail_title'].replace(chr(10), ' ')} Fictional sample data.", f"{post['end_title'].replace(chr(10), ' ')} Explore the Roastbook demo at roastbook.coffee."], 1):
+        for i, alt in enumerate([post['alt'], f"Actual Roastbook screen: {post['detail_title'].replace(chr(10), ' ')} Fictional sample data.", f"{post['end_title'].replace(chr(10), ' ')} Explore the Roastbook demo at www.roastbook.coffee."], 1):
             path = folder / f'carousel-{i:02}.png'
             media.append({'path': path.relative_to(output).as_posix(), 'alt': alt, 'sha256': digest(path), 'width': 1080, 'height': 1350})
         package = {'id': post['id'], 'status': 'draft', 'approved': False, 'caption': post['caption'],
@@ -191,17 +198,17 @@ def main():
                    'ai_generated_scene': True, 'scene_prompt': post['scene_prompt']}
         if args.video:
             package['reel'] = {'path': f"{post['id']}/reel.mp4", 'sha256': digest(folder / 'reel.mp4'),
-                               'width': 1080, 'height': 1920, 'duration_seconds': 11, 'audio': 'none',
-                               'description': 'Animated stills with slow zooms and crossfades; not generated live-action footage.'}
+                               'width': 1080, 'height': 1920, 'duration_seconds': 14, 'audio': 'none',
+                               'description': 'Animated stills with steady frames and smooth crossfades; not generated live-action footage.'}
         (folder / 'post.json').write_text(json.dumps(package, indent=2, ensure_ascii=False) + '\n')
         packages.append(package)
         media_html = ''.join(f'<a href="{post["id"]}/carousel-{i:02}.png" download><img src="{post["id"]}/carousel-{i:02}.png" alt="{html.escape(media[i-1]["alt"])}" loading="lazy"></a>' for i in range(1, 4))
         video = f'<video controls preload="none" poster="{post["id"]}/reel-01.png" src="{post["id"]}/reel.mp4"></video>' if args.video else ''
-        status = 'DRAFT · Carousel + 11-second silent Reel' if args.video else 'DRAFT · Carousel preview'
+        status = 'DRAFT · Carousel + 14-second silent Reel' if args.video else 'DRAFT · Carousel preview'
         cards.append(f'<section><h2>{html.escape(post["title"].replace(chr(10), " "))}</h2><p class="tag">{status}</p><div class="slides">{media_html}</div><details><summary>Video, caption and publishing package</summary><div class="details">{video}<div><pre>{html.escape(post["caption"])}</pre><p><a href="{post["id"]}/reel.mp4" download>Download Reel</a> · <a href="{post["id"]}/caption.txt" download>Caption</a> · <a href="{post["id"]}/post.json" download>Post metadata</a></p></div></div></details></section>')
         print(f"Rendered {post['id']}", flush=True)
     (output / 'campaign.json').write_text(json.dumps({'name': campaign['name'], 'posts': packages}, indent=2, ensure_ascii=False) + '\n')
-    page = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Roastbook campaign review</title><style>body{margin:0;background:#f6efe3;color:#38291f;font:17px system-ui;line-height:1.5}main{max-width:1240px;margin:auto;padding:40px 24px}h1{font-size:clamp(32px,5vw,64px);line-height:1.05;max-width:850px}h2{font-size:28px}.tag{font-size:12px;letter-spacing:.1em;color:#854623}section{padding:28px 0 40px;border-top:1px solid #d5c6b4}.slides{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}img{display:block;width:100%;border-radius:12px}a{color:inherit}details{margin-top:24px}summary{cursor:pointer;padding:12px 0;min-height:24px}.details{display:flex;gap:28px;padding-top:20px}video{width:260px;max-width:100%;border-radius:12px}pre{white-space:pre-wrap;font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid #a75c2e;outline-offset:5px}@media(max-width:600px){main{padding:24px 16px}.slides{grid-template-columns:1fr}.details{display:block}video{width:100%}}</style><main><p>ROASTBOOK / CAMPAIGN 01</p><p><a href="roastbook-campaign.zip" download>Download the complete campaign</a></p><h1>Coffee worth remembering.</h1><p>Five concepts. Real app captures. AI-generated surroundings. All posts are drafts for review; nothing has been published.</p><p>Carousels: 1080 × 1350. Reels: 1080 × 1920, silent, 11 seconds. Click a slide to download it.</p>' + ''.join(cards) + '</main></html>'
+    page = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Roastbook campaign review</title><style>body{margin:0;background:#f6efe3;color:#38291f;font:17px system-ui;line-height:1.5}main{max-width:1240px;margin:auto;padding:40px 24px}h1{font-size:clamp(32px,5vw,64px);line-height:1.05;max-width:850px}h2{font-size:28px}.tag{font-size:12px;letter-spacing:.1em;color:#854623}section{padding:28px 0 40px;border-top:1px solid #d5c6b4}.slides{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}img{display:block;width:100%;border-radius:12px}a{color:inherit}details{margin-top:24px}summary{cursor:pointer;padding:12px 0;min-height:24px}.details{display:flex;gap:28px;padding-top:20px}video{width:260px;max-width:100%;border-radius:12px}pre{white-space:pre-wrap;font:inherit}a:focus-visible,summary:focus-visible{outline:3px solid #a75c2e;outline-offset:5px}@media(max-width:600px){main{padding:24px 16px}.slides{grid-template-columns:1fr}.details{display:block}video{width:100%}}</style><main><p>ROASTBOOK / CAMPAIGN 01</p><p><a href="roastbook-campaign.zip" download>Download the complete campaign</a></p><h1>Coffee worth remembering.</h1><p>Five concepts. Real app captures. AI-generated surroundings. All posts are drafts for review; nothing has been published.</p><p>Carousels: 1080 × 1350. Reels: 1080 × 1920, silent, 14 seconds. Click a slide to download it.</p>' + ''.join(cards) + '</main></html>'
     (output / 'index.html').write_text(page)
     bundle(output, packages)
 

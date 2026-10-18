@@ -1,7 +1,7 @@
 # Roastbook campaign studio
 
 Five Instagram concepts live in `campaign.json`. Each produces three 1080 × 1350
-carousel slides, three 1080 × 1920 video frames, an 11-second silent H.264 Reel,
+carousel slides, three 1080 × 1920 video frames, an 14-second silent H.264 Reel,
 a caption, alt text, and a draft publishing manifest. The review gallery is
 `exports/index.html`.
 
@@ -140,7 +140,7 @@ adapter should consume an explicitly reviewed package, upload the media, and
 record the platform result. Keep approval and publishing separate from rendering.
 No credentials or account IDs belong in the manifest.
 
-Videos animate real stills with gentle zooms and crossfades. They do not simulate
+Videos animate real stills with steady frames and smooth crossfades. They do not simulate
 clicks or claim to be generated live-action footage. Audio is absent so licensed
 music can be selected in Instagram. Captions disclose fictional demo data and
 AI-generated surroundings. Post 5 also explains that AI requires an API key when
@@ -150,3 +150,10 @@ actually links to the demo before using the supplied captions.
 Stop the campaign app with `vibepod-preview stop roastbook-campaign` when capture
 is done; its stop hook stops PostgreSQL without removing the named volume. Keep
 the static studio preview running while reviewing exports.
+
+The final scanning card uses `assets/coffee-bag.webp`, an AI-generated product
+photo with printed fictional packaging. Its prompt is in
+`prompts/coffee-bag.txt`. The extraction fixture remains `sample-label.jpg`
+to preserve the provenance of the real captured extraction. All displayed
+campaign URLs use `www.roastbook.coffee`. Reels hold each card for five seconds
+with half-second crossfades; the camera stays still so UI and text stay sharp.

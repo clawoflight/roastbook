@@ -1,0 +1,14 @@
+Use case: product-mockup
+Asset type: premium coffee product photograph for Roastbook Instagram campaign.
+Primary request: A beautifully art-directed specialty coffee bag with a professionally designed printed label, photographed as a real physical product. The label must wrap naturally with the paper, with believable ink texture and perspective; never look like a flat software textbox pasted over a photograph.
+Scene: warm limestone tabletop and softly textured cream wall, a few coffee beans and a folded linen cloth at the far edge. One matte warm ivory gusseted 250 g coffee bag, centered, entire bag visible with generous space above and below. Landscape 3:2 composition. Bag occupies about 65 percent of image height. Soft directional morning light, grounded natural shadow, editorial specialty-coffee magazine quality.
+Packaging: elegant burnt-orange and dark espresso typography, a small graphic moon and terraced mountain illustration, strong typographic hierarchy, restrained Swiss-inspired label layout. Large brand and coffee name, small carefully aligned origin and processing information. Crisp, legible text printed directly on the bag; no separate white rectangle floating on top. Sophisticated, tactile, natural, desirable coffee packaging.
+Text (verbatim, only these words):
+EMBER ATLAS
+Moonrise Lot 17
+LUMA HIGHLANDS
+Moonrise Valley
+WASHED · LIGHT ROAST
+250 g
+FICTIONAL DEMO COFFEE
+Constraints: fictional coffee matching our demonstration. No real brand logos, no extra text, no phone, no app UI, no watermarks. Preserve clean image edges and a whole uncropped bag.
