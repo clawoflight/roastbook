@@ -547,6 +547,74 @@
       }
     }
   },
+  "Navigation caption": {
+    "Semibold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 10,
+          "unit": "px"
+        },
+        "fontWeight": 600,
+        "lineHeight": {
+          "value": 15,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 0,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 600,
+            "italic": false,
+            "fontSize": 10,
+            "lineHeight": 15,
+            "letterSpacing": 0,
+            "textDecoration": "NONE",
+            "textCase": "ORIGINAL"
+          }
+        }
+      }
+    },
+    "Bold": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.body}",
+        "fontSize": {
+          "value": 10,
+          "unit": "px"
+        },
+        "fontWeight": 700,
+        "lineHeight": {
+          "value": 15,
+          "unit": "px"
+        },
+        "letterSpacing": {
+          "value": 1.2,
+          "unit": "px"
+        }
+      },
+      "$extensions": {
+        "dev.openpencil": {
+          "text": {
+            "fontFamily": "Hanken Grotesk",
+            "fontWeight": 700,
+            "italic": false,
+            "fontSize": 10,
+            "lineHeight": 15,
+            "letterSpacing": 1.2,
+            "textDecoration": "NONE",
+            "textCase": "UPPER"
+          }
+        }
+      }
+    }
+  },
   "Section title": {
     "Bold": {
       "$type": "typography",
@@ -878,107 +946,6 @@
               "textDecoration": "NONE",
               "textCase": "ORIGINAL"
             }
-          }
-        }
-      }
-    }
-  },
-  "Navigation caption": {
-    "Semibold": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "{font.body}",
-        "fontSize": {
-          "value": 10,
-          "unit": "px"
-        },
-        "fontWeight": 600,
-        "lineHeight": {
-          "value": 15,
-          "unit": "px"
-        },
-        "letterSpacing": {
-          "value": 0,
-          "unit": "px"
-        }
-      },
-      "$extensions": {
-        "dev.openpencil": {
-          "text": {
-            "fontFamily": "Hanken Grotesk",
-            "fontWeight": 600,
-            "italic": false,
-            "fontSize": 10,
-            "lineHeight": 15,
-            "letterSpacing": 0,
-            "textDecoration": "NONE",
-            "textCase": "ORIGINAL"
-          }
-        }
-      }
-    },
-    "Semibold 15": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "ui-sans-serif",
-        "fontSize": {
-          "value": 10,
-          "unit": "px"
-        },
-        "fontWeight": 600,
-        "lineHeight": {
-          "value": 15,
-          "unit": "px"
-        },
-        "letterSpacing": {
-          "value": 0,
-          "unit": "px"
-        }
-      },
-      "$extensions": {
-        "dev.openpencil": {
-          "text": {
-            "fontFamily": "ui-sans-serif",
-            "fontWeight": 600,
-            "italic": false,
-            "fontSize": 10,
-            "lineHeight": 15,
-            "letterSpacing": 0,
-            "textDecoration": "NONE",
-            "textCase": "ORIGINAL"
-          }
-        }
-      }
-    },
-    "Bold": {
-      "$type": "typography",
-      "$value": {
-        "fontFamily": "{font.body}",
-        "fontSize": {
-          "value": 10,
-          "unit": "px"
-        },
-        "fontWeight": 700,
-        "lineHeight": {
-          "value": 15,
-          "unit": "px"
-        },
-        "letterSpacing": {
-          "value": 1.2,
-          "unit": "px"
-        }
-      },
-      "$extensions": {
-        "dev.openpencil": {
-          "text": {
-            "fontFamily": "Hanken Grotesk",
-            "fontWeight": 700,
-            "italic": false,
-            "fontSize": 10,
-            "lineHeight": 15,
-            "letterSpacing": 1.2,
-            "textDecoration": "NONE",
-            "textCase": "UPPER"
           }
         }
       }
