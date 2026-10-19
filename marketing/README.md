@@ -226,3 +226,10 @@ The current ten-post run alternates carousels and Reels at noon in
 | October 28 | Reel | Coffee shelf |
 | October 29 | Carousel | Scan the bag |
 | October 30 | Reel | Coffee experiments |
+
+## Website image
+
+Run `python marketing/render-website.py` with the same Pillow environment to
+rebuild `public/media/roastbook-coffee-journal.webp`. The homepage and README
+share this optimized asset: a real demo brew screen composited onto the
+generated espresso scene, without social headlines or profile-link copy.

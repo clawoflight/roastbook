@@ -29,6 +29,15 @@
 <img alt="Self-hosted" src="https://img.shields.io/badge/self--hosted-yes-8B5E34.svg">
 </p>
 
+<p align="center">
+  <a href="https://roastbook.coffee/">
+    <img src="public/media/roastbook-coffee-journal.webp"
+      alt="A saved Roastbook coffee recipe beside an espresso setup"
+      width="1000">
+  </a><br>
+  <sub>Real app screen with sample data, set in an AI-generated coffee scene.</sub>
+</p>
+
 ---
 
 > [!TIP]

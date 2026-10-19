@@ -1,11 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import {
   ArrowRight,
-  Bean,
-  BookOpen,
   Camera,
   CodeXml,
-  Coffee,
   LockKeyhole,
   MapPin,
   Plus,
@@ -60,12 +57,6 @@ const previewBeans = [
     detail: 'Verdant Reach · Washed',
     image: '/media/demo/cobalt-sunburst.thumb.webp',
   },
-] as const
-
-const previewBrews = [
-  { name: 'Worka Sakaro', method: 'V60', rating: '4.7' },
-  { name: 'La Muralla', method: 'Espresso', rating: '4.5' },
-  { name: 'Finca El Paraíso', method: 'AeroPress', rating: '4.3' },
 ] as const
 
 export function DemoLandingPage() {
@@ -429,119 +420,18 @@ function LandingFooter() {
 
 function ProductPreview() {
   return (
-    <div
-      aria-hidden="true"
-      className="relative mx-auto w-full max-w-2xl lg:mx-0"
-    >
-      <div
-        aria-hidden="true"
-        className="absolute -inset-8 -z-10 rounded-[3rem] bg-[radial-gradient(circle,var(--accent)_0%,transparent_68%)] opacity-80"
+    <figure className="mx-auto w-full max-w-2xl lg:mx-0">
+      <img
+        src="/media/roastbook-coffee-journal.webp"
+        alt="Roastbook brew details beside an espresso setup, showing extraction settings and a tasting rating"
+        width={1600}
+        height={1200}
+        fetchPriority="high"
+        className="w-full rounded-3xl border border-border object-cover shadow-coffee-strong"
       />
-      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-coffee-strong">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-2">
-            <span className="flex size-8 overflow-hidden rounded-lg">
-              <img
-                src="/navbar-logo.png"
-                alt=""
-                width={32}
-                height={32}
-                className="size-full object-cover"
-              />
-            </span>
-            <span className="font-display font-extrabold">Roastbook</span>
-          </div>
-          <div className="hidden gap-4 text-xs font-bold text-muted-foreground sm:flex">
-            <span className="text-primary">Brews</span>
-            <span>Beans</span>
-            <span>Café visits</span>
-          </div>
-        </div>
-
-        <div className="bg-background/70 p-4 sm:p-6">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground">
-                SATURDAY, 29 AUGUST
-              </p>
-              <p className="mt-1 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">
-                Good morning. What are we brewing?
-              </p>
-            </div>
-            <span className="hidden size-11 items-center justify-center rounded-full bg-primary text-primary-foreground sm:flex">
-              <Coffee className="size-5" aria-hidden="true" />
-            </span>
-          </div>
-
-          <div className="mt-5 grid grid-cols-3 gap-2.5">
-            {[
-              ['186', 'brews logged'],
-              ['8', 'bags in rotation'],
-              ['24', 'this month'],
-            ].map(([value, label], index) => (
-              <div
-                key={label}
-                className={
-                  index === 0
-                    ? 'rounded-2xl bg-coffee p-3 text-coffee-foreground sm:p-4'
-                    : 'rounded-2xl border border-border bg-card p-3 sm:p-4'
-                }
-              >
-                <p className="font-display text-2xl font-extrabold tabular-nums sm:text-3xl">
-                  {value}
-                </p>
-                <p
-                  className={
-                    index === 0
-                      ? 'mt-1 text-xs font-semibold text-coffee-foreground/75'
-                      : 'mt-1 text-xs font-semibold text-muted-foreground'
-                  }
-                >
-                  {label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-3 rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-display font-bold">Recent brews</p>
-              <BookOpen
-                className="size-4 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </div>
-            <div className="mt-3 space-y-2">
-              {previewBrews.map((brew, index) => (
-                <div
-                  key={brew.name}
-                  className="flex items-center gap-3 rounded-xl bg-secondary px-3 py-2.5"
-                >
-                  <span
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-coffee-foreground"
-                    style={{
-                      background: `linear-gradient(145deg, var(--chart-${(index % 4) + 1}), var(--coffee))`,
-                    }}
-                  >
-                    <Bean className="size-4" aria-hidden="true" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-sm font-bold">
-                      {brew.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {brew.method}
-                    </p>
-                  </div>
-                  <span className="font-display text-sm font-bold text-primary tabular-nums">
-                    {brew.rating}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <figcaption className="mt-3 text-center text-xs text-muted-foreground">
+        Real Roastbook screen with sample data. AI-generated coffee scene.
+      </figcaption>
+    </figure>
   )
 }
