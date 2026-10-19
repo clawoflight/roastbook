@@ -18,6 +18,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { LandingProductShowcases } from '@/routes/-components/landing-product-showcases'
+import { WaitlistForm } from '@/routes/-components/waitlist-form'
 
 const aiFeatures = [
   {
@@ -80,6 +81,7 @@ export function DemoLandingPage() {
 
       <main id="main-content" className="flex-1">
         <LandingHero />
+        <HostingChoices />
         <LandingFeatures />
         <LandingBeanShowcase />
         <LandingProductShowcases />
@@ -125,12 +127,8 @@ function LandingHeader() {
         <div className="hidden sm:block">
           <ThemeToggle />
         </div>
-        <Button asChild size="sm">
-          <Link to="/overview">
-            <span className="hidden min-[360px]:inline">Explore demo</span>
-            <span className="min-[360px]:hidden">Demo</span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
+        <Button asChild size="sm" className="min-h-11">
+          <a href="#waitlist">Join the waitlist</a>
         </Button>
       </div>
     </header>
@@ -141,39 +139,33 @@ function LandingHero() {
   return (
     <section className="grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[minmax(0,0.88fr)_minmax(520px,1.12fr)] lg:gap-16 lg:py-24">
       <div className="max-w-2xl">
-        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-3 py-1.5 text-sm font-semibold text-muted-foreground shadow-coffee">
-          <Sparkles className="size-4 text-primary" aria-hidden="true" />
-          AI-native. Self-hosted. Entirely yours.
-        </div>
-        <h1 className="font-display text-5xl leading-[0.98] font-extrabold tracking-[-0.045em] text-balance sm:text-6xl lg:text-7xl">
-          Scan the bag. Dial in the brew.
+        <p className="mb-5 text-sm font-semibold text-muted-foreground">
+          Open source today. Hosted next.
+        </p>
+        <h1 className="font-display text-5xl leading-[1.02] font-extrabold tracking-[-0.045em] text-balance sm:text-6xl lg:text-7xl">
+          Keep the recipe for a great cup.
         </h1>
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-          Roastbook turns a label photo into structured coffee details, then
-          uses your own brew history to suggest what to change next.
+          Remember your beans, track every brew, and find what tastes best.
+          Roastbook is a coffee journal that helps your next cup start where the
+          last one left off.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-          <Button asChild size="lg">
-            <Link to="/overview">
-              Explore the live demo
-              <ArrowRight aria-hidden="true" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <a
-              href="https://github.com/michidk/roastbook"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <CodeXml aria-hidden="true" />
-              Star Roastbook on GitHub
-            </a>
-          </Button>
+        <WaitlistForm />
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <Link
+            to="/overview"
+            className="inline-flex min-h-11 items-center gap-2 font-semibold text-link underline underline-offset-4"
+          >
+            Explore the demo{' '}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+          <a
+            href="https://github.com/michidk/roastbook#-quick-start"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-link underline underline-offset-4"
+          >
+            Self-host today
+          </a>
         </div>
-        <p className="mt-4 text-sm font-medium text-muted-foreground">
-          The demo is read-only and needs no account. Roastbook is open source
-          and ready to self-host.
-        </p>
       </div>
       <ProductPreview />
     </section>
@@ -182,10 +174,7 @@ function LandingHero() {
 
 function LandingFeatures() {
   return (
-    <section
-      aria-labelledby="why-roastbook"
-      className="border-t border-border/70 py-14 sm:py-20"
-    >
+    <section aria-labelledby="why-roastbook" className="py-14 sm:py-20">
       <div className="max-w-2xl">
         <p className="font-display text-sm font-bold tracking-[0.16em] text-primary uppercase">
           AI that earns its place
@@ -342,16 +331,57 @@ function BeanPreviewCard({
   )
 }
 
+function HostingChoices() {
+  return (
+    <section
+      aria-labelledby="hosting-options"
+      className="grid gap-8 border-y border-border/70 py-10 md:grid-cols-2 md:gap-16"
+    >
+      <div>
+        <h2
+          id="hosting-options"
+          className="font-display text-2xl font-extrabold tracking-tight"
+        >
+          Brew more. Leave the hosting to us.
+        </h2>
+        <p className="mt-3 max-w-lg leading-relaxed text-muted-foreground">
+          Want Roastbook without setting up a server? We're collecting interest
+          in a hosted version. Your signup helps us decide what to build next.
+        </p>
+        <p className="mt-3 text-sm font-semibold">
+          Not available yet. No launch date or pricing announced.
+        </p>
+      </div>
+      <div className="md:border-l md:border-border md:pl-12">
+        <h3 className="font-display text-2xl font-extrabold tracking-tight">
+          Make it yours, today.
+        </h3>
+        <p className="mt-3 max-w-lg leading-relaxed text-muted-foreground">
+          Roastbook is free and open source. Run it on your own infrastructure,
+          keep control of your data, and make it work your way.
+        </p>
+        <a
+          href="https://github.com/michidk/roastbook#-quick-start"
+          className="mt-3 inline-flex min-h-11 items-center gap-2 font-semibold text-link underline underline-offset-4"
+        >
+          <CodeXml className="size-4" aria-hidden="true" />
+          Get the self-hosted version
+        </a>
+      </div>
+    </section>
+  )
+}
+
 function LandingCta() {
   return (
-    <section className="mb-8 overflow-hidden rounded-3xl bg-ink px-6 py-10 text-ink-foreground sm:px-10 sm:py-12 lg:flex lg:items-center lg:justify-between lg:gap-8">
+    <section className="mb-8 rounded-3xl bg-ink px-6 py-10 text-ink-foreground sm:px-10 sm:py-12 lg:flex lg:items-center lg:justify-between lg:gap-8">
       <div>
-        <p className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-          See what your coffee has been trying to tell you.
-        </p>
+        <h2 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+          More coffee. Less setup.
+        </h2>
         <p className="mt-3 max-w-2xl text-base text-ink-foreground/75 sm:text-lg">
-          Explore brews, beans, recipes, café visits, gear, and statistics in
-          the complete read-only demo.
+          Interested in hosted Roastbook? Leave your email and help shape what
+          comes next.
         </p>
       </div>
       <Button
@@ -359,10 +389,10 @@ function LandingCta() {
         size="lg"
         className="mt-7 border-card bg-card text-foreground hover:border-accent hover:bg-accent lg:mt-0"
       >
-        <Link to="/overview">
-          Open Roastbook
+        <a href="#waitlist">
+          Join the waitlist
           <ArrowRight aria-hidden="true" />
-        </Link>
+        </a>
       </Button>
     </section>
   )

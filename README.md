@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://roastbook.coffee/"><b>Live demo</b></a>
+  <a href="https://roastbook.coffee/"><b>Demo &amp; hosted waitlist</b></a>
   &nbsp;·&nbsp;
   <a href="#-quick-start">Quick start</a>
   &nbsp;·&nbsp;
@@ -33,8 +33,13 @@
 
 > [!TIP]
 > **Try it in ten seconds.** The
-> [read-only demo](https://roastbook.coffee/) runs entirely from bundled
+> [read-only demo](https://roastbook.coffee/overview) runs entirely from bundled
 > sample data — no account, no database, nothing to install.
+
+Prefer not to run a server? [Join the hosted waitlist](https://roastbook.coffee/#waitlist).
+A hosted edition is planned; the open-source edition is available to self-host
+today. The waitlist sends signup notifications via Resend, with no subscriber
+database. See [setup](docs/configuration.md#hosted-waitlist).
 
 ## ☕ What it is
 

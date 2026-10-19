@@ -9,11 +9,11 @@ export const Route = createFileRoute('/')({
   head: () => ({
     meta: DEMO_MODE
       ? [
-          { title: 'Roastbook — AI-powered, self-hosted coffee journal' },
+          { title: 'Roastbook | Your coffee journal, your way' },
           {
             name: 'description',
             content:
-              'Scan coffee bags, research beans and gear, and get brew recommendations grounded in your own history — in a journal you self-host.',
+              'Remember your beans and brew better coffee. Self-host Roastbook today, explore the demo, or join the waitlist for a future hosted version.',
           },
         ]
       : [],
