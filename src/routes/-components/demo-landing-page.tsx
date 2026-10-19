@@ -400,17 +400,29 @@ function LandingCta() {
 
 function LandingFooter() {
   return (
-    <footer className="flex flex-col gap-3 border-t border-border/70 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+    <footer className="flex flex-col gap-3 border-t border-border/70 py-8 text-sm text-muted-foreground lg:flex-row lg:items-center lg:justify-between">
       <p>Roastbook is open-source software for people who care about coffee.</p>
-      <a
-        href="https://github.com/michidk/roastbook"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-border bg-card px-4 font-bold text-foreground shadow-coffee transition-colors hover:bg-accent sm:self-auto"
-      >
-        <Star className="size-4 fill-current" aria-hidden="true" />
-        Star us on GitHub
-      </a>
+      <div className="flex flex-wrap items-center gap-3">
+        <a
+          href="https://www.instagram.com/roastbook.coffee/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Roastbook on Instagram: @roastbook.coffee"
+          className="inline-flex min-h-11 items-center gap-2 font-semibold text-link underline underline-offset-4"
+        >
+          <Camera className="size-4" aria-hidden="true" />
+          @roastbook.coffee
+        </a>
+        <a
+          href="https://github.com/michidk/roastbook"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-border bg-card px-4 font-bold text-foreground shadow-coffee transition-colors hover:bg-accent sm:self-auto"
+        >
+          <Star className="size-4 fill-current" aria-hidden="true" />
+          Star us on GitHub
+        </a>
+      </div>
     </footer>
   )
 }
