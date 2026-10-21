@@ -161,8 +161,8 @@ openai:
   existingSecret: ""
   existingSecretKey: "api-key"
   baseUrl: ""  # e.g., "https://openrouter.ai/api/v1" for OpenRouter
-  visionModel: "gpt-4o"  # e.g., "openai/gpt-4o" for OpenRouter
-  researchModel: "gpt-4o"
+  visionModel: "gpt-5.1-codex"
+  researchModel: "gpt-5.1-codex"
   telemetryStorePayloads: false
   telemetryRetentionDays: 1
   telemetryMaxPayloadBytes: 65536

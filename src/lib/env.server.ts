@@ -22,8 +22,8 @@ const serverSchema = {
   S3_SECRET_ACCESS_KEY: optionalString,
   OPENAI_API_KEY: optionalString,
   OPENAI_BASE_URL: z.url().default('https://api.openai.com/v1'),
-  OPENAI_VISION_MODEL: z.string().trim().min(1).default('gpt-4o'),
-  OPENAI_RESEARCH_MODEL: z.string().trim().min(1).default('gpt-4o'),
+  OPENAI_VISION_MODEL: z.string().trim().min(1).default('gpt-5.1-codex'),
+  OPENAI_RESEARCH_MODEL: z.string().trim().min(1).default('gpt-5.1-codex'),
   AI_TELEMETRY_STORE_PAYLOADS: booleanString,
   AI_TELEMETRY_RETENTION_DAYS: z.coerce
     .number()
