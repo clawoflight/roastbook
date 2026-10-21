@@ -168,6 +168,13 @@ if (!existsSync(serviceWorkerPath)) {
     !serviceWorkerTemplate.includes('allSettled'),
     `${serviceWorkerPath} must fail installation when a precache request fails`,
   )
+
+  for (const file of PRECACHED_FILES) {
+    record(
+      serviceWorkerTemplate.includes(`'/${file}'`),
+      `${serviceWorkerPath} is missing the /${file} precache entry`,
+    )
+  }
 }
 
 const expectedBuildId = serviceWorkerTemplate
