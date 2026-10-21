@@ -176,9 +176,11 @@ if (!existsSync(serviceWorkerPath)) {
     failures.push(`${serviceWorkerPath} does not declare a PRECACHE_URLS array`)
   } else {
     const precacheEntries = [...precacheBlock.matchAll(/'([^']+)'/g)].map(
-      (match) => match[1]?.replace(/^\//, '') ?? '',
+      (match) => match[1] ?? '',
     )
-    const expectedPrecacheEntries = new Set(PRECACHED_FILES)
+    const expectedPrecacheEntries = new Set(
+      PRECACHED_FILES.map((file) => `/${file}`),
+    )
 
     for (const entry of precacheEntries) {
       record(
@@ -186,10 +188,10 @@ if (!existsSync(serviceWorkerPath)) {
         `${serviceWorkerPath} has an unexpected precache entry ${entry}`,
       )
     }
-    for (const file of expectedPrecacheEntries) {
+    for (const entry of expectedPrecacheEntries) {
       record(
-        precacheEntries.includes(file),
-        `${serviceWorkerPath} is missing the /${file} precache entry in PRECACHE_URLS`,
+        precacheEntries.includes(entry),
+        `${serviceWorkerPath} is missing the ${entry} precache entry in PRECACHE_URLS`,
       )
     }
   }
