@@ -219,6 +219,9 @@ as MIME type and byte count, not the image payload itself.
 - Search beans, cafés, and gear directly; jump to any page; start a new brew,
   bean, or visit; and switch theme from the command palette (<kbd>⌘</kbd>
   <kbd>K</kbd> or <kbd>Ctrl</kbd> <kbd>K</kbd>).
+- Install Roastbook as a PWA on your phone or desktop. The service worker keeps
+  a branded offline screen available when the connection drops; journal data
+  stays server-backed.
 
 ### Self-hosting
 
@@ -244,6 +247,7 @@ from the database row to the rendered field:
 | Media storage | Local filesystem or any S3-compatible bucket |
 | AI | TanStack AI with any OpenAI-compatible endpoint |
 | Validation | Zod at every boundary, including environment variables |
+| PWA | Web app manifest and a hand-written service worker |
 | Tooling | Vite, Biome, Knip, `bun test` |
 | Deployment | Docker Compose or Helm, fronted by the Hodor auth proxy |
 

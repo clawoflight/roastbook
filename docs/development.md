@@ -62,12 +62,14 @@ bun run test
 bun run lint:deadcode
 bun run build
 bun run check:client-assets
+bun run check:pwa
 ```
 
 `bun run verify` runs this local sequence in dependency order. The client asset
 check runs after the build and enforces ordinary JavaScript and MapLibre chunk
 budgets while checking that server-only SDK markers are absent from browser
-assets.
+assets. The PWA check also runs after the build and validates the manifest,
+icons, offline page, and generated service worker.
 
 The standard `test` command allows environment-dependent integration suites to
 report as skipped. `test:coverage` reports unit-test coverage without imposing
@@ -103,6 +105,30 @@ recordings to the application source tree.
 For a changed route, verify 375px, 768px, and 1280px widths, including keyboard
 access, loading/empty/error states, console errors, and failed network requests.
 Store temporary artifacts under `.artifacts/qa/`; the directory is ignored.
+
+## Progressive web app
+
+Roastbook ships a web app manifest and a small hand-written service worker.
+The worker is registered only in production builds; `bun run dev` never
+registers it, so Vite HMR is not served from a stale cache. Build and start a
+production server to test it:
+
+```bash
+bun run build
+bun run start
+```
+
+PWA installation requires a secure context: HTTPS in production, or
+`http://localhost` during development. In the browser's Application panel,
+check the manifest and service worker, then switch the network to offline and
+reload to see the offline page. The worker caches only the offline page,
+manifest, icons, and hashed `/assets/*` files; journal data is not available
+offline.
+
+`bun run check:pwa` validates the manifest, icons, offline page, and built
+service worker after a build. If a previous production run registered a service
+worker on the same localhost origin, unregister it from the Application panel
+before returning to `bun run dev`.
 
 ## Design files
 

@@ -1,22 +1,42 @@
 {
-  "short_name": "Roastbook",
+  "id": "/",
   "name": "Roastbook",
+  "short_name": "Roastbook",
+  "description": "The AI-native coffee journal you actually own. Photograph the bag. Log the brew. Keep every gram of data on your own infrastructure.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/overview",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f6eddf",
+  "theme_color": "#6f4e37",
+  "categories": ["food", "lifestyle", "productivity"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "logo192.png",
-      "type": "image/png",
+      "src": "/logo192.png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "logo512.png",
-      "type": "image/png",
+      "src": "/logo512.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#f6eddf"
+  ]
 }

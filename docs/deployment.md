@@ -25,6 +25,17 @@ login. Those endpoints authenticate the device with their own bearer token and
 reject every request until the integration is enabled; see
 [Shottimer API](shottimer.md).
 
+## PWA and HTTPS
+
+Roastbook is installable as a progressive web app. Installation requires a
+secure context, so serve production deployments over HTTPS through Hodor or an
+equivalent TLS-terminating proxy. Plain `http://localhost` also counts as
+secure for local testing.
+
+The application serves `/sw.js`, `/manifest.json`, and `/offline.html` with
+`Cache-Control: no-cache`. Keep those responses uncached at any additional CDN
+or reverse proxy. Hodor passes them through without special configuration.
+
 ## Docker image
 
 The Docker build compiles JavaScript on the build host architecture and installs

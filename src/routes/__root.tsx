@@ -15,12 +15,15 @@ import '../styles.css'
 import { AlertTriangle, Home, LockKeyhole, RefreshCw } from 'lucide-react'
 import { AppNavbar } from '@/components/app-navbar'
 import { ErrorDetails } from '@/components/error-details'
+import { OfflineBanner } from '@/components/offline-banner'
+import { PwaManager } from '@/components/pwa-manager'
 import { RouteNotFound } from '@/components/route-not-found'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import { DEMO_MODE } from '@/lib/build-mode'
 import { publicEnv } from '@/lib/env'
 import { getErrorDisplayState } from '@/lib/error-display'
@@ -40,6 +43,30 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
+        name: 'theme-color',
+        content: '#f6eddf',
+      },
+      {
+        name: 'application-name',
+        content: 'Roastbook',
+      },
+      {
+        name: 'mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'Roastbook',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
         title: 'Roastbook',
       },
       ...(DEMO_MODE ? [{ name: 'robots', content: 'noindex, nofollow' }] : []),
@@ -51,6 +78,12 @@ export const Route = createRootRoute({
         href: '/favicon.ico',
       },
       {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '192x192',
+        href: '/logo192.png',
+      },
+      {
         rel: 'apple-touch-icon',
         sizes: '180x180',
         href: '/apple-touch-icon.png',
@@ -58,6 +91,7 @@ export const Route = createRootRoute({
       {
         rel: 'manifest',
         href: '/manifest.json',
+        crossOrigin: 'use-credentials',
       },
     ],
   }),
@@ -92,6 +126,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         )}
       >
         <SettingsHydrator />
+        <PwaManager />
         {children}
         {import.meta.env.DEV ? (
           <TanStackDevtools
@@ -132,6 +167,9 @@ function SettingsHydrator() {
         theme === 'dark' || (theme === 'system' && browserTheme.matches)
       document.documentElement.classList.toggle('dark', isDark)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', isDark ? '#1f1a14' : '#f6eddf')
     }
 
     applyTheme()
@@ -202,6 +240,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
 
 function RootComponent() {
   const settings = Route.useLoaderData()
+  const isOnline = useOnlineStatus()
   const preventDemoSubmit = (event: FormEvent<HTMLElement>) => {
     event.preventDefault()
     toast.info('Demo mode is read-only. Changes are disabled.')
@@ -216,6 +255,7 @@ function RootComponent() {
           viewportProps={{ id: 'app-scroll-area' }}
         >
           <div className="flex min-h-full flex-col">
+            {isOnline ? null : <OfflineBanner />}
             {settings.demoMode ? (
               <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
                 <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-sm font-medium">

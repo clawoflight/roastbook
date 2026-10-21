@@ -153,6 +153,17 @@ const config = defineConfig({
     }),
     nitro({
       preset: roastbookEdition === 'demo' ? 'vercel' : 'bun',
+      routeRules: {
+        '/sw.js': {
+          headers: { 'cache-control': 'no-cache, no-store, must-revalidate' },
+        },
+        '/manifest.json': {
+          headers: { 'cache-control': 'no-cache' },
+        },
+        '/offline.html': {
+          headers: { 'cache-control': 'no-cache' },
+        },
+      },
       routes:
         roastbookEdition === 'demo'
           ? {}
