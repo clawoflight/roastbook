@@ -3,24 +3,35 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import sharp from 'sharp'
 import { z } from 'zod'
+import {
+  BUILD_ID_PLACEHOLDER,
+  createServiceWorkerBuildId,
+  PRECACHED_FILES,
+  readServiceWorkerTemplate,
+} from './service-worker-build'
 
-const STATIC_OUTPUT_DIRS = ['.output/public', '.vercel/output/static']
+const DEFAULT_OUTPUT_DIR = '.output/public'
 const REQUIRED_ICON_SIZES = ['192x192', '512x512'] as const
 const REQUIRED_ICON_PURPOSES = ['any', 'maskable'] as const
-const REQUIRED_BUILD_FILES = [
-  'manifest.json',
-  'sw.js',
-  'offline.html',
-  'apple-touch-icon.png',
-  'favicon.ico',
-]
+const REQUIRED_BUILD_FILES = ['sw.js', ...PRECACHED_FILES]
 const MAX_SERVICE_WORKER_BYTES = 20 * 1024
+const ICON_PURPOSES = new Set(['any', 'maskable', 'monochrome'])
+
+const iconPurposeSchema = z.string().refine(
+  (value) => {
+    const tokens = value.trim().split(/\s+/)
+    return (
+      tokens.length > 0 && tokens.every((token) => ICON_PURPOSES.has(token))
+    )
+  },
+  { message: 'purpose must contain any, maskable, or monochrome tokens' },
+)
 
 const iconSchema = z.object({
   src: z.string().regex(/^\//),
   sizes: z.string().regex(/^\d+x\d+$/),
   type: z.literal('image/png'),
-  purpose: z.enum(['any', 'maskable', 'monochrome']),
+  purpose: iconPurposeSchema,
 })
 
 const manifestSchema = z.object({
@@ -38,6 +49,7 @@ const manifestSchema = z.object({
 })
 
 type Manifest = z.infer<typeof manifestSchema>
+type ManifestIcon = z.infer<typeof iconSchema>
 
 const failures: string[] = []
 
@@ -55,6 +67,10 @@ function parseIconSize(
   return { width: Number(widthText), height: Number(heightText) }
 }
 
+function hasIconPurpose(icon: ManifestIcon, purpose: string): boolean {
+  return icon.purpose.trim().split(/\s+/).includes(purpose)
+}
+
 const manifestText = await readFile('public/manifest.json', 'utf8')
 const manifest: Manifest = manifestSchema.parse(JSON.parse(manifestText))
 
@@ -69,7 +85,7 @@ for (const purpose of REQUIRED_ICON_PURPOSES) {
   for (const sizes of REQUIRED_ICON_SIZES) {
     record(
       manifest.icons.some(
-        (icon) => icon.purpose === purpose && icon.sizes === sizes,
+        (icon) => hasIconPurpose(icon, purpose) && icon.sizes === sizes,
       ),
       `public/manifest.json is missing a ${sizes} ${purpose} icon`,
     )
@@ -91,6 +107,10 @@ for (const icon of manifest.icons) {
 
   const metadata = await sharp(iconPath).metadata()
   record(
+    metadata.format === 'png',
+    `${iconPath} is ${metadata.format}, expected png`,
+  )
+  record(
     metadata.width === dimensions.width &&
       metadata.height === dimensions.height,
     `${iconPath} is ${metadata.width}x${metadata.height}, expected ${icon.sizes}`,
@@ -107,37 +127,64 @@ if (!existsSync(offlinePath)) {
     `${offlinePath} must have the Roastbook offline title`,
   )
   record(
-    !/https?:\/\//.test(offlinePage),
-    `${offlinePath} must not depend on external URLs`,
+    !/(?:https?:)?\/\//i.test(offlinePage),
+    `${offlinePath} must not depend on external or protocol-relative URLs`,
   )
 }
 
 const serviceWorkerPath = 'public/sw.js'
+let serviceWorkerTemplate: string | null = null
 if (!existsSync(serviceWorkerPath)) {
   failures.push(`${serviceWorkerPath} does not exist`)
 } else {
-  const serviceWorker = await readFile(serviceWorkerPath, 'utf8')
+  serviceWorkerTemplate = await readServiceWorkerTemplate()
+
   for (const marker of [
-    '__BUILD_ID__',
+    BUILD_ID_PLACEHOLDER,
     "const OFFLINE_URL = '/offline.html'",
     "request.mode === 'navigate'",
     "const ASSET_CACHE = 'roastbook-assets'",
+    "if (request.method !== 'GET') return",
+    'if (url.origin !== self.location.origin) return',
+    'if (isExcludedPath(url.pathname)) return',
+    "if (url.pathname.startsWith('/assets/'))",
+    "new Set(['/sw.js'])",
+    '/api/',
+    '/_serverFn/',
+    '/_gate/',
+    '/media/',
+    'PRECACHE_PATHS.has(url.pathname)',
+    'async function cacheFirstPrecache(request)',
+    'cache.match(request, { ignoreSearch: true })',
+    'await Promise.all(',
   ]) {
     record(
-      serviceWorker.includes(marker),
+      serviceWorkerTemplate.includes(marker),
       `${serviceWorkerPath} is missing ${marker}`,
     )
   }
+
+  record(
+    !serviceWorkerTemplate.includes('allSettled'),
+    `${serviceWorkerPath} must fail installation when a precache request fails`,
+  )
 }
 
-const outputDirs = STATIC_OUTPUT_DIRS.filter((directory) =>
-  existsSync(directory),
-)
-if (outputDirs.length === 0) {
-  failures.push('No built static output found. Run bun run build first.')
-}
+const expectedBuildId = serviceWorkerTemplate
+  ? await createServiceWorkerBuildId(serviceWorkerTemplate)
+  : null
+
+const outputDirs = process.argv.slice(2)
+if (outputDirs.length === 0) outputDirs.push(DEFAULT_OUTPUT_DIR)
 
 for (const directory of outputDirs) {
+  if (!existsSync(directory)) {
+    failures.push(
+      `${directory} does not exist. Run the matching build before checking it.`,
+    )
+    continue
+  }
+
   for (const file of [
     ...REQUIRED_BUILD_FILES,
     ...manifest.icons.map((icon) => icon.src.slice(1)),
@@ -157,13 +204,15 @@ for (const directory of outputDirs) {
   if (existsSync(builtServiceWorkerPath)) {
     const builtServiceWorker = await readFile(builtServiceWorkerPath, 'utf8')
     record(
-      !builtServiceWorker.includes('__BUILD_ID__'),
+      !builtServiceWorker.includes(BUILD_ID_PLACEHOLDER),
       `${builtServiceWorkerPath} still contains the build placeholder`,
     )
-    record(
-      /^const BUILD_ID = '[0-9a-f]{12}'$/m.test(builtServiceWorker),
-      `${builtServiceWorkerPath} does not contain a generated build ID`,
-    )
+    if (expectedBuildId) {
+      record(
+        builtServiceWorker.includes(`const BUILD_ID = '${expectedBuildId}'`),
+        `${builtServiceWorkerPath} does not match the expected build ID ${expectedBuildId}`,
+      )
+    }
     record(
       Buffer.byteLength(builtServiceWorker) <= MAX_SERVICE_WORKER_BYTES,
       `${builtServiceWorkerPath} exceeds ${MAX_SERVICE_WORKER_BYTES} bytes`,

@@ -126,9 +126,10 @@ manifest, icons, and hashed `/assets/*` files; journal data is not available
 offline.
 
 `bun run check:pwa` validates the manifest, icons, offline page, and built
-service worker after a build. If a previous production run registered a service
-worker on the same localhost origin, unregister it from the Application panel
-before returning to `bun run dev`.
+service worker after a build. For the demo output, pass its static directory:
+`bun run check:pwa .vercel/output/static`. If a previous production run
+registered a service worker on the same localhost origin, unregister it from the
+Application panel before returning to `bun run dev`.
 
 ## Design files
 

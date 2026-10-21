@@ -28,9 +28,9 @@ reject every request until the integration is enabled; see
 ## PWA and HTTPS
 
 Roastbook is installable as a progressive web app. Installation requires a
-secure context, so serve production deployments over HTTPS through Hodor or an
-equivalent TLS-terminating proxy. Plain `http://localhost` also counts as
-secure for local testing.
+secure context, so terminate TLS at an ingress or reverse proxy in front of
+Hodor (or use an equivalent HTTPS proxy) for production deployments. Plain
+`http://localhost` also counts as secure for local testing.
 
 The application serves `/sw.js`, `/manifest.json`, and `/offline.html` with
 `Cache-Control: no-cache`. Keep those responses uncached at any additional CDN

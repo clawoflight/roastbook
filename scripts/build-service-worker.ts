@@ -1,46 +1,35 @@
-import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { readFile, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import {
+  BUILD_ID_PLACEHOLDER,
+  createServiceWorkerBuildId,
+  createServiceWorkerSource,
+  readServiceWorkerTemplate,
+} from './service-worker-build'
 
-const SOURCE_SERVICE_WORKER = 'public/sw.js'
-const PRECACHED_FILES = [
-  'offline.html',
-  'manifest.json',
-  'logo192.png',
-  'logo512.png',
-  'logo-maskable-192.png',
-  'logo-maskable-512.png',
-  'apple-touch-icon.png',
-  'favicon.ico',
-]
-const STATIC_OUTPUT_DIRS = ['.output/public', '.vercel/output/static']
-
-const template = await readFile(SOURCE_SERVICE_WORKER, 'utf8')
-if (!template.includes('__BUILD_ID__')) {
-  throw new Error(
-    `${SOURCE_SERVICE_WORKER} is missing the __BUILD_ID__ placeholder`,
-  )
-}
-
-const hash = createHash('sha256').update(template)
-for (const file of PRECACHED_FILES) {
-  hash.update(file)
-  hash.update(await readFile(join('public', file)))
-}
-const buildId = hash.digest('hex').slice(0, 12)
-const serviceWorker = template.replaceAll('__BUILD_ID__', buildId)
-
-const outputDirs = STATIC_OUTPUT_DIRS.filter((directory) =>
-  existsSync(directory),
-)
+const outputDirs = process.argv.slice(2)
 if (outputDirs.length === 0) {
   throw new Error(
-    `No static output directory found (${STATIC_OUTPUT_DIRS.join(', ')}). Run vite build first.`,
+    'Usage: bun run scripts/build-service-worker.ts <static-output-dir> [...]',
   )
 }
 
+const template = await readServiceWorkerTemplate()
+if (!template.includes(BUILD_ID_PLACEHOLDER)) {
+  throw new Error(
+    `public/sw.js is missing the ${BUILD_ID_PLACEHOLDER} placeholder`,
+  )
+}
+
+const buildId = await createServiceWorkerBuildId(template)
+const serviceWorker = createServiceWorkerSource(template, buildId)
+
 for (const directory of outputDirs) {
+  if (!existsSync(directory)) {
+    throw new Error(`Static output directory does not exist: ${directory}`)
+  }
+
   const target = join(directory, 'sw.js')
   await writeFile(target, serviceWorker)
   console.log(`Generated ${target} (build ${buildId})`)

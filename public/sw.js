@@ -15,6 +15,7 @@ const PRECACHE_URLS = [
   '/apple-touch-icon.png',
   '/favicon.ico',
 ]
+const PRECACHE_PATHS = new Set(PRECACHE_URLS)
 
 self.addEventListener('install', (event) => {
   event.waitUntil(precache())
@@ -37,6 +38,11 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  if (PRECACHE_PATHS.has(url.pathname)) {
+    event.respondWith(cacheFirstPrecache(request))
+    return
+  }
+
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith(cacheFirstAsset(request))
   }
@@ -50,7 +56,7 @@ self.addEventListener('message', (event) => {
 
 async function precache() {
   const cache = await caches.open(PRECACHE_CACHE)
-  await Promise.allSettled(
+  await Promise.all(
     PRECACHE_URLS.map((url) =>
       cache.add(new Request(url, { cache: 'reload' })),
     ),
@@ -86,6 +92,14 @@ async function networkFirstNavigation(request) {
       },
     )
   }
+}
+
+async function cacheFirstPrecache(request) {
+  const cache = await caches.open(PRECACHE_CACHE)
+  const cached = await cache.match(request, { ignoreSearch: true })
+  if (cached) return cached
+
+  return fetch(request)
 }
 
 async function cacheFirstAsset(request) {
