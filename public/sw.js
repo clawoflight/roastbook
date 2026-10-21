@@ -6,7 +6,7 @@ const MAX_ASSET_ENTRIES = 100
 const EXCLUDED_PATHS = new Set(['/sw.js'])
 const EXCLUDED_PREFIXES = ['/api/', '/_serverFn/', '/_gate/', '/media/']
 const PRECACHE_URLS = [
-  OFFLINE_URL,
+  '/offline.html',
   '/manifest.json',
   '/logo192.png',
   '/logo512.png',
