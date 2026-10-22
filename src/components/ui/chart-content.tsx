@@ -163,8 +163,6 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = 'ChartTooltip'
 
-const ChartLegend = RechartsPrimitive.Legend
-
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
@@ -250,4 +248,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export { ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent }
+export { ChartLegendContent, ChartTooltip, ChartTooltipContent }
