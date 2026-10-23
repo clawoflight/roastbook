@@ -14,6 +14,7 @@ import {
   INITIAL_SYNC_RETRY_DELAY_MS,
   nextSyncRetryDelay,
   shouldAnnounceAuthRequired,
+  shouldScheduleSyncRetry,
 } from '@/modules/offline/sync-policy'
 import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
 import { isPendingBrewHeldForTasting } from '@/modules/offline/tasting-holds'
@@ -119,9 +120,10 @@ export function OfflineSyncManager() {
           authNotified = result.authRequired
           if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
           else clearRetry()
-        } catch {
+        } catch (error) {
           // A failed flush leaves the queue intact. Retry local/transient
           // failures while online; a successful sync resets the backoff.
+          console.error('Offline sync flush failed', error)
           scheduleRetry()
         } finally {
           usePendingBrewsStore.getState().setSyncing(false)
@@ -137,7 +139,15 @@ export function OfflineSyncManager() {
     }
 
     function scheduleRetry() {
-      if (disposed || retryTimer !== null || !navigator.onLine) return
+      if (
+        !shouldScheduleSyncRetry({
+          online: navigator.onLine,
+          disposed,
+          hasTimer: retryTimer !== null,
+        })
+      ) {
+        return
+      }
       const delay = retryDelay
       retryTimer = window.setTimeout(() => {
         retryTimer = null

@@ -11,3 +11,15 @@ export function shouldAnnounceAuthRequired(
 ): boolean {
   return authRequired && !alreadyAnnounced
 }
+
+export function shouldScheduleSyncRetry({
+  online,
+  disposed,
+  hasTimer,
+}: {
+  readonly online: boolean
+  readonly disposed: boolean
+  readonly hasTimer: boolean
+}): boolean {
+  return online && !disposed && !hasTimer
+}

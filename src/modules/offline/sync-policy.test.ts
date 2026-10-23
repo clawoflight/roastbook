@@ -4,6 +4,7 @@ import {
   MAX_SYNC_RETRY_DELAY_MS,
   nextSyncRetryDelay,
   shouldAnnounceAuthRequired,
+  shouldScheduleSyncRetry,
 } from '@/modules/offline/sync-policy'
 
 describe('offline sync policy', () => {
@@ -26,5 +27,36 @@ describe('offline sync policy', () => {
     expect(shouldAnnounceAuthRequired(true, true)).toBe(false)
     expect(shouldAnnounceAuthRequired(false, true)).toBe(false)
     expect(shouldAnnounceAuthRequired(false, false)).toBe(false)
+  })
+
+  test('schedules a retry only while online, mounted, and timer-free', () => {
+    expect(
+      shouldScheduleSyncRetry({
+        online: true,
+        disposed: false,
+        hasTimer: false,
+      }),
+    ).toBe(true)
+    expect(
+      shouldScheduleSyncRetry({
+        online: false,
+        disposed: false,
+        hasTimer: false,
+      }),
+    ).toBe(false)
+    expect(
+      shouldScheduleSyncRetry({
+        online: true,
+        disposed: true,
+        hasTimer: false,
+      }),
+    ).toBe(false)
+    expect(
+      shouldScheduleSyncRetry({
+        online: true,
+        disposed: false,
+        hasTimer: true,
+      }),
+    ).toBe(false)
   })
 })
