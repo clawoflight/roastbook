@@ -124,26 +124,3 @@ export const getServerEnv = createServerOnlyFn((): ServerEnv => {
   cachedEnvironment ??= parseServerEnv(process.env)
   return cachedEnvironment
 })
-
-// The public waitlist runs without the journal's database or storage settings.
-export function parseWaitlistEnv(runtimeEnvironment: RuntimeEnvironment) {
-  return createEnv({
-    server: {
-      RESEND_API_KEY: optionalString,
-      ADMIN_EMAIL: z.email().optional(),
-      RESEND_FROM_EMAIL: z.email().default('onboarding@resend.dev'),
-    },
-    runtimeEnvStrict: {
-      RESEND_API_KEY: runtimeEnvironment.RESEND_API_KEY,
-      ADMIN_EMAIL: runtimeEnvironment.ADMIN_EMAIL,
-      RESEND_FROM_EMAIL: runtimeEnvironment.RESEND_FROM_EMAIL,
-    },
-    emptyStringAsUndefined: true,
-    isServer: true,
-    onValidationError: validationError,
-  })
-}
-
-export const getWaitlistEnv = createServerOnlyFn(() =>
-  parseWaitlistEnv(process.env),
-)

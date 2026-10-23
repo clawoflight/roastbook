@@ -34,14 +34,12 @@ Standard `bun run build` and Docker builds use PostgreSQL, compile demo mode to
 `false`, and do not install the PGlite development dependency in the production
 image. The edition cannot be toggled at runtime.
 
-The enforcement boundary is server-side request middleware. With demo mode
-enabled, GET and HEAD requests proceed. The hosted-waitlist POST server function
-is the sole write exception; journal writes, uploads, settings changes,
-AI actions, and other POST endpoints fail with a read-only error. The UI also
+The enforcement boundary is server-side request middleware. With demo mode enabled,
+GET and HEAD requests proceed. Journal writes, uploads, settings changes, AI
+actions, and POST endpoints fail with a read-only error. The UI also
 shows a persistent banner, prevents form submissions, and disables its global
-create controls. The demo edition serves a public project landing page at `/`.
-The journal overview lives at `/overview` in every edition; standard builds
-redirect `/` there. The bean-package seed images are emitted as static assets
+create controls. Both demo and standard editions redirect `/` to `/overview`.
+The bean-package seed images are emitted as static assets
 during the demo build. All demo business and product records are fictional.
 Roasters and cafés have no website URLs, and five bundled abstract favicon
 marks are reused across them without making network requests.
@@ -55,22 +53,3 @@ queries, joins, pagination, and statistics therefore keep the same abstraction
 as the PostgreSQL edition while the deployment remains stateless. The public
 demo warns that its first request may be slower while a serverless instance
 starts and restores the database snapshot.
-
-## Hosted waitlist
-
-The landing page collects interest in a future hosted edition. Its POST server
-function validates the email and sends an administrative notification through
-Resend. It does not write to the demo database, create an account, subscribe a
-Resend contact, or send a confirmation email to the visitor. The form confirms
-success only when Resend accepts the notification.
-
-Set `RESEND_API_KEY` and `ADMIN_EMAIL` in the Vercel production environment,
-then redeploy. See [waitlist configuration](configuration.md#hosted-waitlist)
-for the optional verified sender address. These runtime secrets are server-only
-and do not require `DATABASE_URL`.
-
-A honeypot rejects basic bot submissions without sending mail. The existing
-resource limiter caps sends at ten per minute and two concurrent requests per
-server process. This is not a shared limit across Vercel instances; use Vercel
-Firewall rate limits if abuse requires stronger protection. There is no durable
-email deduplication: repeated accepted submissions generate repeated emails.

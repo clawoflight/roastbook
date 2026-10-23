@@ -98,23 +98,3 @@ Set `HODOR_SECURE_COOKIE=true` whenever Compose is served over HTTPS.
 The chart's complete defaults live in `charts/values.yaml` and are validated by
 `charts/values.schema.json`. See `charts/README.md` for installation examples
 and the external-secret contract.
-
-## Hosted waitlist
-
-These server-only variables configure the public landing page's email signup.
-They are validated separately from journal settings, so the demo needs no
-PostgreSQL or storage credentials.
-
-| Variable | Default | Required | Description |
-| --- | --- | --- | --- |
-| `RESEND_API_KEY` | — | For signups | Resend sending API key |
-| `ADMIN_EMAIL` | — | For signups | Inbox receiving each waitlist signup |
-| `RESEND_FROM_EMAIL` | `onboarding@resend.dev` | No | Sender email address |
-
-The default Resend test sender can only deliver to your Resend account's email
-address. To deliver elsewhere, verify a domain in Resend and set
-`RESEND_FROM_EMAIL` to an address on that domain. Set these variables in Vercel
-for the deployment's environment and redeploy. Never prefix them with `VITE_`.
-Missing configuration or a rejected delivery shows a retry message, not a
-successful signup. No subscriber database is maintained; the admin inbox is the
-record of interest.

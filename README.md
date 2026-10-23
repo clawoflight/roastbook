@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://roastbook.coffee/"><b>Demo &amp; hosted waitlist</b></a>
+  <a href="https://roastbook.coffee/overview"><b>Open the demo</b></a>
   &nbsp;·&nbsp;
   <a href="#-quick-start">Quick start</a>
   &nbsp;·&nbsp;
@@ -45,10 +45,8 @@
 > [read-only demo](https://roastbook.coffee/overview) runs entirely from bundled
 > sample data — no account, no database, nothing to install.
 
-Prefer not to run a server? [Join the hosted waitlist](https://roastbook.coffee/#waitlist).
-A hosted edition is planned; the open-source edition is available to self-host
-today. The waitlist sends signup notifications via Resend, with no subscriber
-database. See [setup](docs/configuration.md#hosted-waitlist).
+The marketing site lives in the sibling [roastbook-website](../roastbook-website)
+project. This repository serves the read-only demo and the self-hosted journal.
 
 ## ☕ What it is
 
@@ -330,7 +328,6 @@ src/lib/storage/     Local and S3-compatible storage providers
 src/db/              Drizzle schema and database connection
 drizzle/             Committed migrations and metadata
 charts/              Helm chart
-marketing/           Instagram campaign sources and production scripts
 ```
 
 > [!WARNING]
@@ -345,6 +342,6 @@ marketing/           Instagram campaign sources and production scripts
 
 <p align="center">
   Open-source software for people who care about coffee. ☕<br>
-  <sub><a href="https://roastbook.coffee/">Try the demo</a> ·
+  <sub><a href="https://roastbook.coffee/overview">Try the demo</a> ·
   <a href="https://github.com/michidk/roastbook">Star it on GitHub</a></sub>
 </p>

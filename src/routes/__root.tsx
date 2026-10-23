@@ -5,7 +5,6 @@ import {
   Outlet,
   Scripts,
   useRouter,
-  useRouterState,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import type { FormEvent } from 'react'
@@ -22,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { DEMO_MODE } from '@/lib/build-mode'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
 import { getAppSettings } from '@/lib/server/app-settings'
@@ -68,24 +66,15 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const settings = Route.useLoaderData()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-  const isDemoLandingPage = DEMO_MODE && pathname === '/'
 
   return (
-    <html
-      lang="en"
-      className={isDemoLandingPage ? 'document-scroll' : undefined}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body
         className={cn(
           settings?.backgroundTextureEnabled === false && 'texture-disabled',
-          isDemoLandingPage && 'document-scroll',
         )}
       >
         <SettingsHydrator />
@@ -199,10 +188,6 @@ function RootErrorComponent({ error }: { error: unknown }) {
 
 function RootComponent() {
   const settings = Route.useLoaderData()
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  })
-  const isDemoLandingPage = settings.demoMode && pathname === '/'
   const preventDemoSubmit = (event: FormEvent<HTMLElement>) => {
     event.preventDefault()
     toast.info('Demo mode is read-only. Changes are disabled.')
@@ -210,44 +195,33 @@ function RootComponent() {
 
   return (
     <TooltipProvider>
-      <div
-        className={
-          isDemoLandingPage
-            ? 'min-h-[100dvh]'
-            : 'flex h-[100dvh] flex-col overflow-hidden'
-        }
-      >
-        {isDemoLandingPage ? null : (
-          <>
-            <AppNavbar demoMode={settings.demoMode} />
-            <ScrollArea
-              className="min-h-0 flex-1"
-              viewportProps={{ id: 'app-scroll-area' }}
-            >
-              <div className="flex min-h-full flex-col">
-                {settings.demoMode ? (
-                  <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
-                    <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-sm font-medium">
-                      <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-                      Demo mode: explore with sample data; changes are disabled.
-                      First loads may be slower while the demo wakes up.
-                    </div>
-                  </div>
-                ) : null}
-                <main
-                  id="main-content"
-                  onSubmitCapture={
-                    settings.demoMode ? preventDemoSubmit : undefined
-                  }
-                  className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8"
-                >
-                  <Outlet />
-                </main>
+      <div className="flex h-[100dvh] flex-col overflow-hidden">
+        <AppNavbar demoMode={settings.demoMode} />
+        <ScrollArea
+          className="min-h-0 flex-1"
+          viewportProps={{ id: 'app-scroll-area' }}
+        >
+          <div className="flex min-h-full flex-col">
+            {settings.demoMode ? (
+              <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
+                <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-sm font-medium">
+                  <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+                  Demo mode: explore with sample data; changes are disabled.
+                  First loads may be slower while the demo wakes up.
+                </div>
               </div>
-            </ScrollArea>
-          </>
-        )}
-        {isDemoLandingPage ? <Outlet /> : null}
+            ) : null}
+            <main
+              id="main-content"
+              onSubmitCapture={
+                settings.demoMode ? preventDemoSubmit : undefined
+              }
+              className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 md:pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-8"
+            >
+              <Outlet />
+            </main>
+          </div>
+        </ScrollArea>
       </div>
       <Toaster />
     </TooltipProvider>
