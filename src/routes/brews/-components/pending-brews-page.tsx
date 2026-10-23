@@ -1,4 +1,4 @@
-import { Coffee, RefreshCw } from 'lucide-react'
+import { Coffee, RefreshCw, Trash2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
@@ -33,6 +33,7 @@ export function PendingBrewsPage() {
   const items = usePendingBrewsStore((state) => state.items)
   const isHydrated = usePendingBrewsStore((state) => state.isHydrated)
   const isSyncing = usePendingBrewsStore((state) => state.isSyncing)
+  const loadError = usePendingBrewsStore((state) => state.loadError)
   const hydrate = usePendingBrewsStore((state) => state.hydrate)
   const isOnline = useOnlineStatus()
   const formatDateTime = useDateTimeFormatter()
@@ -46,6 +47,24 @@ export function PendingBrewsPage() {
       <Card>
         <CardContent className="py-8 text-center text-sm text-muted-foreground">
           Loading pending brews…
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (loadError && items.length === 0) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 py-8 text-center">
+          <p className="font-semibold">Could not read pending brews</p>
+          <p className="text-sm text-muted-foreground">{loadError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void hydrate()}
+          >
+            Try again
+          </Button>
         </CardContent>
       </Card>
     )
@@ -87,6 +106,12 @@ export function PendingBrewsPage() {
           {isSyncing ? 'Syncing…' : 'Sync now'}
         </Button>
       </div>
+
+      {loadError ? (
+        <p className="text-sm text-destructive-text">
+          Could not refresh saved brews: {loadError}
+        </p>
+      ) : null}
 
       {items.map((item) => {
         const details = [
@@ -159,6 +184,18 @@ export function PendingBrewsPage() {
                 <DeleteConfirmation
                   title="Discard pending brew?"
                   description="This removes the unsynced brew from this device. It cannot be recovered."
+                  trigger={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={isSyncing}
+                      aria-label="Discard pending brew"
+                      className="text-destructive-text hover:bg-destructive/10 hover:text-destructive-text"
+                    >
+                      <Trash2 aria-hidden className="h-4 w-4" />
+                    </Button>
+                  }
                   onConfirm={async () => {
                     await discardPendingBrew(item.operationId)
                     toast.success('Pending brew discarded')

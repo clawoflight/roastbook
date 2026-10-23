@@ -7,6 +7,7 @@ const MAX_ASSET_ENTRIES = 100
 const MAX_DOCUMENT_ENTRIES = 20
 const EXCLUDED_PATHS = new Set(['/sw.js'])
 const EXCLUDED_PREFIXES = ['/api/', '/_serverFn/', '/_gate/', '/media/']
+const PRECACHE_ASSETS = __PRECACHE_ASSETS__
 const PRECACHE_URLS = [
   '/offline.html',
   '/manifest.json',
@@ -16,6 +17,12 @@ const PRECACHE_URLS = [
   '/logo-maskable-512.png',
   '/apple-touch-icon.png',
   '/favicon.ico',
+  '/navbar-logo.png',
+  '/paper-grain-light.svg',
+  '/paper-grain-dark.svg',
+  '/coffee-stains-light.svg',
+  '/coffee-stains-dark.svg',
+  ...PRECACHE_ASSETS,
 ]
 const PRECACHE_PATHS = new Set(PRECACHE_URLS)
 const DOCUMENT_PRECACHE_URLS = ['/overview', '/brews/new', '/brews/pending']

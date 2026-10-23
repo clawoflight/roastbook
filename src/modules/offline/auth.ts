@@ -5,11 +5,15 @@ export type AuthenticationState =
 
 export async function checkAuthentication(): Promise<AuthenticationState> {
   try {
-    const response = await fetch('/api/auth-probe', { cache: 'no-store' })
+    const response = await fetch('/api/auth-probe', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5000),
+    })
     if (response.status === 204) return 'authenticated'
     if (response.status === 401 || response.status === 403) {
       return 'auth-required'
     }
+    if (response.status >= 500) return 'unreachable'
     if (response.redirected) return 'auth-required'
 
     const pathname = new URL(response.url, window.location.origin).pathname

@@ -13,7 +13,9 @@ import {
 import { replaceRecipeDrinkOptions } from '@/lib/server/drink-options.server'
 import { saveShotToRecipeInTransaction } from '@/lib/server/shot-recipes.server'
 import {
+  createShotAndSaveRecipeOperation,
   createShotOperation,
+  deleteShotOperation,
   updateShotOperation,
 } from '@/lib/server/shots-operations.server'
 import { shotFormValuesFrom } from '@/modules/brews/shot-form-values'
@@ -119,6 +121,70 @@ integrationDescribe('brew operations contract', () => {
       .from(shots)
       .where(eq(shots.clientOperationId, clientOperationId))
     expect(rows).toHaveLength(1)
+  })
+
+  test('keeps a completed operation tombstone after the brew is deleted', async () => {
+    if (!brewingMethodId) {
+      throw new Error('Contract brewing method was not created')
+    }
+
+    const clientOperationId = crypto.randomUUID()
+    const created = await createShotOperation({
+      brewingMethodId,
+      clientOperationId,
+      doseGrams: '18.0',
+    })
+    await deleteShotOperation(created.id)
+
+    await expect(
+      createShotOperation({
+        brewingMethodId,
+        clientOperationId,
+        doseGrams: '19.0',
+      }),
+    ).rejects.toThrow('already synced and deleted')
+
+    const rows = await db
+      .select({ id: shots.id })
+      .from(shots)
+      .where(eq(shots.clientOperationId, clientOperationId))
+    expect(rows).toHaveLength(0)
+  })
+
+  test('does not save a second recipe when the create is retried', async () => {
+    if (!brewingMethodId) {
+      throw new Error('Contract brewing method was not created')
+    }
+
+    const clientOperationId = crypto.randomUUID()
+    const recipeName = `idempotent-recipe-${clientOperationId}`
+    const first = await createShotAndSaveRecipeOperation({
+      shot: {
+        brewingMethodId,
+        clientOperationId,
+        doseGrams: '18.0',
+      },
+      target: { name: recipeName },
+    })
+    const second = await createShotAndSaveRecipeOperation({
+      shot: {
+        brewingMethodId,
+        clientOperationId,
+        doseGrams: '19.0',
+      },
+      target: { name: recipeName },
+    })
+
+    expect(second.shot.id).toBe(first.shot.id)
+    expect(second.recipe).toBeNull()
+
+    const recipeRows = await db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(eq(recipes.name, recipeName))
+    expect(recipeRows).toHaveLength(1)
+
+    await db.delete(recipes).where(eq(recipes.name, recipeName))
   })
   test('saving a brew as a recipe preserves milk options on create and overwrite', async () => {
     if (!brewingMethodId) throw new Error('Missing contract method')

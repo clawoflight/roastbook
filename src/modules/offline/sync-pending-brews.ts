@@ -1,5 +1,6 @@
+import { getErrorMessage } from '@/lib/error-message'
 import type { AuthenticationState } from '@/modules/offline/auth'
-import { isNetworkError } from '@/modules/offline/errors'
+import { isDefinitiveSyncError, isNetworkError } from '@/modules/offline/errors'
 import type { PendingBrew, PendingBrewPayload } from '@/modules/offline/types'
 
 export interface SyncPendingBrewsDependencies {
@@ -60,8 +61,6 @@ async function syncOneBrew(
       ...item.payload,
       clientOperationId: item.operationId,
     })
-    await dependencies.remove(item.operationId)
-    return 'synced'
   } catch (error) {
     if (isNetworkError(error) || !dependencies.isOnline()) return 'network'
 
@@ -76,14 +75,26 @@ async function syncOneBrew(
       return 'auth'
     }
 
+    const message = getErrorMessage(error, 'Could not sync this brew')
+    if (!isDefinitiveSyncError(error)) {
+      await dependencies.mark(item.operationId, {
+        status: 'pending',
+        attempts: item.attempts + 1,
+        lastError: message,
+      })
+      return 'network'
+    }
+
     await dependencies.mark(item.operationId, {
       status: 'failed',
       attempts: item.attempts + 1,
-      lastError:
-        error instanceof Error ? error.message : 'Could not sync this brew',
+      lastError: message,
     })
     return 'failed'
   }
+
+  await dependencies.remove(item.operationId)
+  return 'synced'
 }
 
 export async function syncPendingBrews(
@@ -91,28 +102,27 @@ export async function syncPendingBrews(
 ): Promise<SyncPendingBrewsResult> {
   const items = await dependencies.list()
   const eligible = items.filter((item) => item.status !== 'failed')
-  const alreadyFailed = items.length - eligible.length
 
   if (eligible.length === 0) {
-    return syncResult(0, alreadyFailed, {
+    return syncResult(0, 0, {
       stoppedByNetwork: !dependencies.isOnline(),
     })
   }
   if (!dependencies.isOnline()) {
-    return syncResult(0, alreadyFailed, { stoppedByNetwork: true })
+    return syncResult(0, 0, { stoppedByNetwork: true })
   }
 
   const authentication = await dependencies.authenticate()
   if (authentication === 'unreachable') {
-    return syncResult(0, alreadyFailed, { stoppedByNetwork: true })
+    return syncResult(0, 0, { stoppedByNetwork: true })
   }
   if (authentication === 'auth-required') {
     await markAuthRequired(dependencies, eligible)
-    return syncResult(0, alreadyFailed, { authRequired: true })
+    return syncResult(0, 0, { authRequired: true })
   }
 
   let synced = 0
-  let failed = alreadyFailed
+  let failed = 0
 
   for (const [index, item] of eligible.entries()) {
     if (!dependencies.isOnline()) {

@@ -15,6 +15,7 @@ import {
   beanPurchases,
   beans,
   brewingMethods,
+  clientOperations,
   shotAccessoryGear,
   shots,
   shotTasteTags,
@@ -54,6 +55,12 @@ import { LEGACY_SENSORY_TASTE_TAG_NAMES } from '@/lib/taste-tags'
 import type { ShotSortKey } from '@/modules/brews/read-models'
 
 type ShotCreateCandidate = ReturnType<typeof shotCreateSchema.parse>
+type ShotRow = typeof shots.$inferSelect
+type CreateShotResult = {
+  readonly shot: ShotRow | null
+  readonly created: boolean
+  readonly operationAlreadyCompleted: boolean
+}
 const SHOTS_PAGE_SIZE = 12
 const SHOT_GROUPS_PAGE_SIZE = 8
 const BEAN_SHOT_CHART_LIMIT = 100
@@ -382,12 +389,56 @@ export async function getShotOperation(id: number) {
 async function createShotInTransaction(
   tx: ShotTransaction,
   data: ShotCreateCandidate,
-) {
-  if (data.clientOperationId) {
+): Promise<CreateShotResult> {
+  const operationId = data.clientOperationId
+
+  if (operationId) {
+    // A brew created before the operation tombstone existed is still a valid
+    // idempotency result; make sure it has an operation row from now on.
     const existingShot = await tx.query.shots.findFirst({
-      where: eq(shots.clientOperationId, data.clientOperationId),
+      where: eq(shots.clientOperationId, operationId),
     })
-    if (existingShot) return existingShot
+    if (existingShot) {
+      await tx
+        .insert(clientOperations)
+        .values({ operationId, brewId: existingShot.id })
+        .onConflictDoNothing({ target: clientOperations.operationId })
+      return {
+        shot: existingShot,
+        created: false,
+        operationAlreadyCompleted: false,
+      }
+    }
+
+    const [operation] = await tx
+      .insert(clientOperations)
+      .values({ operationId })
+      .onConflictDoNothing({ target: clientOperations.operationId })
+      .returning()
+
+    if (!operation) {
+      const existingOperation = await tx.query.clientOperations.findFirst({
+        where: eq(clientOperations.operationId, operationId),
+      })
+      if (existingOperation?.brewId) {
+        const existingBrew = await tx.query.shots.findFirst({
+          where: eq(shots.id, existingOperation.brewId),
+        })
+        if (existingBrew) {
+          return {
+            shot: existingBrew,
+            created: false,
+            operationAlreadyCompleted: false,
+          }
+        }
+      }
+
+      return {
+        shot: null,
+        created: false,
+        operationAlreadyCompleted: true,
+      }
+    }
   }
 
   const method = await getBrewingMethod(tx, data.brewingMethodId)
@@ -408,21 +459,38 @@ async function createShotInTransaction(
     .insert(shots)
     .values({
       ...values,
-      clientOperationId: data.clientOperationId ?? null,
+      clientOperationId: operationId ?? null,
       machineSettingRevisionId,
     })
     .onConflictDoNothing({ target: shots.clientOperationId })
     .returning()
   if (!shot) {
-    const existingShot = data.clientOperationId
+    const existingShot = operationId
       ? await tx.query.shots.findFirst({
-          where: eq(shots.clientOperationId, data.clientOperationId),
+          where: eq(shots.clientOperationId, operationId),
         })
       : undefined
     if (!existingShot) throw new ShotInputError('Could not create brew')
-    return existingShot
+    if (operationId) {
+      await tx
+        .update(clientOperations)
+        .set({ brewId: existingShot.id })
+        .where(eq(clientOperations.operationId, operationId))
+    }
+    return {
+      shot: existingShot,
+      created: false,
+      operationAlreadyCompleted: false,
+    }
   }
   const persistedShot = expectReturnedRow(shot, 'Shot')
+
+  if (operationId) {
+    await tx
+      .update(clientOperations)
+      .set({ brewId: persistedShot.id })
+      .where(eq(clientOperations.operationId, operationId))
+  }
 
   await replaceShotDrinkOptions(
     tx,
@@ -444,20 +512,42 @@ async function createShotInTransaction(
       })),
     )
   }
-  return persistedShot
+
+  return {
+    shot: persistedShot,
+    created: true,
+    operationAlreadyCompleted: false,
+  }
 }
 
 export function createShotOperation(data: ShotCreateCandidate) {
-  return db.transaction((tx) => createShotInTransaction(tx, data))
+  return db.transaction(async (tx) => {
+    const result = await createShotInTransaction(tx, data)
+    if (result.operationAlreadyCompleted) {
+      throw new ShotInputError('This brew was already synced and deleted')
+    }
+    if (!result.shot) throw new ShotInputError('Could not create brew')
+    return result.shot
+  })
 }
 
 export function createShotAndSaveRecipeOperation(
   data: CreateShotAndSaveRecipeInput,
 ) {
   return db.transaction(async (tx) => {
-    const shot = await createShotInTransaction(tx, data.shot)
-    const recipe = await saveShotToRecipeInTransaction(tx, shot.id, data.target)
-    return { shot, recipe }
+    const result = await createShotInTransaction(tx, data.shot)
+    if (result.operationAlreadyCompleted) {
+      throw new ShotInputError('This brew was already synced and deleted')
+    }
+    if (!result.shot) throw new ShotInputError('Could not create brew')
+    if (!result.created) return { shot: result.shot, recipe: null }
+
+    const recipe = await saveShotToRecipeInTransaction(
+      tx,
+      result.shot.id,
+      data.target,
+    )
+    return { shot: result.shot, recipe }
   })
 }
 

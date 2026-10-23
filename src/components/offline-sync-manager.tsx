@@ -56,10 +56,10 @@ export function OfflineSyncManager() {
       }
 
       syncInFlight = (async () => {
-        if (!navigator.onLine) return
-
-        usePendingBrewsStore.getState().setSyncing(true)
         try {
+          if (!navigator.onLine) return
+
+          usePendingBrewsStore.getState().setSyncing(true)
           const result = await syncPendingBrews({
             list: async () =>
               (await listPendingBrews()).filter(
@@ -77,22 +77,28 @@ export function OfflineSyncManager() {
             if (!router.state.location.pathname.startsWith('/brews/new')) {
               await router.invalidate().catch(() => undefined)
             }
-            toast.success(
-              `${result.synced} brew${result.synced === 1 ? '' : 's'} synced`,
-              {
-                action: {
-                  label: 'View brews',
-                  onClick: () => void router.navigate({ to: '/brews' }),
-                },
-              },
-            )
-          } else if (result.authRequired) {
-            toast.info('Sign in to sync brews saved on this device')
-          } else if (result.failed > 0) {
-            toast.warning('Some brews could not sync', {
+          }
+
+          const problems = result.authRequired || result.failed > 0
+          const parts = [
+            result.synced > 0
+              ? `${result.synced} brew${result.synced === 1 ? '' : 's'} synced`
+              : null,
+            result.authRequired ? 'sign-in required' : null,
+            result.failed > 0
+              ? `${result.failed} need${result.failed === 1 ? 's' : ''} attention`
+              : null,
+          ].filter((part): part is string => part !== null)
+
+          if (parts.length > 0) {
+            const notify = problems ? toast.warning : toast.success
+            notify(parts.join(' · '), {
               action: {
-                label: 'Review',
-                onClick: () => void router.navigate({ to: '/brews/pending' }),
+                label: problems ? 'Review pending' : 'View brews',
+                onClick: () =>
+                  void router.navigate({
+                    to: problems ? '/brews/pending' : '/brews',
+                  }),
               },
             })
           }

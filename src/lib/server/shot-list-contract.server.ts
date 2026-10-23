@@ -23,7 +23,7 @@ export const shotGroupListSchema = shotListSchema.pick({
 })
 
 export const createShotAndSaveRecipeSchema = z.object({
-  shot: shotCreateSchema.omit({ clientOperationId: true }),
+  shot: shotCreateSchema,
   target: recipeTargetSchema,
 })
 

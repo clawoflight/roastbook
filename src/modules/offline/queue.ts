@@ -35,7 +35,7 @@ function openDatabase(): Promise<IDBDatabase> {
     )
   }
 
-  databasePromise ??= new Promise((resolve, reject) => {
+  databasePromise ??= new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
 
     request.onupgradeneeded = () => {
@@ -56,6 +56,20 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onblocked = () =>
       reject(new Error('Offline storage is blocked by another tab'))
   })
+    .then((database) => {
+      database.onclose = () => {
+        databasePromise = undefined
+      }
+      database.onversionchange = () => {
+        database.close()
+        databasePromise = undefined
+      }
+      return database
+    })
+    .catch((error) => {
+      databasePromise = undefined
+      throw error
+    })
 
   return databasePromise
 }
@@ -97,9 +111,16 @@ export async function updatePendingBrew(
   operationId: string,
   changes: Partial<Omit<PendingBrew, 'operationId'>>,
 ): Promise<void> {
-  const existing = await getPendingBrew(operationId)
-  if (!existing) return
-  await putPendingBrew({ ...existing, ...changes })
+  const database = await openDatabase()
+  const transaction = database.transaction(PENDING_STORE, 'readwrite')
+  const store = transaction.objectStore(PENDING_STORE)
+  const existing = (await requestToPromise(store.get(operationId))) as
+    | PendingBrew
+    | undefined
+  if (existing) {
+    store.put({ ...existing, ...changes })
+  }
+  await transactionToPromise(transaction)
 }
 
 export async function deletePendingBrew(operationId: string): Promise<void> {
@@ -150,4 +171,21 @@ export async function readCachedReferenceData<T>(
   }
 
   return record
+}
+
+/** Test-only reset so each queue test starts from an empty database. */
+export async function resetOfflineDatabaseForTests(): Promise<void> {
+  const database = await databasePromise?.catch(() => undefined)
+  database?.close()
+  databasePromise = undefined
+
+  if (typeof indexedDB === 'undefined') return
+
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DATABASE_NAME)
+    request.onsuccess = () => resolve()
+    request.onerror = () =>
+      reject(request.error ?? new Error('Could not reset offline storage'))
+    request.onblocked = () => resolve()
+  })
 }

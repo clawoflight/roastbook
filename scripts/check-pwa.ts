@@ -7,6 +7,7 @@ import {
   BUILD_ID_PLACEHOLDER,
   createServiceWorkerBuildId,
   PRECACHED_FILES,
+  readClientAssetNames,
   readServiceWorkerTemplate,
 } from './service-worker-build'
 
@@ -105,7 +106,13 @@ for (const icon of manifest.icons) {
     continue
   }
 
-  const metadata = await sharp(iconPath).metadata()
+  const metadata = await sharp(iconPath)
+    .metadata()
+    .catch(() => undefined)
+  if (!metadata) {
+    failures.push(`${iconPath} could not be decoded`)
+    continue
+  }
   record(
     metadata.format === 'png',
     `${iconPath} is ${metadata.format}, expected png`,
@@ -144,10 +151,6 @@ if (!existsSync(serviceWorkerPath)) {
   )
 }
 
-const expectedBuildId = serviceWorkerTemplate
-  ? await createServiceWorkerBuildId(serviceWorkerTemplate)
-  : null
-
 const outputDirs = process.argv.slice(2)
 if (outputDirs.length === 0) outputDirs.push(DEFAULT_OUTPUT_DIR)
 
@@ -159,12 +162,19 @@ for (const directory of outputDirs) {
     continue
   }
 
-  for (const file of [
+  for (const file of new Set([
     ...REQUIRED_BUILD_FILES,
     ...manifest.icons.map((icon) => icon.src.slice(1)),
-  ]) {
+  ])) {
     record(existsSync(join(directory, file)), `${directory}/${file} is missing`)
   }
+
+  const expectedBuildId = serviceWorkerTemplate
+    ? await createServiceWorkerBuildId(
+        serviceWorkerTemplate,
+        await readClientAssetNames(directory),
+      )
+    : null
 
   const builtManifestPath = join(directory, 'manifest.json')
   if (existsSync(builtManifestPath)) {

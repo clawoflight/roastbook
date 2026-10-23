@@ -5,6 +5,7 @@ import {
   BUILD_ID_PLACEHOLDER,
   createServiceWorkerBuildId,
   createServiceWorkerSource,
+  readClientAssetNames,
   readServiceWorkerTemplate,
 } from './service-worker-build'
 
@@ -22,15 +23,22 @@ if (!template.includes(BUILD_ID_PLACEHOLDER)) {
   )
 }
 
-const buildId = await createServiceWorkerBuildId(template)
-const serviceWorker = createServiceWorkerSource(template, buildId)
-
 for (const directory of outputDirs) {
   if (!existsSync(directory)) {
     throw new Error(`Static output directory does not exist: ${directory}`)
   }
 
+  const clientAssets = await readClientAssetNames(directory)
+  const directoryBuildId = await createServiceWorkerBuildId(
+    template,
+    clientAssets,
+  )
+  const directoryServiceWorker = createServiceWorkerSource(
+    template,
+    directoryBuildId,
+    clientAssets,
+  )
   const target = join(directory, 'sw.js')
-  await writeFile(target, serviceWorker)
-  console.log(`Generated ${target} (build ${buildId})`)
+  await writeFile(target, directoryServiceWorker)
+  console.log(`Generated ${target} (build ${directoryBuildId})`)
 }

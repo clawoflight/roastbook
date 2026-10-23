@@ -1,14 +1,29 @@
 import { describe, expect, test } from 'bun:test'
+import { newShotPayload } from '@/lib/new-shot-payload'
+import { EMPTY_SHOT_FORM_VALUES } from '@/modules/brews/shot-form-values'
 import { syncPendingBrews } from '@/modules/offline/sync-pending-brews'
 import type { PendingBrew, PendingBrewPayload } from '@/modules/offline/types'
 
 function pendingBrew(overrides: Partial<PendingBrew> = {}): PendingBrew {
   const operationId = overrides.operationId ?? crypto.randomUUID()
+  const payload: PendingBrewPayload = {
+    ...newShotPayload(
+      {
+        ...EMPTY_SHOT_FORM_VALUES,
+        brewingMethodId: '1',
+        doseGrams: '18.00',
+        yieldGrams: '36.00',
+        shotTimeSeconds: '28.00',
+        rating: 4,
+      },
+      [7],
+    ),
+    clientOperationId: operationId,
+  }
+
   return {
     operationId,
-    payload: {
-      clientOperationId: operationId,
-    } as PendingBrewPayload,
+    payload,
     summary: {
       beanName: 'Konga',
       methodName: 'Espresso',
@@ -43,16 +58,18 @@ function createRepository(initial: PendingBrew[]) {
 }
 
 describe('offline brew sync', () => {
-  test('syncs pending brews and removes them from the queue', async () => {
-    const repository = createRepository([pendingBrew(), pendingBrew()])
-    const created: string[] = []
+  test('syncs pending brews and forwards the saved payload', async () => {
+    const first = pendingBrew()
+    const second = pendingBrew()
+    const repository = createRepository([first, second])
+    const created: PendingBrewPayload[] = []
 
     const result = await syncPendingBrews({
       list: repository.list,
       remove: repository.remove,
       mark: repository.mark,
       create: (payload) => {
-        created.push(payload.clientOperationId)
+        created.push(payload)
         return Promise.resolve({ id: created.length })
       },
       authenticate: () => Promise.resolve('authenticated'),
@@ -66,6 +83,14 @@ describe('offline brew sync', () => {
       failed: 0,
     })
     expect(created).toHaveLength(2)
+    expect(created[0]).toMatchObject({
+      clientOperationId: first.operationId,
+      doseGrams: '18.00',
+      yieldGrams: '36.00',
+      shotTimeSeconds: '28.00',
+      rating: 4,
+      tasteTagIds: [7],
+    })
     expect(await repository.list()).toHaveLength(0)
   })
 
@@ -90,8 +115,10 @@ describe('offline brew sync', () => {
     expect(await repository.list()).toHaveLength(1)
   })
 
-  test('marks queued brews when authentication expired', async () => {
-    const repository = createRepository([pendingBrew()])
+  test('marks every queued brew when authentication expired', async () => {
+    const first = pendingBrew()
+    const second = pendingBrew()
+    const repository = createRepository([first, second])
 
     const result = await syncPendingBrews({
       list: repository.list,
@@ -103,7 +130,11 @@ describe('offline brew sync', () => {
     })
 
     expect(result.authRequired).toBe(true)
-    expect((await repository.list())[0]?.status).toBe('auth-required')
+    const items = await repository.list()
+    expect(items.map((item) => item.status)).toEqual([
+      'auth-required',
+      'auth-required',
+    ])
   })
 
   test('keeps a validation failure and continues with the next brew', async () => {
@@ -151,6 +182,27 @@ describe('offline brew sync', () => {
     expect((await repository.list())[0]?.status).toBe('pending')
   })
 
+  test('keeps a transient server failure pending for the next sync', async () => {
+    const item = pendingBrew()
+    const repository = createRepository([item])
+
+    const result = await syncPendingBrews({
+      list: repository.list,
+      remove: repository.remove,
+      mark: repository.mark,
+      create: () => Promise.reject(new Error('Internal Server Error')),
+      authenticate: () => Promise.resolve('authenticated'),
+      isOnline: () => true,
+    })
+
+    expect(result.stoppedByNetwork).toBe(true)
+    expect(result.failed).toBe(0)
+    expect((await repository.list())[0]?.status).toBe('pending')
+    expect((await repository.list())[0]?.lastError).toBe(
+      'Internal Server Error',
+    )
+  })
+
   test('stops when the auth probe becomes unreachable after a failure', async () => {
     const item = pendingBrew()
     const repository = createRepository([item])
@@ -193,6 +245,7 @@ describe('offline brew sync', () => {
     })
 
     expect(result.synced).toBe(1)
+    expect(result.failed).toBe(0)
     expect(created).toEqual([pending.operationId])
     expect((await repository.list())[0]?.status).toBe('failed')
   })

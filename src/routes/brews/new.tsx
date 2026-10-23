@@ -31,7 +31,7 @@ import { parseNewBrewSearch } from '@/routes/brews/-lib/new-brew-search'
 
 export const Route = createFileRoute('/brews/new')({
   validateSearch: searchValidator(parseNewBrewSearch),
-  loader: async () => {
+  loader: async (): Promise<NewBrewLoaderData> => {
     const defaultBrewedAt = new Date().toISOString()
 
     try {
@@ -62,6 +62,10 @@ export const Route = createFileRoute('/brews/new')({
 })
 
 type NewBrewReferenceData = Awaited<ReturnType<typeof loadNewBrewReferenceData>>
+type NewBrewLoaderData = NewBrewReferenceData & {
+  readonly defaultBrewedAt: string
+  readonly offlineSnapshotSavedAt?: string
+}
 
 async function loadNewBrewReferenceData() {
   const [
@@ -120,7 +124,7 @@ function NewShotPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!navigator.onLine) return
+    if (!navigator.onLine || data.offlineSnapshotSavedAt) return
     void import('@/modules/offline/reference-data')
       .then(({ writeCachedNewBrewReferenceData }) =>
         writeCachedNewBrewReferenceData(data),

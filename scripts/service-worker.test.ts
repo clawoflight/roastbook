@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import vm from 'node:vm'
 import {
+  ASSET_LIST_PLACEHOLDER,
   BUILD_ID_PLACEHOLDER,
   PRECACHED_FILES,
   readServiceWorkerTemplate,
@@ -88,7 +89,12 @@ function htmlResponse(body: string, url: string): Response {
 
 async function createHarness(options: HarnessOptions = {}) {
   const template = await readServiceWorkerTemplate()
-  const source = template.replaceAll(BUILD_ID_PLACEHOLDER, 'testbuild1234')
+  const source = template
+    .replaceAll(BUILD_ID_PLACEHOLDER, 'testbuild1234')
+    .replaceAll(
+      ASSET_LIST_PLACEHOLDER,
+      JSON.stringify(['/assets/test-bundle.js']),
+    )
   const listeners = new Map<string, (event: unknown) => void>()
   const stores = new Map<string, MockCache>()
   let offline = false
@@ -250,7 +256,10 @@ describe('service worker', () => {
     const precache = harness.getPrecacheCache()
     expect(precache).toBeDefined()
     expect((await precache?.keys())?.sort()).toEqual(
-      PRECACHED_FILES.map((file) => absoluteUrl(`/${file}`)).sort(),
+      [
+        ...PRECACHED_FILES.map((file) => absoluteUrl(`/${file}`)),
+        absoluteUrl('/assets/test-bundle.js'),
+      ].sort(),
     )
   })
 
@@ -364,13 +373,15 @@ describe('service worker', () => {
     await expect(harness.dispatch('install')).rejects.toThrow()
   })
 
-  test('cleans stale precache caches and claims clients', async () => {
+  test('cleans stale precache and document caches and claims clients', async () => {
     const harness = await createHarness()
     harness.seedCache('roastbook-precache-stale')
+    harness.seedCache('roastbook-documents-stale')
 
     await harness.dispatch('activate')
 
     expect(harness.hasCache('roastbook-precache-stale')).toBe(false)
+    expect(harness.hasCache('roastbook-documents-stale')).toBe(false)
     expect(harness.getClaimCalls()).toBe(1)
   })
 

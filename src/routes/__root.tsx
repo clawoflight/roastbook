@@ -157,7 +157,9 @@ function OfflineStatusMount() {
       .then((module) => {
         if (!cancelled) setStatus(() => module.OfflineStatus)
       })
-      .catch(() => undefined)
+      .catch((error) => {
+        console.error('Could not load the offline status UI', error)
+      })
     return () => {
       cancelled = true
     }
@@ -202,6 +204,7 @@ function SettingsHydrator() {
 
 function RootErrorComponent({ error }: { error: unknown }) {
   const router = useRouter()
+  const isOnline = useOnlineStatus()
   const errorState = getErrorDisplayState(error)
 
   return (
@@ -209,6 +212,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppNavbar />
         <OfflineStatusMount />
+        <OfflineBanner isOnline={isOnline} demoMode={DEMO_MODE} />
         <ScrollArea
           className="min-h-0 flex-1"
           viewportProps={{ id: 'app-scroll-area' }}
@@ -269,13 +273,13 @@ function RootComponent() {
     <TooltipProvider>
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppNavbar demoMode={settings.demoMode} />
+        {settings.demoMode ? null : <OfflineStatusMount />}
+        <OfflineBanner isOnline={isOnline} demoMode={settings.demoMode} />
         <ScrollArea
           className="min-h-0 flex-1"
           viewportProps={{ id: 'app-scroll-area' }}
         >
           <div className="flex min-h-full flex-col">
-            {settings.demoMode ? null : <OfflineStatusMount />}
-            {isOnline ? null : <OfflineBanner />}
             {settings.demoMode ? (
               <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">
                 <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-sm font-medium">

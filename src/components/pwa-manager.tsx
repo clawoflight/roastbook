@@ -47,7 +47,10 @@ export function PwaManager() {
     }
 
     const handleControllerChange = () => {
-      if (!updateRequestedRef.current) return
+      if (!updateRequestedRef.current) {
+        toast.dismiss(UPDATE_TOAST_ID)
+        return
+      }
       updateRequestedRef.current = false
       window.location.reload()
     }
@@ -56,7 +59,9 @@ export function PwaManager() {
       navigator.serviceWorker
         .register('/sw.js', { scope: '/', updateViaCache: 'none' })
         .then(watchRegistration)
-        .catch(() => undefined)
+        .catch((error) => {
+          console.error('Service worker registration failed', error)
+        })
     }
 
     navigator.serviceWorker.addEventListener(
