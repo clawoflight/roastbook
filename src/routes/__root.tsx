@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { publicEnv } from '@/lib/env'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
 import { getAppSettings } from '@/lib/server/app-settings'
@@ -66,11 +67,20 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const settings = Route.useLoaderData()
+  const umamiScriptUrl = publicEnv.VITE_UMAMI_SCRIPT_URL
+  const umamiWebsiteId = publicEnv.VITE_UMAMI_WEBSITE_ID
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          defer
+          src={umamiScriptUrl}
+          data-website-id={umamiWebsiteId}
+          data-do-not-track="true"
+          data-roastbook-surface="demo"
+        />
       </head>
       <body
         className={cn(
