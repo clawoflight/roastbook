@@ -84,6 +84,42 @@ integrationDescribe('brew operations contract', () => {
       createShotOperation({ brewingMethodId: 2_147_483_647 }),
     ).rejects.toThrow('Brewing method not found')
   })
+
+  test('creates exactly one brew for a repeated client operation id', async () => {
+    if (!brewingMethodId) {
+      throw new Error('Contract brewing method was not created')
+    }
+
+    const clientOperationId = crypto.randomUUID()
+    const first = await createShotOperation({
+      brewingMethodId,
+      clientOperationId,
+      doseGrams: '18.0',
+    })
+    const updated = await updateShotOperation({
+      id: first.id,
+      brewingMethodId,
+      doseGrams: '19.0',
+    })
+    expect(updated.id).toBe(first.id)
+    expect(updated.clientOperationId).toBe(clientOperationId)
+
+    const second = await createShotOperation({
+      brewingMethodId,
+      clientOperationId,
+      doseGrams: '20.0',
+    })
+
+    expect(second.id).toBe(first.id)
+    expect(second.doseGrams).toBe('19.00')
+    expect(second.clientOperationId).toBe(clientOperationId)
+
+    const rows = await db
+      .select({ id: shots.id })
+      .from(shots)
+      .where(eq(shots.clientOperationId, clientOperationId))
+    expect(rows).toHaveLength(1)
+  })
   test('saving a brew as a recipe preserves milk options on create and overwrite', async () => {
     if (!brewingMethodId) throw new Error('Missing contract method')
     const methodId = brewingMethodId

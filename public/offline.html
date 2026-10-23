@@ -113,7 +113,22 @@
         font-weight: 700;
       }
 
-      button:focus-visible {
+      a.secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--foreground);
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      button:focus-visible,
+      a.secondary:focus-visible {
         outline: 2px solid var(--foreground);
         outline-offset: 3px;
       }
@@ -125,10 +140,11 @@
       <p class="eyebrow">Roastbook</p>
       <h1>You're offline</h1>
       <p>
-        Roastbook needs a connection to load your coffee journal. Reconnect,
-        then try again.
+        This page isn't available offline. Brews you save stay on this device
+        and sync when you reconnect.
       </p>
       <button type="button" onclick="location.reload()">Try again</button>
+      <a class="secondary" href="/overview">Open Roastbook</a>
     </main>
   </body>
 </html>

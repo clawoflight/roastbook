@@ -68,6 +68,20 @@ describe('server validation schemas', () => {
         grindSetting: 'x'.repeat(501),
       }),
     ).toThrow()
+
+    const clientOperationId = crypto.randomUUID()
+    expect(
+      shotCreateSchema.parse({
+        brewingMethodId: 1,
+        clientOperationId,
+      }).clientOperationId,
+    ).toBe(clientOperationId)
+    expect(() =>
+      shotCreateSchema.parse({
+        brewingMethodId: 1,
+        clientOperationId: 'not-a-uuid',
+      }),
+    ).toThrow()
   })
 
   test('rejects dates meaningfully in the future', () => {

@@ -1,8 +1,10 @@
 const BUILD_ID = '__BUILD_ID__'
 const PRECACHE_CACHE = `roastbook-precache-${BUILD_ID}`
+const DOCUMENT_CACHE = `roastbook-documents-${BUILD_ID}`
 const ASSET_CACHE = 'roastbook-assets'
 const OFFLINE_URL = '/offline.html'
 const MAX_ASSET_ENTRIES = 100
+const MAX_DOCUMENT_ENTRIES = 20
 const EXCLUDED_PATHS = new Set(['/sw.js'])
 const EXCLUDED_PREFIXES = ['/api/', '/_serverFn/', '/_gate/', '/media/']
 const PRECACHE_URLS = [
@@ -16,6 +18,7 @@ const PRECACHE_URLS = [
   '/favicon.ico',
 ]
 const PRECACHE_PATHS = new Set(PRECACHE_URLS)
+const DOCUMENT_PRECACHE_URLS = ['/overview', '/brews/new', '/brews/pending']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(precache())
@@ -31,6 +34,12 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
+
+  if (url.pathname === '/_gate/logout') {
+    event.respondWith(fetch(request).finally(clearDocumentCaches))
+    return
+  }
+
   if (isExcludedPath(url.pathname)) return
 
   if (request.mode === 'navigate') {
@@ -61,6 +70,24 @@ async function precache() {
       cache.add(new Request(url, { cache: 'reload' })),
     ),
   )
+  await Promise.allSettled(DOCUMENT_PRECACHE_URLS.map(cacheDocument))
+}
+
+async function cacheDocument(url) {
+  try {
+    const response = await fetch(
+      new Request(url, {
+        cache: 'reload',
+        headers: { Accept: 'text/html' },
+      }),
+    )
+    if (!isCacheableDocument(response)) return
+
+    const cache = await caches.open(DOCUMENT_CACHE)
+    await cache.put(url, response)
+  } catch {
+    // Offline readiness is best-effort; the app still works online.
+  }
 }
 
 async function activate() {
@@ -69,7 +96,8 @@ async function activate() {
     keys
       .filter(
         (key) =>
-          key.startsWith('roastbook-precache-') && key !== PRECACHE_CACHE,
+          (key.startsWith('roastbook-precache-') && key !== PRECACHE_CACHE) ||
+          (key.startsWith('roastbook-documents-') && key !== DOCUMENT_CACHE),
       )
       .map((key) => caches.delete(key)),
   )
@@ -78,8 +106,24 @@ async function activate() {
 
 async function networkFirstNavigation(request) {
   try {
-    return await fetch(request)
+    const response = await fetch(request)
+    if (isCacheableDocument(response)) {
+      try {
+        const cache = await caches.open(DOCUMENT_CACHE)
+        await cache.put(request, response.clone())
+        await trimCache(cache, MAX_DOCUMENT_ENTRIES)
+      } catch {
+        // A cache write failure must not block the navigation.
+      }
+    }
+    return response
   } catch {
+    const documentCache = await caches.open(DOCUMENT_CACHE)
+    const cachedDocument = await documentCache.match(request, {
+      ignoreSearch: true,
+    })
+    if (cachedDocument) return cachedDocument
+
     const cache = await caches.open(PRECACHE_CACHE)
     const offlinePage = await cache.match(OFFLINE_URL)
     if (offlinePage) return offlinePage
@@ -92,6 +136,26 @@ async function networkFirstNavigation(request) {
       },
     )
   }
+}
+
+function isCacheableDocument(response) {
+  if (!response.ok || response.redirected) return false
+  if (response.headers.get('content-type')?.includes('text/html') !== true) {
+    return false
+  }
+
+  const url = new URL(response.url)
+  if (url.pathname.startsWith('/_gate/')) return false
+  return true
+}
+
+async function clearDocumentCaches() {
+  const keys = await caches.keys()
+  await Promise.all(
+    keys
+      .filter((key) => key.startsWith('roastbook-documents-'))
+      .map((key) => caches.delete(key)),
+  )
 }
 
 async function cacheFirstPrecache(request) {

@@ -383,6 +383,13 @@ async function createShotInTransaction(
   tx: ShotTransaction,
   data: ShotCreateCandidate,
 ) {
+  if (data.clientOperationId) {
+    const existingShot = await tx.query.shots.findFirst({
+      where: eq(shots.clientOperationId, data.clientOperationId),
+    })
+    if (existingShot) return existingShot
+  }
+
   const method = await getBrewingMethod(tx, data.brewingMethodId)
   await assertDrinkTypeAvailableForBrewingMethod(
     tx,
@@ -399,8 +406,22 @@ async function createShotInTransaction(
     await findCurrentOwnerMachineSettingRevisionId(tx, values.machineId)
   const [shot] = await tx
     .insert(shots)
-    .values({ ...values, machineSettingRevisionId })
+    .values({
+      ...values,
+      clientOperationId: data.clientOperationId ?? null,
+      machineSettingRevisionId,
+    })
+    .onConflictDoNothing({ target: shots.clientOperationId })
     .returning()
+  if (!shot) {
+    const existingShot = data.clientOperationId
+      ? await tx.query.shots.findFirst({
+          where: eq(shots.clientOperationId, data.clientOperationId),
+        })
+      : undefined
+    if (!existingShot) throw new ShotInputError('Could not create brew')
+    return existingShot
+  }
   const persistedShot = expectReturnedRow(shot, 'Shot')
 
   await replaceShotDrinkOptions(

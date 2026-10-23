@@ -379,6 +379,13 @@
       "when": 1792241980197,
       "tag": "0054_bean_purchase_shop_name",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1792772449710,
+      "tag": "0055_client_operation_id",
+      "breakpoints": true
     }
   ]
 }

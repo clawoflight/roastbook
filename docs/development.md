@@ -121,15 +121,18 @@ bun run start
 PWA installation requires a secure context: HTTPS in production, or
 `http://localhost` during development. In the browser's Application panel,
 check the manifest and service worker, then switch the network to offline and
-reload to see the offline page. The worker caches only the offline page,
-manifest, icons, and hashed `/assets/*` files; journal data is not available
-offline.
+reload to see the offline behaviour. The worker caches the offline page,
+manifest, icons, hashed `/assets/*` files, and bounded app documents for offline
+boot. Brews created offline are queued in IndexedDB and synchronized; see
+[Offline journaling](offline.md).
 
 `bun run check:pwa` validates the manifest, icons, offline page, and built
 service worker after a build. For the demo output, pass its static directory:
-`bun run check:pwa .vercel/output/static`. If a previous production run
-registered a service worker on the same localhost origin, unregister it from the
-Application panel before returning to `bun run dev`.
+`bun run check:pwa .vercel/output/static`. The worker's runtime behavior
+(offline fallback, precache serving, request exclusions, and update handling) is
+covered by `scripts/service-worker.test.ts` in `bun run test`. If a previous
+production run registered a service worker on the same localhost origin,
+unregister it from the Application panel before returning to `bun run dev`.
 
 ## Design files
 

@@ -7,8 +7,8 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import type { FormEvent } from 'react'
-import { useEffect } from 'react'
+import type { ComponentType, FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import '../styles.css'
@@ -148,6 +148,24 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   )
 }
 
+function OfflineStatusMount() {
+  const [Status, setStatus] = useState<ComponentType | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void import('@/components/pending-sync-banner')
+      .then((module) => {
+        if (!cancelled) setStatus(() => module.OfflineStatus)
+      })
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return Status ? <Status /> : null
+}
+
 function SettingsHydrator() {
   const theme = usePreferencesStore((state) => state.theme)
   const hasHydrated = usePreferencesStore((state) => state.hasHydrated)
@@ -190,6 +208,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
     <TooltipProvider>
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppNavbar />
+        <OfflineStatusMount />
         <ScrollArea
           className="min-h-0 flex-1"
           viewportProps={{ id: 'app-scroll-area' }}
@@ -255,6 +274,7 @@ function RootComponent() {
           viewportProps={{ id: 'app-scroll-area' }}
         >
           <div className="flex min-h-full flex-col">
+            {settings.demoMode ? null : <OfflineStatusMount />}
             {isOnline ? null : <OfflineBanner />}
             {settings.demoMode ? (
               <div className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-amber-950 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100">

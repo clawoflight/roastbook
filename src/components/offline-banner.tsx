@@ -8,7 +8,8 @@ export function OfflineBanner() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 text-sm font-medium">
         <WifiOff className="h-4 w-4" aria-hidden="true" />
-        You're offline. Reconnect to load or save your journal.
+        You're offline. Brews you save stay on this device and sync when you
+        reconnect.
       </div>
     </div>
   )

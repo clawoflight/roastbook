@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StatsRouteImport } from './routes/stats'
+import { Route as ApiAuthProbeRouteImport } from './routes/api/auth-probe'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as BeansIndexRouteImport } from './routes/beans/index'
 import { Route as BeansBeanIdRouteImport } from './routes/beans/$beanId'
@@ -22,6 +23,7 @@ import { Route as BrewingMethodsNewRouteImport } from './routes/brewing-methods/
 import { Route as BrewsIndexRouteImport } from './routes/brews/index'
 import { Route as BrewsShotIdRouteImport } from './routes/brews/$shotId'
 import { Route as BrewsNewRouteImport } from './routes/brews/new'
+import { Route as BrewsPendingRouteImport } from './routes/brews/pending'
 import { Route as GearSetsIndexRouteImport } from './routes/gear-sets/index'
 import { Route as GearSetsGearSetIdRouteImport } from './routes/gear-sets/$gearSetId'
 import { Route as GearSetsNewRouteImport } from './routes/gear-sets/new'
@@ -74,6 +76,11 @@ const StatsRoute = StatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthProbeRoute = ApiAuthProbeRouteImport.update({
+  id: '/api/auth-probe',
+  path: '/api/auth-probe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
@@ -123,6 +130,11 @@ const BrewsShotIdRoute = BrewsShotIdRouteImport.update({
 const BrewsNewRoute = BrewsNewRouteImport.update({
   id: '/brews/new',
   path: '/brews/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrewsPendingRoute = BrewsPendingRouteImport.update({
+  id: '/brews/pending',
+  path: '/brews/pending',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GearSetsIndexRoute = GearSetsIndexRouteImport.update({
@@ -310,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
+  '/api/auth-probe': typeof ApiAuthProbeRoute
   '/api/health': typeof ApiHealthRoute
   '/beans/$beanId': typeof BeansBeanIdRoute
   '/beans/new': typeof BeansNewRoute
@@ -317,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/brewing-methods/new': typeof BrewingMethodsNewRoute
   '/brews/$shotId': typeof BrewsShotIdRoute
   '/brews/new': typeof BrewsNewRoute
+  '/brews/pending': typeof BrewsPendingRoute
   '/gear-sets/$gearSetId': typeof GearSetsGearSetIdRoute
   '/gear-sets/new': typeof GearSetsNewRoute
   '/gear/$gearId': typeof GearGearIdRoute
@@ -360,6 +374,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/stats': typeof StatsRoute
+  '/api/auth-probe': typeof ApiAuthProbeRoute
   '/api/health': typeof ApiHealthRoute
   '/beans/$beanId': typeof BeansBeanIdRoute
   '/beans/new': typeof BeansNewRoute
@@ -367,6 +382,7 @@ export interface FileRoutesByTo {
   '/brewing-methods/new': typeof BrewingMethodsNewRoute
   '/brews/$shotId': typeof BrewsShotIdRoute
   '/brews/new': typeof BrewsNewRoute
+  '/brews/pending': typeof BrewsPendingRoute
   '/gear-sets/$gearSetId': typeof GearSetsGearSetIdRoute
   '/gear-sets/new': typeof GearSetsNewRoute
   '/gear/$gearId': typeof GearGearIdRoute
@@ -412,6 +428,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteWithChildren
   '/stats': typeof StatsRoute
+  '/api/auth-probe': typeof ApiAuthProbeRoute
   '/api/health': typeof ApiHealthRoute
   '/beans/$beanId': typeof BeansBeanIdRoute
   '/beans/new': typeof BeansNewRoute
@@ -419,6 +436,7 @@ export interface FileRoutesById {
   '/brewing-methods/new': typeof BrewingMethodsNewRoute
   '/brews/$shotId': typeof BrewsShotIdRoute
   '/brews/new': typeof BrewsNewRoute
+  '/brews/pending': typeof BrewsPendingRoute
   '/gear-sets/$gearSetId': typeof GearSetsGearSetIdRoute
   '/gear-sets/new': typeof GearSetsNewRoute
   '/gear/$gearId': typeof GearGearIdRoute
@@ -465,6 +483,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/stats'
+    | '/api/auth-probe'
     | '/api/health'
     | '/beans/$beanId'
     | '/beans/new'
@@ -472,6 +491,7 @@ export interface FileRouteTypes {
     | '/brewing-methods/new'
     | '/brews/$shotId'
     | '/brews/new'
+    | '/brews/pending'
     | '/gear-sets/$gearSetId'
     | '/gear-sets/new'
     | '/gear/$gearId'
@@ -515,6 +535,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/stats'
+    | '/api/auth-probe'
     | '/api/health'
     | '/beans/$beanId'
     | '/beans/new'
@@ -522,6 +543,7 @@ export interface FileRouteTypes {
     | '/brewing-methods/new'
     | '/brews/$shotId'
     | '/brews/new'
+    | '/brews/pending'
     | '/gear-sets/$gearSetId'
     | '/gear-sets/new'
     | '/gear/$gearId'
@@ -566,6 +588,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/stats'
+    | '/api/auth-probe'
     | '/api/health'
     | '/beans/$beanId'
     | '/beans/new'
@@ -573,6 +596,7 @@ export interface FileRouteTypes {
     | '/brewing-methods/new'
     | '/brews/$shotId'
     | '/brews/new'
+    | '/brews/pending'
     | '/gear-sets/$gearSetId'
     | '/gear-sets/new'
     | '/gear/$gearId'
@@ -618,6 +642,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   StatsRoute: typeof StatsRoute
+  ApiAuthProbeRoute: typeof ApiAuthProbeRoute
   ApiHealthRoute: typeof ApiHealthRoute
   BeansBeanIdRoute: typeof BeansBeanIdRoute
   BeansNewRoute: typeof BeansNewRoute
@@ -625,6 +650,7 @@ export interface RootRouteChildren {
   BrewingMethodsNewRoute: typeof BrewingMethodsNewRoute
   BrewsShotIdRoute: typeof BrewsShotIdRoute
   BrewsNewRoute: typeof BrewsNewRoute
+  BrewsPendingRoute: typeof BrewsPendingRoute
   GearSetsGearSetIdRoute: typeof GearSetsGearSetIdRoute
   GearSetsNewRoute: typeof GearSetsNewRoute
   GearGearIdRoute: typeof GearGearIdRoute
@@ -678,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/stats'
       fullPath: '/stats'
       preLoaderRoute: typeof StatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth-probe': {
+      id: '/api/auth-probe'
+      path: '/api/auth-probe'
+      fullPath: '/api/auth-probe'
+      preLoaderRoute: typeof ApiAuthProbeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -748,6 +781,13 @@ declare module '@tanstack/react-router' {
       path: '/brews/new'
       fullPath: '/brews/new'
       preLoaderRoute: typeof BrewsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/brews/pending': {
+      id: '/brews/pending'
+      path: '/brews/pending'
+      fullPath: '/brews/pending'
+      preLoaderRoute: typeof BrewsPendingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gear-sets/': {
@@ -1037,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRouteWithChildren,
   StatsRoute: StatsRoute,
+  ApiAuthProbeRoute: ApiAuthProbeRoute,
   ApiHealthRoute: ApiHealthRoute,
   BeansBeanIdRoute: BeansBeanIdRoute,
   BeansNewRoute: BeansNewRoute,
@@ -1044,6 +1085,7 @@ const rootRouteChildren: RootRouteChildren = {
   BrewingMethodsNewRoute: BrewingMethodsNewRoute,
   BrewsShotIdRoute: BrewsShotIdRoute,
   BrewsNewRoute: BrewsNewRoute,
+  BrewsPendingRoute: BrewsPendingRoute,
   GearSetsGearSetIdRoute: GearSetsGearSetIdRoute,
   GearSetsNewRoute: GearSetsNewRoute,
   GearGearIdRoute: GearGearIdRoute,

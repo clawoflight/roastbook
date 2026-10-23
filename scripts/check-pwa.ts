@@ -138,63 +138,10 @@ if (!existsSync(serviceWorkerPath)) {
   failures.push(`${serviceWorkerPath} does not exist`)
 } else {
   serviceWorkerTemplate = await readServiceWorkerTemplate()
-
-  for (const marker of [
-    BUILD_ID_PLACEHOLDER,
-    "const OFFLINE_URL = '/offline.html'",
-    "request.mode === 'navigate'",
-    "const ASSET_CACHE = 'roastbook-assets'",
-    "if (request.method !== 'GET') return",
-    'if (url.origin !== self.location.origin) return',
-    'if (isExcludedPath(url.pathname)) return',
-    "if (url.pathname.startsWith('/assets/'))",
-    "new Set(['/sw.js'])",
-    '/api/',
-    '/_serverFn/',
-    '/_gate/',
-    '/media/',
-    'PRECACHE_PATHS.has(url.pathname)',
-    'async function cacheFirstPrecache(request)',
-    'cache.match(request, { ignoreSearch: true })',
-    'await Promise.all(',
-  ]) {
-    record(
-      serviceWorkerTemplate.includes(marker),
-      `${serviceWorkerPath} is missing ${marker}`,
-    )
-  }
-
   record(
-    !serviceWorkerTemplate.includes('allSettled'),
-    `${serviceWorkerPath} must fail installation when a precache request fails`,
+    serviceWorkerTemplate.includes(BUILD_ID_PLACEHOLDER),
+    `${serviceWorkerPath} is missing the ${BUILD_ID_PLACEHOLDER} placeholder`,
   )
-
-  const precacheBlock = /const PRECACHE_URLS = \[([\s\S]*?)\]/.exec(
-    serviceWorkerTemplate,
-  )?.[1]
-  if (!precacheBlock) {
-    failures.push(`${serviceWorkerPath} does not declare a PRECACHE_URLS array`)
-  } else {
-    const precacheEntries = [...precacheBlock.matchAll(/'([^']+)'/g)].map(
-      (match) => match[1] ?? '',
-    )
-    const expectedPrecacheEntries = new Set(
-      PRECACHED_FILES.map((file) => `/${file}`),
-    )
-
-    for (const entry of precacheEntries) {
-      record(
-        expectedPrecacheEntries.has(entry),
-        `${serviceWorkerPath} has an unexpected precache entry ${entry}`,
-      )
-    }
-    for (const entry of expectedPrecacheEntries) {
-      record(
-        precacheEntries.includes(entry),
-        `${serviceWorkerPath} is missing the ${entry} precache entry in PRECACHE_URLS`,
-      )
-    }
-  }
 }
 
 const expectedBuildId = serviceWorkerTemplate

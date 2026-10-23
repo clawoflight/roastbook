@@ -104,6 +104,7 @@ const nullableShotDecimal = boundedDecimalStringSchema(
 
 export const shotCreateSchema = z.object({
   brewingMethodId: positiveIdSchema,
+  clientOperationId: z.uuid().optional(),
   brewedAt: notFutureDateSchema.optional(),
   beanId: optionalNullablePositiveIdSchema,
   beanPurchaseId: optionalNullablePositiveIdSchema,
@@ -189,9 +190,11 @@ export const shotCreateSchema = z.object({
   tasteTagIds: z.array(positiveIdSchema).max(100).optional(),
 })
 
-export const shotUpdateSchema = shotCreateSchema.extend({
-  id: positiveIdSchema,
-})
+export const shotUpdateSchema = shotCreateSchema
+  .omit({ clientOperationId: true })
+  .extend({
+    id: positiveIdSchema,
+  })
 
 export const tasteTagCreateSchema = z.object({
   name: z.string().trim().min(1).max(50),

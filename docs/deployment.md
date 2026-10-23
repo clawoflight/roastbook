@@ -36,6 +36,10 @@ The application serves `/sw.js`, `/manifest.json`, and `/offline.html` with
 `Cache-Control: no-cache`. Keep those responses uncached at any additional CDN
 or reverse proxy. Hodor passes them through without special configuration.
 
+Offline pending brews and reference data live in the browser's IndexedDB. No
+server configuration is required, but apply the committed migrations before
+deploying a client that queues brews so the idempotency column exists.
+
 ## Docker image
 
 The Docker build compiles JavaScript on the build host architecture and installs
