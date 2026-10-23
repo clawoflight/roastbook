@@ -76,13 +76,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <script
-          defer
-          src={umamiScriptUrl}
-          data-website-id={umamiWebsiteId}
-          data-do-not-track="true"
-          data-roastbook-surface="demo"
-        />
+        {!publicEnv.VITE_HEAD_HTML?.includes('umami') && (
+          <script
+            defer
+            src={umamiScriptUrl}
+            data-website-id={umamiWebsiteId}
+            data-do-not-track="true"
+            data-roastbook-surface="demo"
+          />
+        )}
       </head>
       <body
         className={cn(

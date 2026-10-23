@@ -8,11 +8,11 @@ const env = createEnv({
     VITE_UMAMI_SCRIPT_URL: z
       .string()
       .url()
-      .default('https://analytics.k8s.lohr.dev/script.js'),
+      .default('https://analytics.k8s.lohr.dev/umami'),
     VITE_UMAMI_WEBSITE_ID: z
       .string()
       .uuid()
-      .default('eeeb96ec-1431-4c9d-a9c8-004a7458c0da'),
+      .default('ee879bad-67b3-46d2-80c5-9f35fa262f0d'),
     VITE_STORAGE_URL: z
       .string()
       .trim()
