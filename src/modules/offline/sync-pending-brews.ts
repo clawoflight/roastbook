@@ -21,6 +21,71 @@ export interface SyncPendingBrewsResult {
   readonly failed: number
 }
 
+type ItemSyncOutcome = 'synced' | 'network' | 'auth' | 'failed'
+
+function syncResult(
+  synced: number,
+  failed: number,
+  options: Partial<
+    Pick<SyncPendingBrewsResult, 'authRequired' | 'stoppedByNetwork'>
+  > = {},
+): SyncPendingBrewsResult {
+  return {
+    synced,
+    failed,
+    authRequired: options.authRequired ?? false,
+    stoppedByNetwork: options.stoppedByNetwork ?? false,
+  }
+}
+
+async function markAuthRequired(
+  dependencies: SyncPendingBrewsDependencies,
+  items: readonly PendingBrew[],
+): Promise<void> {
+  for (const item of items) {
+    if (item.status === 'auth-required') continue
+    await dependencies.mark(item.operationId, {
+      status: 'auth-required',
+      lastError: undefined,
+    })
+  }
+}
+
+async function syncOneBrew(
+  dependencies: SyncPendingBrewsDependencies,
+  item: PendingBrew,
+): Promise<ItemSyncOutcome> {
+  try {
+    await dependencies.create({
+      ...item.payload,
+      clientOperationId: item.operationId,
+    })
+    await dependencies.remove(item.operationId)
+    return 'synced'
+  } catch (error) {
+    if (isNetworkError(error) || !dependencies.isOnline()) return 'network'
+
+    const authentication = await dependencies.authenticate()
+    if (authentication === 'unreachable') return 'network'
+    if (authentication === 'auth-required') {
+      await dependencies.mark(item.operationId, {
+        status: 'auth-required',
+        attempts: item.attempts + 1,
+        lastError: undefined,
+      })
+      return 'auth'
+    }
+
+    await dependencies.mark(item.operationId, {
+      status: 'failed',
+      attempts: item.attempts + 1,
+      lastError:
+        error instanceof Error ? error.message : 'Could not sync this brew',
+    })
+    return 'failed'
+  }
+}
+
 export async function syncPendingBrews(
   dependencies: SyncPendingBrewsDependencies,
 ): Promise<SyncPendingBrewsResult> {
@@ -29,116 +94,43 @@ export async function syncPendingBrews(
   const alreadyFailed = items.length - eligible.length
 
   if (eligible.length === 0) {
-    return {
-      synced: 0,
-      authRequired: false,
+    return syncResult(0, alreadyFailed, {
       stoppedByNetwork: !dependencies.isOnline(),
-      failed: alreadyFailed,
-    }
+    })
   }
-
   if (!dependencies.isOnline()) {
-    return {
-      synced: 0,
-      authRequired: false,
-      stoppedByNetwork: true,
-      failed: alreadyFailed,
-    }
+    return syncResult(0, alreadyFailed, { stoppedByNetwork: true })
   }
 
   const authentication = await dependencies.authenticate()
   if (authentication === 'unreachable') {
-    return {
-      synced: 0,
-      authRequired: false,
-      stoppedByNetwork: true,
-      failed: alreadyFailed,
-    }
+    return syncResult(0, alreadyFailed, { stoppedByNetwork: true })
   }
   if (authentication === 'auth-required') {
-    for (const item of eligible) {
-      if (item.status !== 'auth-required') {
-        await dependencies.mark(item.operationId, {
-          status: 'auth-required',
-          lastError: undefined,
-        })
-      }
-    }
-    return {
-      synced: 0,
-      authRequired: true,
-      stoppedByNetwork: false,
-      failed: alreadyFailed,
-    }
+    await markAuthRequired(dependencies, eligible)
+    return syncResult(0, alreadyFailed, { authRequired: true })
   }
 
   let synced = 0
   let failed = alreadyFailed
 
-  for (const item of eligible) {
+  for (const [index, item] of eligible.entries()) {
     if (!dependencies.isOnline()) {
-      return {
-        synced,
-        authRequired: false,
-        stoppedByNetwork: true,
-        failed,
-      }
+      return syncResult(synced, failed, { stoppedByNetwork: true })
     }
 
-    try {
-      await dependencies.create({
-        ...item.payload,
-        clientOperationId: item.operationId,
-      })
-      await dependencies.remove(item.operationId)
+    const outcome = await syncOneBrew(dependencies, item)
+    if (outcome === 'synced') {
       synced += 1
-    } catch (error) {
-      if (isNetworkError(error) || !dependencies.isOnline()) {
-        return {
-          synced,
-          authRequired: false,
-          stoppedByNetwork: true,
-          failed,
-        }
-      }
-
-      const authentication = await dependencies.authenticate()
-      if (authentication === 'unreachable') {
-        return {
-          synced,
-          authRequired: false,
-          stoppedByNetwork: true,
-          failed,
-        }
-      }
-      if (authentication === 'auth-required') {
-        await dependencies.mark(item.operationId, {
-          status: 'auth-required',
-          attempts: item.attempts + 1,
-          lastError: undefined,
-        })
-        return {
-          synced,
-          authRequired: true,
-          stoppedByNetwork: false,
-          failed,
-        }
-      }
-
-      await dependencies.mark(item.operationId, {
-        status: 'failed',
-        attempts: item.attempts + 1,
-        lastError:
-          error instanceof Error ? error.message : 'Could not sync this brew',
-      })
+    } else if (outcome === 'network') {
+      return syncResult(synced, failed, { stoppedByNetwork: true })
+    } else if (outcome === 'auth') {
+      await markAuthRequired(dependencies, eligible.slice(index + 1))
+      return syncResult(synced, failed, { authRequired: true })
+    } else {
       failed += 1
     }
   }
 
-  return {
-    synced,
-    authRequired: false,
-    stoppedByNetwork: false,
-    failed,
-  }
+  return syncResult(synced, failed)
 }
