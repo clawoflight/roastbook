@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { DEMO_MODE } from '@/lib/build-mode'
 import { publicEnv } from '@/lib/env'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
@@ -41,6 +42,7 @@ export const Route = createRootRoute({
       {
         title: 'Roastbook',
       },
+      ...(DEMO_MODE ? [{ name: 'robots', content: 'noindex, nofollow' }] : []),
     ],
     links: [
       {

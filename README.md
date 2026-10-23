@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://roastbook.coffee/overview"><b>Open the demo</b></a>
+  <a href="https://demo.roastbook.coffee/overview"><b>Open the demo</b></a>
   &nbsp;·&nbsp;
   <a href="#-quick-start">Quick start</a>
   &nbsp;·&nbsp;
@@ -42,7 +42,7 @@
 
 > [!TIP]
 > **Try it in ten seconds.** The
-> [read-only demo](https://roastbook.coffee/overview) runs entirely from bundled
+> [read-only demo](https://demo.roastbook.coffee/overview) runs entirely from bundled
 > sample data — no account, no database, nothing to install.
 
 The public website is [roastbook.coffee](https://roastbook.coffee/). This repository
@@ -342,6 +342,6 @@ charts/              Helm chart
 
 <p align="center">
   Open-source software for people who care about coffee. ☕<br>
-  <sub><a href="https://roastbook.coffee/overview">Try the demo</a> ·
+  <sub><a href="https://demo.roastbook.coffee/overview">Try the demo</a> ·
   <a href="https://github.com/michidk/roastbook">Star it on GitHub</a></sub>
 </p>
