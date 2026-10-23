@@ -27,6 +27,10 @@ reject every request until the integration is enabled; see
 
 ## Docker image
 
+The Docker build compiles JavaScript on the build host architecture and installs
+runtime dependencies for the target architecture. Nitro's traced dependencies
+are removed so native modules such as Sharp resolve from that target install.
+
 Build and run the application directly when an external database and reverse
 proxy are already available:
 
