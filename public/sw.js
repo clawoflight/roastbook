@@ -78,11 +78,20 @@ async function precache() {
   )
   // Client chunks are large and can change independently; a failed chunk
   // must not prevent the worker (and its offline page) from installing.
-  await Promise.allSettled(
+  const assetResults = await Promise.allSettled(
     PRECACHE_ASSETS.map((url) =>
       cache.add(new Request(url, { cache: 'reload' })),
     ),
   )
+  for (const [index, result] of assetResults.entries()) {
+    if (result.status === 'rejected') {
+      console.warn(
+        'Failed to precache client asset',
+        PRECACHE_ASSETS[index],
+        result.reason,
+      )
+    }
+  }
   await Promise.allSettled(DOCUMENT_PRECACHE_URLS.map(cacheDocument))
 }
 
@@ -176,6 +185,9 @@ async function cacheFirstPrecache(request) {
   const cached = await cache.match(request, { ignoreSearch: true })
   if (cached) return cached
 
+  if (new URL(request.url).pathname.startsWith('/assets/')) {
+    return cacheFirstAsset(request)
+  }
   return fetch(request)
 }
 

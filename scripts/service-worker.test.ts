@@ -98,6 +98,7 @@ async function createHarness(options: HarnessOptions = {}) {
   const listeners = new Map<string, (event: unknown) => void>()
   const stores = new Map<string, MockCache>()
   let offline = false
+  let failPrecache = options.failPrecacheUrl !== undefined
   let skipWaitingCalls = 0
   let claimCalls = 0
 
@@ -107,6 +108,7 @@ async function createHarness(options: HarnessOptions = {}) {
     const url = absoluteUrl(typeof input === 'string' ? input : input.url)
     if (offline) throw new TypeError('Failed to fetch')
     if (
+      failPrecache &&
       options.failPrecacheUrl &&
       url === absoluteUrl(options.failPrecacheUrl)
     ) {
@@ -235,6 +237,9 @@ async function createHarness(options: HarnessOptions = {}) {
   return {
     dispatch,
     setOffline,
+    setPrecacheFailure: (value: boolean) => {
+      failPrecache = value
+    },
     getPrecacheCache,
     getDocumentCache,
     seedCache,
@@ -381,6 +386,23 @@ describe('service worker', () => {
 
     const keys = (await harness.getPrecacheCache()?.keys()) ?? []
     expect(keys).not.toContain(absoluteUrl('/assets/test-bundle.js'))
+
+    // A later online request should fall through to the runtime asset cache.
+    harness.setPrecacheFailure(false)
+    const online = await harness.dispatch('fetch', {
+      request: request('/assets/test-bundle.js'),
+    })
+    expect(await (online as Response).text()).toBe(
+      `network:${absoluteUrl('/assets/test-bundle.js')}`,
+    )
+
+    harness.setOffline(true)
+    const offline = await harness.dispatch('fetch', {
+      request: request('/assets/test-bundle.js'),
+    })
+    expect(await (offline as Response).text()).toBe(
+      `network:${absoluteUrl('/assets/test-bundle.js')}`,
+    )
   })
 
   test('cleans stale precache and document caches and claims clients', async () => {

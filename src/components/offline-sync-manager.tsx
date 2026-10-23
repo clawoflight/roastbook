@@ -10,6 +10,11 @@ import {
 } from '@/modules/offline/pending-store'
 import { deletePendingBrew, listPendingBrews } from '@/modules/offline/queue'
 import { syncPendingBrews } from '@/modules/offline/sync-pending-brews'
+import {
+  INITIAL_SYNC_RETRY_DELAY_MS,
+  nextSyncRetryDelay,
+  shouldAnnounceAuthRequired,
+} from '@/modules/offline/sync-policy'
 import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
 import { isPendingBrewHeldForTasting } from '@/modules/offline/tasting-holds'
 
@@ -49,8 +54,9 @@ export function OfflineSyncManager() {
 
     void usePendingBrewsStore.getState().hydrate()
     let retryTimer: number | null = null
-    let retryDelay = 5000
+    let retryDelay = INITIAL_SYNC_RETRY_DELAY_MS
     let authNotified = false
+    let disposed = false
 
     const runSync = (): Promise<void> => {
       if (syncInFlight) {
@@ -82,7 +88,10 @@ export function OfflineSyncManager() {
             }
           }
 
-          const includeAuth = result.authRequired && !authNotified
+          const includeAuth = shouldAnnounceAuthRequired(
+            result.authRequired,
+            authNotified,
+          )
           const problems = result.failed > 0 || includeAuth
           const parts = [
             result.synced > 0
@@ -111,7 +120,9 @@ export function OfflineSyncManager() {
           if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
           else clearRetry()
         } catch {
-          // A failed flush leaves the queue intact for the next attempt.
+          // A failed flush leaves the queue intact. Retry local/transient
+          // failures while online; a successful sync resets the backoff.
+          scheduleRetry()
         } finally {
           usePendingBrewsStore.getState().setSyncing(false)
           syncInFlight = null
@@ -126,11 +137,11 @@ export function OfflineSyncManager() {
     }
 
     function scheduleRetry() {
-      if (retryTimer !== null || !navigator.onLine) return
+      if (disposed || retryTimer !== null || !navigator.onLine) return
       const delay = retryDelay
       retryTimer = window.setTimeout(() => {
         retryTimer = null
-        retryDelay = Math.min(retryDelay * 2, 60_000)
+        retryDelay = nextSyncRetryDelay(retryDelay)
         void runSync()
       }, delay)
     }
@@ -140,7 +151,7 @@ export function OfflineSyncManager() {
         window.clearTimeout(retryTimer)
         retryTimer = null
       }
-      retryDelay = 5000
+      retryDelay = INITIAL_SYNC_RETRY_DELAY_MS
     }
 
     const handleOnline = () => {
@@ -165,6 +176,7 @@ export function OfflineSyncManager() {
     if (navigator.onLine) void runSync()
 
     return () => {
+      disposed = true
       clearRetry()
       window.removeEventListener('online', handleOnline)
       document.removeEventListener('visibilitychange', handleVisibility)
