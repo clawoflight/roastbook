@@ -45,8 +45,8 @@
 > [read-only demo](https://roastbook.coffee/overview) runs entirely from bundled
 > sample data — no account, no database, nothing to install.
 
-The marketing site lives in the sibling [roastbook-website](../roastbook-website)
-project. This repository serves the read-only demo and the self-hosted journal.
+The public website is [roastbook.coffee](https://roastbook.coffee/). This repository
+serves the read-only demo and the self-hosted journal.
 
 ## ☕ What it is
 

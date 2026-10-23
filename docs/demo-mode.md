@@ -2,8 +2,8 @@
 
 Roastbook supports a read-only demo edition. The edition is compiled into the
 client and server bundles, so a standard production artifact cannot be changed
-into a demo by altering its runtime environment. The public demo runs at
-<https://roastbook.coffee/>.
+into a demo by altering its runtime environment. The public demo runs from its
+deployed demo host.
 
 ## Database-free demo
 
