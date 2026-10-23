@@ -48,6 +48,9 @@ export function OfflineSyncManager() {
     if (DEMO_MODE) return
 
     void usePendingBrewsStore.getState().hydrate()
+    let retryTimer: number | null = null
+    let retryDelay = 5000
+    let authNotified = false
 
     const runSync = (): Promise<void> => {
       if (syncInFlight) {
@@ -79,12 +82,13 @@ export function OfflineSyncManager() {
             }
           }
 
-          const problems = result.authRequired || result.failed > 0
+          const includeAuth = result.authRequired && !authNotified
+          const problems = result.failed > 0 || includeAuth
           const parts = [
             result.synced > 0
               ? `${result.synced} brew${result.synced === 1 ? '' : 's'} synced`
               : null,
-            result.authRequired ? 'sign-in required' : null,
+            includeAuth ? 'sign in to sync' : null,
             result.failed > 0
               ? `${result.failed} need${result.failed === 1 ? 's' : ''} attention`
               : null,
@@ -102,6 +106,10 @@ export function OfflineSyncManager() {
               },
             })
           }
+
+          authNotified = result.authRequired
+          if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
+          else clearRetry()
         } catch {
           // A failed flush leaves the queue intact for the next attempt.
         } finally {
@@ -117,18 +125,47 @@ export function OfflineSyncManager() {
       return syncInFlight
     }
 
-    const handleOnline = () => void runSync()
+    function scheduleRetry() {
+      if (retryTimer !== null || !navigator.onLine) return
+      const delay = retryDelay
+      retryTimer = window.setTimeout(() => {
+        retryTimer = null
+        retryDelay = Math.min(retryDelay * 2, 60_000)
+        void runSync()
+      }, delay)
+    }
+
+    function clearRetry() {
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer)
+        retryTimer = null
+      }
+      retryDelay = 5000
+    }
+
+    const handleOnline = () => {
+      clearRetry()
+      void runSync()
+    }
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') void runSync()
+      if (document.visibilityState === 'visible') {
+        clearRetry()
+        void runSync()
+      }
+    }
+    const handleManualSync = () => {
+      clearRetry()
+      void runSync()
     }
 
     window.addEventListener('online', handleOnline)
     document.addEventListener('visibilitychange', handleVisibility)
-    const unsubscribe = subscribeToPendingSync(() => void runSync())
+    const unsubscribe = subscribeToPendingSync(handleManualSync)
 
     if (navigator.onLine) void runSync()
 
     return () => {
+      clearRetry()
       window.removeEventListener('online', handleOnline)
       document.removeEventListener('visibilitychange', handleVisibility)
       unsubscribe()

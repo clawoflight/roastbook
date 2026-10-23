@@ -30,7 +30,11 @@ export async function readClientAssetNames(
   directory: string,
 ): Promise<string[]> {
   const assetsDirectory = join(directory, 'assets')
-  if (!existsSync(assetsDirectory)) return []
+  if (!existsSync(assetsDirectory)) {
+    throw new Error(
+      `Client assets directory does not exist: ${assetsDirectory}`,
+    )
+  }
 
   const entries = await readdir(assetsDirectory, { withFileTypes: true })
   return entries

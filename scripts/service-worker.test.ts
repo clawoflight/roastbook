@@ -368,9 +368,19 @@ describe('service worker', () => {
     }
   })
 
-  test('fails installation when a precache request fails', async () => {
+  test('fails installation when a required precache request fails', async () => {
     const harness = await createHarness({ failPrecacheUrl: '/logo192.png' })
     await expect(harness.dispatch('install')).rejects.toThrow()
+  })
+
+  test('keeps installing when a client asset cannot be precached', async () => {
+    const harness = await createHarness({
+      failPrecacheUrl: '/assets/test-bundle.js',
+    })
+    await expect(harness.dispatch('install')).resolves.toBeUndefined()
+
+    const keys = (await harness.getPrecacheCache()?.keys()) ?? []
+    expect(keys).not.toContain(absoluteUrl('/assets/test-bundle.js'))
   })
 
   test('cleans stale precache and document caches and claims clients', async () => {

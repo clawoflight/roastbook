@@ -84,6 +84,7 @@ function PendingBrewActions({
         <Button
           type="button"
           size="sm"
+          disabled={!isOnline}
           onClick={() => window.location.reload()}
         >
           Sign in

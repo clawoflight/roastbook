@@ -1,0 +1,1 @@
+CREATE INDEX "client_operations_brew_id_idx" ON "client_operations" USING btree ("brew_id");

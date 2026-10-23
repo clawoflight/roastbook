@@ -1402,13 +1402,17 @@ export const shots = pgTable(
   ],
 )
 
-export const clientOperations = pgTable('client_operations', {
-  operationId: text('operation_id').primaryKey(),
-  brewId: integer('brew_id').references(() => shots.id, {
-    onDelete: 'set null',
-  }),
-  createdAt: createdAt(),
-})
+export const clientOperations = pgTable(
+  'client_operations',
+  {
+    operationId: text('operation_id').primaryKey(),
+    brewId: integer('brew_id').references(() => shots.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: createdAt(),
+  },
+  (table) => [index('client_operations_brew_id_idx').on(table.brewId)],
+)
 
 export const shotsRelations = relations(shots, ({ one, many }) => ({
   machineSettingRevision: one(espressoMachineSettingRevisions, {

@@ -393,6 +393,13 @@
       "when": 1792776077487,
       "tag": "0056_client_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792777260656,
+      "tag": "0057_client_operations_brew_id_idx",
+      "breakpoints": true
     }
   ]
 }

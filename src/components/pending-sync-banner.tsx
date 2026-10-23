@@ -15,15 +15,13 @@ export function PendingSyncBanner() {
 
   const authRequired = items.some((item) => item.status === 'auth-required')
   const failed = items.some((item) => item.status === 'failed')
-  const status = loadError
-    ? 'Could not refresh saved brews.'
-    : isSyncing
-      ? 'Syncing now…'
-      : authRequired
-        ? 'Sign in to sync.'
-        : failed
-          ? 'Some brews need attention.'
-          : 'Waiting to sync.'
+  const status = isSyncing
+    ? 'Syncing now…'
+    : authRequired
+      ? 'Sign in to sync.'
+      : failed
+        ? 'Some brews need attention.'
+        : 'Waiting to sync.'
 
   return (
     <div
@@ -39,7 +37,7 @@ export function PendingSyncBanner() {
         <span>
           {items.length === 0
             ? 'Pending brews could not be loaded.'
-            : `${items.length} brew${items.length === 1 ? '' : 's'} saved on this device. ${status}`}
+            : `${items.length} brew${items.length === 1 ? '' : 's'} saved on this device. ${status}${loadError ? ' Could not refresh saved brews.' : ''}`}
         </span>
         <Link
           to="/brews/pending"

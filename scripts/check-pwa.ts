@@ -108,11 +108,15 @@ for (const icon of manifest.icons) {
 
   const metadata = await sharp(iconPath)
     .metadata()
-    .catch(() => undefined)
-  if (!metadata) {
-    failures.push(`${iconPath} could not be decoded`)
-    continue
-  }
+    .catch((error) => {
+      failures.push(
+        `${iconPath} could not be decoded: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+      return undefined
+    })
+  if (!metadata) continue
   record(
     metadata.format === 'png',
     `${iconPath} is ${metadata.format}, expected png`,

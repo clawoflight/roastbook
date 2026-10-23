@@ -22,9 +22,8 @@ const PRECACHE_URLS = [
   '/paper-grain-dark.svg',
   '/coffee-stains-light.svg',
   '/coffee-stains-dark.svg',
-  ...PRECACHE_ASSETS,
 ]
-const PRECACHE_PATHS = new Set(PRECACHE_URLS)
+const PRECACHE_PATHS = new Set([...PRECACHE_URLS, ...PRECACHE_ASSETS])
 const DOCUMENT_PRECACHE_URLS = ['/overview', '/brews/new', '/brews/pending']
 
 self.addEventListener('install', (event) => {
@@ -74,6 +73,13 @@ async function precache() {
   const cache = await caches.open(PRECACHE_CACHE)
   await Promise.all(
     PRECACHE_URLS.map((url) =>
+      cache.add(new Request(url, { cache: 'reload' })),
+    ),
+  )
+  // Client chunks are large and can change independently; a failed chunk
+  // must not prevent the worker (and its offline page) from installing.
+  await Promise.allSettled(
+    PRECACHE_ASSETS.map((url) =>
       cache.add(new Request(url, { cache: 'reload' })),
     ),
   )
