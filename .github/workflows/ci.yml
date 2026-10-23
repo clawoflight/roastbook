@@ -120,7 +120,10 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Multi-architecture builds can spend several minutes compiling the
+    # application under QEMU. Keep the build job alive long enough to finish
+    # instead of cancelling a healthy build at the default 30-minute limit.
+    timeout-minutes: 60
     needs: checks
     permissions:
       contents: read
