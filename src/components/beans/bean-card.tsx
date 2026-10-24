@@ -53,6 +53,9 @@ export function BeanCard({
   const remainingLabel = weightEstimate
     ? `${formatNumber(weightEstimate.remainingWeight.toFixed(0))} g remaining`
     : null
+  const weightLabel =
+    remainingLabel ??
+    (bagWeight !== null ? `${formatNumber(Math.round(bagWeight))} g` : null)
 
   return (
     <Link
@@ -157,9 +160,9 @@ export function BeanCard({
               </div>
             )}
 
-            {(roastDate || bagWeight !== null) && (
+            {(roastDate || weightLabel !== null) && (
               <div
-                className={`mt-4 grid border-t border-white/35 pt-4 text-xs text-white/85 lg:text-base ${roastDate && bagWeight !== null ? 'grid-cols-2' : 'grid-cols-1'}`}
+                className={`mt-4 grid border-t border-white/35 pt-4 text-xs text-white/85 lg:text-base ${roastDate && weightLabel !== null ? 'grid-cols-2' : 'grid-cols-1'}`}
               >
                 {roastDate && (
                   <span className="flex min-w-0 items-center gap-2 pr-3">
@@ -170,14 +173,12 @@ export function BeanCard({
                     <span className="truncate">{roastDate}</span>
                   </span>
                 )}
-                {bagWeight !== null && (
+                {weightLabel !== null && (
                   <span
                     className={`flex min-w-0 items-center gap-2 ${roastDate ? 'border-l border-white/30 pl-4' : ''}`}
                   >
                     <Scale className="size-4 shrink-0" aria-hidden="true" />
-                    <span className="truncate tabular-nums">
-                      {formatNumber(Math.round(bagWeight))} g
-                    </span>
+                    <span className="truncate tabular-nums">{weightLabel}</span>
                   </span>
                 )}
               </div>
