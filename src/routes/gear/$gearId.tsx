@@ -89,11 +89,19 @@ export const Route = createFileRoute('/gear/$gearId')({
         const { readCachedEntityDetail } = await import(
           '@/modules/offline/entity-detail-cache'
         )
-        const cached = await readCachedEntityDetail<GearDetailData>(
-          'gear',
-          gearId,
-        )
+        const cached = await readCachedEntityDetail<
+          GearDetailData & { readonly query?: GearDetailSearch }
+        >('gear', gearId)
         if (cached) {
+          const query = cached.data.query
+          if (
+            query &&
+            (query.brewPage !== deps.brewPage ||
+              query.brewSort !== deps.brewSort ||
+              query.brewDirection !== deps.brewDirection)
+          ) {
+            throw error
+          }
           return { ...cached.data, offlineSnapshotSavedAt: cached.savedAt }
         }
       } catch {
@@ -125,10 +133,23 @@ function GearDetailRoute() {
           gear,
           shotPage,
           researchEnabled,
+          query: {
+            brewPage: search.brewPage,
+            brewSort: search.brewSort,
+            brewDirection: search.brewDirection,
+          },
         }),
       )
       .catch(() => undefined)
-  }, [gear, shotPage, researchEnabled, offlineSnapshotSavedAt])
+  }, [
+    gear,
+    shotPage,
+    researchEnabled,
+    offlineSnapshotSavedAt,
+    search.brewPage,
+    search.brewSort,
+    search.brewDirection,
+  ])
 
   const updateShotSearch = (values: Partial<typeof search>) =>
     navigate({ search: (current) => ({ ...current, ...values }) })

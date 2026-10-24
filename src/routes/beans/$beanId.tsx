@@ -104,11 +104,19 @@ export const Route = createFileRoute('/beans/$beanId')({
         const { readCachedEntityDetail } = await import(
           '@/modules/offline/entity-detail-cache'
         )
-        const cached = await readCachedEntityDetail<BeanDetailData>(
-          'bean',
-          beanId,
-        )
+        const cached = await readCachedEntityDetail<
+          BeanDetailData & { readonly query?: BeanDetailSearch }
+        >('bean', beanId)
         if (cached) {
+          const query = cached.data.query
+          if (
+            query &&
+            (query.brewPage !== deps.brewPage ||
+              query.brewSort !== deps.brewSort ||
+              query.brewDirection !== deps.brewDirection)
+          ) {
+            throw error
+          }
           return { ...cached.data, offlineSnapshotSavedAt: cached.savedAt }
         }
       } catch {

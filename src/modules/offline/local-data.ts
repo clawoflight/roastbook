@@ -138,6 +138,49 @@ export async function listLocalEntities<T>(
     )
 }
 
+export async function putServerEntity<T>(input: {
+  readonly ownerKey?: string
+  readonly entityType: OfflineEntityType
+  readonly serverId: string
+  readonly data: T
+}): Promise<void> {
+  const ownerKey = input.ownerKey ?? DEFAULT_OWNER_KEY
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(LOCAL_ENTITIES_STORE, 'readwrite')
+  const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const existing = (await requestToPromise(
+    store
+      .index(OWNER_ENTITY_SERVER_INDEX)
+      .get([ownerKey, input.entityType, input.serverId]),
+  )) as LocalEntityRecord<T> | undefined
+  if (existing?.syncState === 'pending' || existing?.syncState === 'conflict') {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  const updatedAt = new Date().toISOString()
+  const record: LocalEntityRecord<T> = existing
+    ? {
+        ...existing,
+        data: input.data,
+        syncState: 'synced',
+        updatedAt,
+      }
+    : {
+        key: localEntityKey(ownerKey, input.entityType, input.serverId),
+        ownerKey,
+        entityType: input.entityType,
+        localId: input.serverId,
+        serverId: input.serverId,
+        data: input.data,
+        revision: null,
+        syncState: 'synced',
+        updatedAt,
+      }
+  store.put(record)
+  await transactionToPromise(transaction)
+}
+
 export async function markLocalEntitySynced(
   entityType: OfflineEntityType,
   localId: string,
@@ -148,17 +191,28 @@ export async function markLocalEntitySynced(
   },
 ): Promise<LocalEntityRecord | undefined> {
   const ownerKey = options.ownerKey ?? DEFAULT_OWNER_KEY
-  const existing = await getLocalEntity(entityType, localId, ownerKey)
-  if (!existing) return undefined
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(LOCAL_ENTITIES_STORE, 'readwrite')
+  const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const key = localEntityKey(ownerKey, entityType, localId)
+  const existing = (await requestToPromise(store.get(key))) as
+    | LocalEntityRecord
+    | undefined
+  if (!existing) {
+    await transactionToPromise(transaction)
+    return undefined
+  }
 
-  return putLocalEntity({
+  const record: LocalEntityRecord = {
     ...existing,
-    ownerKey,
     serverId: options.serverId,
     revision: options.revision ?? existing.revision,
     syncState: 'synced',
     updatedAt: new Date().toISOString(),
-  })
+  }
+  store.put(record)
+  await transactionToPromise(transaction)
+  return record
 }
 
 export async function removeLocalEntity(

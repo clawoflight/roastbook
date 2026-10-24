@@ -113,6 +113,11 @@ export function BeanDetailPage() {
           roasters,
           visionEnabled,
           researchEnabled,
+          query: {
+            brewPage: search.brewPage,
+            brewSort: search.brewSort,
+            brewDirection: search.brewDirection,
+          },
         }),
       )
       .catch(() => undefined)
@@ -124,6 +129,9 @@ export function BeanDetailPage() {
     visionEnabled,
     researchEnabled,
     offlineSnapshotSavedAt,
+    search.brewPage,
+    search.brewSort,
+    search.brewDirection,
   ])
 
   const currentPurchase =

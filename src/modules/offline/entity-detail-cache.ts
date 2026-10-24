@@ -1,6 +1,6 @@
 import {
   getLocalEntityByServerId,
-  putLocalEntity,
+  putServerEntity,
   removeLocalEntity,
 } from '@/modules/offline/local-data'
 import type { OfflineEntityType } from '@/modules/offline/operations'
@@ -15,30 +15,10 @@ export async function cacheEntityDetail<T>(
   serverId: number | string,
   data: T,
 ): Promise<void> {
-  const serverIdValue = String(serverId)
-  const existing = await getLocalEntityByServerId<T>(entityType, serverIdValue)
-  if (existing?.syncState === 'pending' || existing?.syncState === 'conflict') {
-    return
-  }
-  const updatedAt = new Date().toISOString()
-
-  if (existing) {
-    await putLocalEntity({
-      ...existing,
-      data,
-      syncState: 'synced',
-      updatedAt,
-    })
-    return
-  }
-
-  await putLocalEntity({
+  await putServerEntity({
     entityType,
-    localId: serverIdValue,
-    serverId: serverIdValue,
+    serverId: String(serverId),
     data,
-    syncState: 'synced',
-    updatedAt,
   })
 }
 
