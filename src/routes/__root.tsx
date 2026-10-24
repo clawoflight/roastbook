@@ -44,7 +44,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#f6eddf',
+        content: THEME_COLORS.light,
       },
       {
         name: 'application-name',
