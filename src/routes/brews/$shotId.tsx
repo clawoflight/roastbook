@@ -72,7 +72,7 @@ export const Route = createFileRoute('/brews/$shotId')({
           '@/modules/offline/brew-cache'
         )
         const cached = await readCachedBrewDetail<BrewDetailData>(shotId)
-        if (cached) {
+        if (cached?.data?.shot) {
           let editData = cached.data.editData
           if (deps.edit && !editData) {
             try {

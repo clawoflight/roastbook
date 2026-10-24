@@ -29,15 +29,17 @@ import {
 } from '@/components/ui/dialog'
 import { useImageUpload } from '@/hooks/use-image-upload'
 import { useOnlineStatus } from '@/hooks/use-online-status'
+import { createEntityImageUploadFormData } from '@/lib/entity-image-upload-form'
 import { getErrorMessage } from '@/lib/error-message'
 import type { ImageFile } from '@/lib/image-file'
 import { isImageUploadNetworkError } from '@/lib/image-upload-error'
 import { imageUrl, thumbnailUrl } from '@/lib/image-url'
-import { deleteEntityImage, setImageAsThumbnail } from '@/lib/server/images'
 import {
-  type EntityImageUploadFailure,
-  uploadEntityImages,
-} from '@/lib/upload-entity-images'
+  deleteEntityImage,
+  setImageAsThumbnail,
+  uploadEntityImage,
+} from '@/lib/server/images'
+import type { EntityImageUploadFailure } from '@/lib/upload-entity-images'
 import { cn } from '@/lib/utils'
 import {
   enqueueImageDelete,
@@ -115,50 +117,74 @@ export function EntityImageGallery({
         : entityType === 'gear'
           ? 'Gear'
           : 'Brew'
-
-    const queuePictures = async (queued: readonly ImageFile[]) => {
-      if (queued.length === 0) return
-      for (const picture of queued) {
-        await enqueueImageUpload({
-          entityType,
-          entityId,
-          file: picture.file,
-          details: {
-            label: entityLabelForFiles,
-            detail: picture.file.name,
-          },
-        })
-      }
-      removeImages(queued)
-      toast.success(
-        queued.length === 1
-          ? 'Picture saved on this device'
-          : 'Pictures saved on this device',
-      )
-    }
+    const canQueueOffline = entityType === 'shots'
+    const uploaded: ImageFile[] = []
+    const queued: ImageFile[] = []
+    const failures: EntityImageUploadFailure[] = []
 
     try {
-      if (!isOnline) {
-        await queuePictures(pictures)
+      if (!isOnline && !canQueueOffline) {
+        setGalleryError('Pictures for this item need a connection')
         return
       }
 
-      const result = await uploadEntityImages(entityType, entityId, pictures)
-      const queuedFailures = result.failures.filter(
-        ({ error }) => !navigator.onLine || isImageUploadNetworkError(error),
-      )
-      await queuePictures(queuedFailures.map(({ image }) => image))
-      removeImages(result.uploaded)
-      setUploadFailures((current) => [
-        ...current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
-        ...result.failures.filter(
-          ({ image }) =>
-            !queuedFailures.some(
-              (queued) => queued.image.preview === image.preview,
-            ),
-        ),
-      ])
-      if (result.uploaded.length > 0) {
+      for (const picture of pictures) {
+        const clientOperationId = crypto.randomUUID()
+        if (isOnline) {
+          try {
+            await uploadEntityImage({
+              data: createEntityImageUploadFormData(
+                entityType,
+                entityId,
+                picture.file,
+                clientOperationId,
+              ),
+            })
+            uploaded.push(picture)
+            continue
+          } catch (error) {
+            if (!canQueueOffline || !isImageUploadNetworkError(error)) {
+              failures.push({ image: picture, error })
+              continue
+            }
+          }
+        }
+
+        if (!canQueueOffline) {
+          failures.push({
+            image: picture,
+            error: new Error('Pictures for this item need a connection'),
+          })
+          continue
+        }
+
+        try {
+          await enqueueImageUpload({
+            entityType,
+            entityId,
+            file: picture.file,
+            clientOperationId,
+            details: {
+              label: entityLabelForFiles,
+              detail: picture.file.name,
+            },
+          })
+          queued.push(picture)
+        } catch (error) {
+          failures.push({ image: picture, error })
+        }
+      }
+
+      removeImages([...uploaded, ...queued])
+      setUploadFailures(failures)
+      if (queued.length > 0) {
+        toast.success(
+          queued.length === 1
+            ? 'Picture saved on this device'
+            : 'Pictures saved on this device',
+        )
+      }
+      if (uploaded.length > 0) {
         try {
           await onImagesChange()
         } catch (error) {
@@ -171,21 +197,7 @@ export function EntityImageGallery({
         }
       }
     } catch (error) {
-      if (!navigator.onLine || isImageUploadNetworkError(error)) {
-        try {
-          await queuePictures(pictures)
-          return
-        } catch (queueError) {
-          setGalleryError(
-            getErrorMessage(queueError, 'Could not save these pictures'),
-          )
-          return
-        }
-      }
-      setUploadFailures((current) => [
-        ...current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
-        ...pictures.map((image) => ({ image, error })),
-      ])
+      setGalleryError(getErrorMessage(error, 'Could not save these pictures'))
     } finally {
       setIsUploading(false)
     }
@@ -230,14 +242,15 @@ export function EntityImageGallery({
     setIsDeletingImage(image.id)
     try {
       if (!isOnline) {
+        if (entityType !== 'shots') {
+          setGalleryError('Removing pictures for this item needs a connection')
+          return
+        }
         await enqueueImageDelete({
           entityType,
           entityId: entityIdForImage(image),
           imageId: image.id,
-          details: {
-            label: entityType === 'shots' ? 'Brew' : 'Picture',
-            detail: 'Remove picture',
-          },
+          details: { label: 'Brew', detail: 'Remove picture' },
         })
         toast.success('Picture removal saved on this device')
         return
@@ -252,18 +265,25 @@ export function EntityImageGallery({
           },
         })
       } catch (error) {
-        if (!navigator.onLine || isImageUploadNetworkError(error)) {
-          await enqueueImageDelete({
-            entityType,
-            entityId: entityIdForImage(image),
-            imageId: image.id,
-            details: {
-              label: entityType === 'shots' ? 'Brew' : 'Picture',
-              detail: 'Remove picture',
-            },
-          })
-          toast.success('Picture removal saved on this device')
-          return
+        if (
+          entityType === 'shots' &&
+          (!navigator.onLine || isImageUploadNetworkError(error))
+        ) {
+          try {
+            await enqueueImageDelete({
+              entityType,
+              entityId: entityIdForImage(image),
+              imageId: image.id,
+              details: { label: 'Brew', detail: 'Remove picture' },
+            })
+            toast.success('Picture removal saved on this device')
+            return
+          } catch (queueError) {
+            setGalleryError(
+              getErrorMessage(queueError, 'Could not save this removal'),
+            )
+            return
+          }
         }
         setGalleryError(getErrorMessage(error, 'Failed to delete image'))
         return
@@ -489,10 +509,16 @@ export function EntityImageGallery({
             prompt={
               entityType === 'bean-purchases'
                 ? 'Add pictures of this coffee'
-                : 'Add equipment pictures'
+                : entityType === 'gear'
+                  ? 'Add equipment pictures'
+                  : 'Add pictures of this brew'
             }
             previewAltPrefix={
-              entityType === 'bean-purchases' ? 'Coffee' : 'Gear'
+              entityType === 'bean-purchases'
+                ? 'Coffee'
+                : entityType === 'gear'
+                  ? 'Gear'
+                  : 'Brew'
             }
             isBusy={isUploading}
             statusText={isUploading ? 'Uploading pictures' : undefined}

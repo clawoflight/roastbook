@@ -6,6 +6,10 @@ import {
   removeLocalEntity,
 } from '@/modules/offline/local-data'
 import {
+  getOperation,
+  updateOperation,
+} from '@/modules/offline/operation-queue'
+import {
   deletePendingBrew,
   listPendingBrews,
   putPendingBrew,
@@ -71,6 +75,18 @@ export async function updateQueuedBrewPayload(
   operationId: string,
   payload: PendingBrewPayload,
 ): Promise<void> {
+  const operation = await getOperation(operationId)
+  if (operation?.operationType === 'save-to-recipe') {
+    await updateOperation(operationId, {
+      payload: {
+        ...(operation.payload as Record<string, unknown>),
+        shot: payload,
+      },
+    })
+    await usePendingBrewsStore.getState().refresh()
+    return
+  }
+
   await updatePendingBrew(operationId, { payload })
   const localEntity = await getLocalEntity('brew', operationId).catch(
     () => undefined,

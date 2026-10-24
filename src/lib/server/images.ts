@@ -142,13 +142,23 @@ async function storeEntityImage(data: EntityImageData) {
 
   if (data.entityType === 'shots' && data.clientOperationId) {
     const existing = await db.query.shotImages.findFirst({
-      where: eq(shotImages.clientOperationId, data.clientOperationId),
+      where: and(
+        eq(shotImages.clientOperationId, data.clientOperationId),
+        eq(shotImages.shotId, data.entityId),
+      ),
     })
     if (existing) {
       return {
         ...existing,
         url: storage.getUrl(existing.storagePath),
       }
+    }
+    const usedElsewhere = await db.query.shotImages.findFirst({
+      columns: { id: true },
+      where: eq(shotImages.clientOperationId, data.clientOperationId),
+    })
+    if (usedElsewhere) {
+      throw new Error('Image operation id is already used for another brew')
     }
   }
 
@@ -230,7 +240,24 @@ async function storeEntityImage(data: EntityImageData) {
             shotId: data.entityId,
             clientOperationId: data.clientOperationId ?? null,
           })
+          .onConflictDoNothing({ target: shotImages.clientOperationId })
           .returning()
+        if (!result) {
+          const existing = data.clientOperationId
+            ? await db.query.shotImages.findFirst({
+                where: and(
+                  eq(shotImages.clientOperationId, data.clientOperationId),
+                  eq(shotImages.shotId, data.entityId),
+                ),
+              })
+            : undefined
+          if (!existing) throw new Error('Could not save this picture')
+          await cleanupUncommittedUpload(storagePath)
+          return {
+            ...existing,
+            url: storage.getUrl(existing.storagePath),
+          }
+        }
         image = expectReturnedRow(result, 'Image')
         break
       }

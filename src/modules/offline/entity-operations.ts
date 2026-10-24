@@ -149,21 +149,42 @@ export async function enqueueEntityDelete(
 export async function enqueueRecipeCreate(
   payload: unknown,
   details: EntityMutationSummary,
+  clientOperationId: string = crypto.randomUUID(),
 ): Promise<string> {
-  const id = crypto.randomUUID()
   const operation = newOperation({
-    id,
+    id: clientOperationId,
     entityType: 'recipe',
     operationType: 'create',
     entityLocalId: crypto.randomUUID(),
     entityServerId: null,
     payload: {
       ...(payload as Record<string, unknown>),
-      clientOperationId: id,
+      clientOperationId,
     },
     details,
     dependencyIds: [],
     baseRevision: null,
+  })
+  await putOperation(operation)
+  requestPendingSync()
+  return operation.id
+}
+
+export async function enqueueSavedBrewToRecipe(input: {
+  readonly shotId: number
+  readonly target: { readonly name: string } | { readonly recipeId: number }
+  readonly details: EntityMutationSummary
+  readonly baseRevision?: string | null
+}): Promise<string> {
+  const operation = newOperation({
+    entityType: 'brew',
+    operationType: 'save-to-recipe',
+    entityLocalId: String(input.shotId),
+    entityServerId: String(input.shotId),
+    payload: { shotId: input.shotId, target: input.target },
+    details: input.details,
+    dependencyIds: [],
+    baseRevision: input.baseRevision ?? null,
   })
   await putOperation(operation)
   requestPendingSync()
@@ -198,8 +219,9 @@ export async function enqueueImageUpload(input: {
   readonly entityId: number
   readonly file: File
   readonly details: EntityMutationSummary
+  readonly clientOperationId?: string
 }): Promise<string> {
-  const id = crypto.randomUUID()
+  const id = input.clientOperationId ?? crypto.randomUUID()
   const blob = await putOfflineBlob({
     entityType: 'brew-image',
     entityId: input.entityId,
@@ -258,6 +280,28 @@ export async function enqueueImageDelete(input: {
     baseRevision: null,
   })
   await putOperation(operation)
+
+  if (input.entityType === 'shots') {
+    const cached = await getLocalEntityByServerId<{
+      shot?: { images?: Array<{ id: number }> }
+    }>('brew', String(input.entityId))
+    const images = cached?.data.shot?.images
+    if (cached && images) {
+      await putLocalEntity({
+        ...cached,
+        data: {
+          ...cached.data,
+          shot: {
+            ...cached.data.shot,
+            images: images.filter((image) => image.id !== input.imageId),
+          },
+        },
+        syncState: 'pending',
+        updatedAt: new Date().toISOString(),
+      })
+    }
+  }
+
   requestPendingSync()
   return operation.id
 }

@@ -218,7 +218,7 @@ export function OfflineSettings() {
         title="Offline journaling"
         description={
           isOnline
-            ? 'This browser stores pending brew creates and saved copies for offline use. You are online.'
+            ? 'This browser stores pending brew and recipe changes, pictures, and saved copies for offline use. You are online.'
             : 'You are offline. Pending brew creates stay on this device and sync when the connection returns.'
         }
         action={<CloudOff className="size-5 text-link" />}
@@ -265,8 +265,8 @@ export function OfflineSettings() {
         ) : null}
 
         <p className="text-sm text-muted-foreground">
-          Only brew creation is queued offline today. More operation types will
-          appear here as offline coverage expands.
+          Brew and recipe creates, edits, and deletes, save-to-recipe, and brew
+          pictures are queued offline today.
         </p>
 
         <div className="flex flex-wrap items-center gap-2">

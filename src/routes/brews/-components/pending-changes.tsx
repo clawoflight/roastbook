@@ -130,12 +130,10 @@ function PendingOperationDetails({
 
 function ConflictActions({
   operation,
-  isOnline,
   isSyncing,
   runAction,
 }: {
   readonly operation: OfflineOperation
-  readonly isOnline: boolean
   readonly isSyncing: boolean
   readonly runAction: RunAction
 }) {
@@ -144,7 +142,7 @@ function ConflictActions({
       <Button
         type="button"
         size="sm"
-        disabled={!isOnline || isSyncing}
+        disabled={isSyncing}
         onClick={() =>
           void runAction(
             () => forceOperation(operation.id),
@@ -276,7 +274,6 @@ function PendingOperationCard({
           {operation.status === 'conflict' ? (
             <ConflictActions
               operation={operation}
-              isOnline={isOnline}
               isSyncing={isSyncing}
               runAction={runAction}
             />

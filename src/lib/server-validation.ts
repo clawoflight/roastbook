@@ -190,18 +190,26 @@ export const shotCreateSchema = z.object({
   tasteTagIds: z.array(positiveIdSchema).max(100).optional(),
 })
 
+const baseUpdatedAtSchema = z
+  .string()
+  .datetime()
+  .refine(
+    (value) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value),
+    { message: 'Expected an ISO timestamp with milliseconds' },
+  )
+
 export const shotUpdateSchema = shotCreateSchema
   .omit({ clientOperationId: true })
   .extend({
     id: positiveIdSchema,
-    baseUpdatedAt: z.string().datetime().optional(),
+    baseUpdatedAt: baseUpdatedAtSchema.optional(),
   })
 
 export const deleteRecordSchema = z.union([
   positiveIdSchema,
   z.object({
     id: positiveIdSchema,
-    baseUpdatedAt: z.string().datetime().optional(),
+    baseUpdatedAt: baseUpdatedAtSchema.optional(),
     idempotent: z.boolean().optional(),
   }),
 ])

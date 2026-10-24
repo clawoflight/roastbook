@@ -145,7 +145,7 @@ export function ShotEditForm({
     } catch (error) {
       if (isNetworkError(error) || !navigator.onLine) {
         try {
-          await queueUpdate(null)
+          await queueUpdate(baseUpdatedAt)
           return
         } catch (queueError) {
           toast.error(

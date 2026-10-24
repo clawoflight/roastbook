@@ -38,7 +38,10 @@ import {
 } from '@/lib/shot-sensory'
 import { enabledSensoryRatingKeys } from '@/lib/taste-profile'
 import { isNegativeTasteTag } from '@/lib/taste-tags'
-import { enqueueEntityDelete } from '@/modules/offline/entity-operations'
+import {
+  enqueueEntityDelete,
+  enqueueSavedBrewToRecipe,
+} from '@/modules/offline/entity-operations'
 import { isNetworkError } from '@/modules/offline/errors'
 
 const routeApi = getRouteApi('/brews/$shotId')
@@ -133,7 +136,7 @@ export function BrewDetailPage() {
     } catch (error) {
       if (isNetworkError(error) || !navigator.onLine) {
         try {
-          await queueDelete(null)
+          await queueDelete(baseUpdatedAt)
           return
         } catch {
           toast.error('Could not save this deletion on this device')
@@ -163,12 +166,32 @@ export function BrewDetailPage() {
 
   const handleSaveRecipe = async (target: SaveToRecipeTarget) => {
     const isNewRecipe = target.kind === 'new'
+    const targetPayload = isNewRecipe
+      ? { name: target.name }
+      : { recipeId: target.recipeId }
+    const queueSaveRecipe = async () => {
+      await enqueueSavedBrewToRecipe({
+        shotId: shot.id,
+        target: targetPayload,
+        details: {
+          label: shot.bean?.name ?? 'Brew',
+          detail: isNewRecipe
+            ? `New recipe: ${target.name}`
+            : 'Existing recipe',
+        },
+        baseRevision: baseUpdatedAt,
+      })
+      toast.success('Recipe save queued on this device')
+      await navigate({ to: '/brews/pending' })
+      return true
+    }
+
     setIsSavingRecipe(true)
     try {
+      if (!isOnline) return await queueSaveRecipe()
+
       const recipe = await saveShotAsRecipe({
-        data: isNewRecipe
-          ? { shotId: shot.id, name: target.name }
-          : { shotId: shot.id, recipeId: target.recipeId },
+        data: { shotId: shot.id, ...targetPayload },
       })
       if (!recipe) {
         toast.error('Could not save this recipe')
@@ -178,6 +201,16 @@ export function BrewDetailPage() {
       toast.success(isNewRecipe ? 'Recipe created' : 'Recipe updated')
       return true
     } catch (error) {
+      if (isNetworkError(error) || !navigator.onLine) {
+        try {
+          return await queueSaveRecipe()
+        } catch (queueError) {
+          toast.error(
+            getErrorMessage(queueError, 'Could not queue this recipe save'),
+          )
+          return false
+        }
+      }
       toast.error(getErrorMessage(error, 'Could not save this recipe'))
       return false
     } finally {

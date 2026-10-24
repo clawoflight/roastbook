@@ -280,7 +280,7 @@ export function RecipeDetailPage() {
                     await navigate({ to: '/recipes' })
                   } catch (error) {
                     if (isNetworkError(error) || !navigator.onLine) {
-                      await queueDelete(null)
+                      await queueDelete(recipeBaseUpdatedAt)
                       return
                     }
                     toast.error(

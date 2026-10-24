@@ -81,12 +81,18 @@ export function RecipeForm({
       )
     },
     submit: async () => {
-      const payload = { name, ...recipePayload(values) }
+      const operationId = crypto.randomUUID()
+      const payload = {
+        name,
+        ...recipePayload(values),
+        clientOperationId: operationId,
+      }
       const queueRecipe = async () => {
-        await enqueueRecipeCreate(payload, {
-          label: name.trim(),
-          detail: 'Recipe',
-        })
+        await enqueueRecipeCreate(
+          payload,
+          { label: name.trim(), detail: 'Recipe' },
+          operationId,
+        )
         toast.success('Recipe saved on this device')
         if (onQueued) await onQueued()
       }
@@ -96,10 +102,9 @@ export function RecipeForm({
         return
       }
 
+      let recipe: { readonly id: number }
       try {
-        const recipe = await createRecipe({ data: payload })
-        toast.success('Recipe created')
-        await onCreated(recipe)
+        recipe = await createRecipe({ data: payload })
       } catch (error) {
         if (isNetworkError(error) || !navigator.onLine) {
           await queueRecipe()
@@ -107,6 +112,9 @@ export function RecipeForm({
         }
         throw error
       }
+
+      toast.success('Recipe created')
+      await onCreated(recipe)
     },
     onError: (error) =>
       toast.error(getErrorMessage(error, 'Could not create recipe')),

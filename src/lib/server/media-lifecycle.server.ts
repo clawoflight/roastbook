@@ -227,8 +227,35 @@ async function deleteVisitRow(
 export async function deleteEntityWithMedia(
   entityType: MediaEntityType,
   entityId: number,
+  options: {
+    readonly expectedUpdatedAt?: Date
+    readonly idempotent?: boolean
+  } = {},
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    if (
+      entityType === 'shots' &&
+      (options.expectedUpdatedAt || options.idempotent)
+    ) {
+      const [existing] = await tx
+        .select({ updatedAt: shots.updatedAt })
+        .from(shots)
+        .where(eq(shots.id, entityId))
+        .for('update')
+      if (!existing) {
+        if (options.idempotent) return
+        throw new Error('Brew not found')
+      }
+      if (
+        options.expectedUpdatedAt &&
+        existing.updatedAt.getTime() !== options.expectedUpdatedAt.getTime()
+      ) {
+        throw new Error(
+          'This brew changed on the server. Reload and try again.',
+        )
+      }
+    }
+
     const paths = await selectEntityImagePaths(tx, entityType, entityId)
     await queueMediaCleanup(tx, paths)
     await deleteEntityRow(tx, entityType, entityId)

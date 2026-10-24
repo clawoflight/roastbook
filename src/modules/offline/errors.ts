@@ -18,6 +18,7 @@ const DEFINITIVE_SYNC_ERROR_PATTERNS = [
   /between .* and/i,
   /unsupported offline operation/i,
   /image data is missing/i,
+  /already used/i,
 ]
 
 function errorMessage(error: unknown): string {

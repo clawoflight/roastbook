@@ -585,7 +585,7 @@ export function updateShotOperation(
       )
     }
     await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
-    const { id, tasteTagIds, baseUpdatedAt: _baseUpdatedAt } = data
+    const { id, tasteTagIds } = data
     const values = getShotValues(
       data,
       method.enabledParameters,
@@ -602,8 +602,25 @@ export function updateShotOperation(
         ...(machineChanged ? { machineSettingRevisionId } : undefined),
         updatedAt: new Date(),
       })
-      .where(eq(shots.id, id))
+      .where(
+        and(
+          eq(shots.id, id),
+          data.baseUpdatedAt
+            ? eq(shots.updatedAt, new Date(data.baseUpdatedAt))
+            : undefined,
+        ),
+      )
       .returning()
+    if (!shot) {
+      const current = await tx.query.shots.findFirst({
+        columns: { id: true },
+        where: eq(shots.id, id),
+      })
+      if (!current) throw new ShotInputError('Brew not found')
+      throw new ShotInputError(
+        'This brew changed on the server. Reload and try again.',
+      )
+    }
     const persistedShot = expectReturnedRow(shot, 'Shot')
 
     if (data.drinkOptionValueIds !== undefined) {
@@ -636,23 +653,12 @@ export async function deleteShotOperation(data: {
   readonly baseUpdatedAt?: string
   readonly idempotent?: boolean
 }) {
-  const existing = await db.query.shots.findFirst({
-    columns: { id: true, updatedAt: true },
-    where: eq(shots.id, data.id),
+  await deleteEntityWithMedia('shots', data.id, {
+    expectedUpdatedAt: data.baseUpdatedAt
+      ? new Date(data.baseUpdatedAt)
+      : undefined,
+    idempotent: data.idempotent,
   })
-  if (!existing) {
-    if (data.idempotent) return
-    throw new ShotInputError('Brew not found')
-  }
-  if (
-    data.baseUpdatedAt &&
-    existing.updatedAt.toISOString() !== data.baseUpdatedAt
-  ) {
-    throw new ShotInputError(
-      'This brew changed on the server. Reload and try again.',
-    )
-  }
-  await deleteEntityWithMedia('shots', data.id)
 }
 
 export async function getLastShotForBeanAndMethodOperation(data: {

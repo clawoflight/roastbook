@@ -239,8 +239,25 @@ export const updateRecipe = createServerFn({ method: 'POST' })
       const [recipe] = await tx
         .update(recipes)
         .set(projected.values)
-        .where(eq(recipes.id, id))
+        .where(
+          and(
+            eq(recipes.id, id),
+            baseUpdatedAt
+              ? eq(recipes.updatedAt, new Date(baseUpdatedAt))
+              : undefined,
+          ),
+        )
         .returning()
+      if (!recipe) {
+        const current = await tx.query.recipes.findFirst({
+          columns: { id: true },
+          where: eq(recipes.id, id),
+        })
+        if (!current) throw new RecipeInputError('Recipe not found')
+        throw new RecipeInputError(
+          'This recipe changed on the server. Reload and try again.',
+        )
+      }
       const persistedRecipe = expectReturnedRow(recipe, 'Recipe')
       await replaceRecipeAccessoryGear(tx, id, projected.accessoryGearIds)
       await replaceRecipeDrinkOptions(
@@ -320,6 +337,7 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
       const { accessoryGearLinks, drinkOptions, ...sourceRecipe } = source
       const {
         id: _sourceId,
+        clientOperationId: _sourceOperationId,
         createdAt: _sourceCreatedAt,
         updatedAt: _sourceUpdatedAt,
         ...recipeValues
@@ -361,26 +379,30 @@ export const deleteRecipe = createServerFn({ method: 'POST' })
     return typeof data === 'number' ? { id: data } : data
   })
   .handler(async ({ data }) => {
-    const existing = await db.query.recipes.findFirst({
-      columns: { id: true, updatedAt: true },
-      where: eq(recipes.id, data.id),
-    })
-    if (!existing) {
-      if (data.idempotent) return
-      throw new RecipeInputError('Recipe not found')
-    }
-    if (
-      data.baseUpdatedAt &&
-      existing.updatedAt.toISOString() !== data.baseUpdatedAt
-    ) {
+    await db.transaction(async (tx) => {
+      const [recipe] = await tx
+        .delete(recipes)
+        .where(
+          and(
+            eq(recipes.id, data.id),
+            data.baseUpdatedAt
+              ? eq(recipes.updatedAt, new Date(data.baseUpdatedAt))
+              : undefined,
+          ),
+        )
+        .returning({ id: recipes.id })
+
+      if (recipe) return
+      const existing = await tx.query.recipes.findFirst({
+        columns: { id: true },
+        where: eq(recipes.id, data.id),
+      })
+      if (!existing) {
+        if (data.idempotent) return
+        throw new RecipeInputError('Recipe not found')
+      }
       throw new RecipeInputError(
         'This recipe changed on the server. Reload and try again.',
       )
-    }
-
-    const [recipe] = await db
-      .delete(recipes)
-      .where(eq(recipes.id, data.id))
-      .returning({ id: recipes.id })
-    expectReturnedRow(recipe, 'Recipe')
+    })
   })

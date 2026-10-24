@@ -8,7 +8,12 @@ import {
   type EntityType,
   uploadEntityImage,
 } from '@/lib/server/images'
-import { createRecipe, deleteRecipe, updateRecipe } from '@/lib/server/recipes'
+import {
+  createRecipe,
+  deleteRecipe,
+  saveShotAsRecipe,
+  updateRecipe,
+} from '@/lib/server/recipes'
 import {
   createShot,
   createShotAndSaveRecipe,
@@ -92,12 +97,29 @@ async function executeBrewOperation(
     return { serverId: String(id) }
   }
   if (operation.operationType === 'save-to-recipe') {
-    const result = await createShotAndSaveRecipe({
-      data: operation.payload as NonNullable<
-        Parameters<typeof createShotAndSaveRecipe>[0]
-      >['data'],
-    })
-    return { serverId: String(result.shot.id) }
+    const payload = operation.payload as {
+      readonly shot?: unknown
+      readonly shotId?: number
+      readonly target: { readonly name: string } | { readonly recipeId: number }
+    }
+    if (payload.shot) {
+      const result = await createShotAndSaveRecipe({
+        data: operation.payload as NonNullable<
+          Parameters<typeof createShotAndSaveRecipe>[0]
+        >['data'],
+      })
+      return { serverId: String(result.shot.id) }
+    }
+    if (payload.shotId) {
+      await saveShotAsRecipe({
+        data: {
+          shotId: payload.shotId,
+          ...payload.target,
+        } as NonNullable<Parameters<typeof saveShotAsRecipe>[0]>['data'],
+      })
+      return { serverId: String(payload.shotId) }
+    }
+    throw new Error('Save-to-recipe operation is missing its brew')
   }
 
   throw new Error(`Unsupported brew operation: ${operation.operationType}`)
@@ -310,35 +332,6 @@ export function OfflineSyncManager() {
                 authenticate: checkAuthentication,
                 isOnline: () => navigator.onLine,
                 onAcknowledged: async (operation, executionResult) => {
-                  if (
-                    operation.entityType === 'brew-image' &&
-                    operation.entityServerId
-                  ) {
-                    const imagePayload = operation.payload as {
-                      readonly entityType?: EntityType
-                    }
-                    const cacheType =
-                      imagePayload.entityType === 'shots'
-                        ? 'brew'
-                        : imagePayload.entityType === 'gear'
-                          ? 'gear'
-                          : imagePayload.entityType === 'bean-purchases'
-                            ? 'bean'
-                            : null
-                    if (cacheType) {
-                      const cached = await getLocalEntityByServerId(
-                        cacheType,
-                        operation.entityServerId,
-                      )
-                      if (cached) {
-                        await removeLocalEntity(
-                          cacheType,
-                          cached.localId,
-                        ).catch(() => undefined)
-                      }
-                    }
-                  }
-
                   const serverId = executionResult.serverId
                   if (!serverId) return
 

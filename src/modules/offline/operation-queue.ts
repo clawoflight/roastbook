@@ -160,14 +160,36 @@ export async function acknowledgeOperation(
 }
 
 export async function cancelOperation(id: string): Promise<void> {
-  const existing = await getOperation(id)
-  if (!existing || isTerminalOperationStatus(existing.status)) return
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(OPERATIONS_STORE, 'readwrite')
+  const store = transaction.objectStore(OPERATIONS_STORE)
+  const existing = (await requestToPromise(store.get(id))) as
+    | OfflineOperation
+    | undefined
+  if (!existing || isTerminalOperationStatus(existing.status)) {
+    await transactionToPromise(transaction)
+    return
+  }
   if (existing.status === 'in-flight') {
+    await transactionToPromise(transaction)
     throw new Error(
       'Wait for the current sync to finish before discarding this operation',
     )
   }
-  await updateOperation(id, { status: 'cancelled' })
+
+  const now = new Date().toISOString()
+  store.put({
+    ...existing,
+    status: 'cancelled',
+    payload: null,
+    details: null,
+    blobKeys: [],
+    lastError: null,
+    cancelledAt: existing.cancelledAt ?? now,
+    updatedAt: now,
+  })
+  await transactionToPromise(transaction)
+
   for (const blobKey of existing.blobKeys) {
     await deleteOfflineBlob(blobKey).catch(() => undefined)
   }

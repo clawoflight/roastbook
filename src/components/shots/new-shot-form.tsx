@@ -503,29 +503,44 @@ export function NewShotForm({
     }
 
     const enqueueSaveToRecipe = async (target: SaveToRecipeTarget) => {
-      await enqueueBrewSaveToRecipe(
-        operationId,
-        {
-          shot: { ...baseData, clientOperationId: operationId },
-          target:
-            target.kind === 'new'
-              ? { name: target.name }
-              : { recipeId: target.recipeId },
-        },
-        {
-          label: selectedBean?.name ?? 'Brew',
-          detail:
-            target.kind === 'new'
-              ? `New recipe: ${target.name}`
-              : 'Existing recipe',
-        },
-      )
+      const shouldHoldForTasting = hasEnabledTasteProfileField(tasteProfile)
+      if (shouldHoldForTasting) holdPendingBrewForTasting(operationId)
+
+      try {
+        await enqueueBrewSaveToRecipe(
+          operationId,
+          {
+            shot: { ...baseData, clientOperationId: operationId },
+            target:
+              target.kind === 'new'
+                ? { name: target.name }
+                : { recipeId: target.recipeId },
+          },
+          {
+            label: selectedBean?.name ?? 'Brew',
+            detail:
+              target.kind === 'new'
+                ? `New recipe: ${target.name}`
+                : 'Existing recipe',
+          },
+        )
+      } catch (error) {
+        if (shouldHoldForTasting) {
+          releasePendingBrewForTasting(operationId)
+        }
+        throw error
+      }
+
       operationIdRef.current = null
       setIsDirty(false)
-      toast.success(
-        'Saved on this device. The brew and recipe will sync when you reconnect.',
-      )
-      await onQueued()
+      if (shouldHoldForTasting) {
+        setTasting({ kind: 'pending', operationId, values: submittedValues })
+      } else {
+        toast.success(
+          'Saved on this device. The brew and recipe will sync when you reconnect.',
+        )
+        await onQueued()
+      }
       return true
     }
 
