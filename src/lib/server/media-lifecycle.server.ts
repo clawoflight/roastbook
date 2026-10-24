@@ -244,7 +244,9 @@ export async function deleteEntityWithMedia(
   await db.transaction(async (tx) => {
     if (
       entityType === 'shots' &&
-      (options.expectedUpdatedAt || options.idempotent)
+      (options.expectedRevision !== undefined ||
+        options.expectedUpdatedAt ||
+        options.idempotent)
     ) {
       const [existing] = await tx
         .select({ revision: shots.revision, updatedAt: shots.updatedAt })
