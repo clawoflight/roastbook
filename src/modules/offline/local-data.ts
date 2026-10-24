@@ -162,6 +162,7 @@ export async function putServerEntity<T>(input: {
   )) as OfflineOperation[]
   const deleteQueued = operations.some(
     (operation) =>
+      operation.ownerKey === ownerKey &&
       operation.entityType === input.entityType &&
       operation.operationType === 'delete' &&
       operation.entityLocalId === input.serverId &&
@@ -273,11 +274,15 @@ export async function updateServerEntityRevision(
   )) as OfflineOperation[]
   const hasPending = operations.some(
     (operation) =>
-      operation.entityType === entityType &&
+      operation.ownerKey === entity.ownerKey &&
       operation.entityServerId === serverId &&
-      (operation.operationType === 'update' ||
-        operation.operationType === 'delete') &&
-      isVisibleOperationStatus(operation.status),
+      isVisibleOperationStatus(operation.status) &&
+      ((operation.entityType === entityType &&
+        (operation.operationType === 'update' ||
+          operation.operationType === 'delete')) ||
+        (operation.entityType === 'brew-image' &&
+          (operation.operationType === 'upload' ||
+            operation.operationType === 'remove-image'))),
   )
   const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
   const data = entity.data[entityKey]
@@ -290,8 +295,51 @@ export async function updateServerEntityRevision(
     ...entity,
     data: {
       ...entity.data,
-      [entityKey]: { ...data, updatedAt: revision },
+      [entityKey]: { ...data, revision: Number(revision) },
     },
+    syncState: hasPending ? 'pending' : 'synced',
+    updatedAt: new Date().toISOString(),
+  })
+  await transactionToPromise(transaction)
+}
+
+export async function refreshServerEntitySyncState(
+  entityType: OfflineEntityType,
+  serverId: string,
+): Promise<void> {
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(
+    [LOCAL_ENTITIES_STORE, OPERATIONS_STORE],
+    'readwrite',
+  )
+  const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const entity = (await requestToPromise(
+    store
+      .index(OWNER_ENTITY_SERVER_INDEX)
+      .get([DEFAULT_OWNER_KEY, entityType, serverId]),
+  )) as LocalEntityRecord | undefined
+  if (!entity) {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  const operations = (await requestToPromise(
+    transaction.objectStore(OPERATIONS_STORE).getAll(),
+  )) as OfflineOperation[]
+  const hasPending = operations.some(
+    (operation) =>
+      operation.ownerKey === entity.ownerKey &&
+      operation.entityServerId === serverId &&
+      isVisibleOperationStatus(operation.status) &&
+      ((operation.entityType === entityType &&
+        (operation.operationType === 'update' ||
+          operation.operationType === 'delete')) ||
+        (operation.entityType === 'brew-image' &&
+          (operation.operationType === 'upload' ||
+            operation.operationType === 'remove-image'))),
+  )
+  store.put({
+    ...entity,
     syncState: hasPending ? 'pending' : 'synced',
     updatedAt: new Date().toISOString(),
   })

@@ -200,6 +200,7 @@ const baseUpdatedAtSchema = z
 
 export const shotUpdateSchema = shotCreateSchema.extend({
   id: positiveIdSchema,
+  baseRevision: z.number().int().min(0).optional(),
   baseUpdatedAt: baseUpdatedAtSchema.optional(),
 })
 
@@ -207,6 +208,7 @@ export const deleteRecordSchema = z.union([
   positiveIdSchema,
   z.object({
     id: positiveIdSchema,
+    baseRevision: z.number().int().min(0).optional(),
     baseUpdatedAt: baseUpdatedAtSchema.optional(),
     idempotent: z.boolean().optional(),
   }),

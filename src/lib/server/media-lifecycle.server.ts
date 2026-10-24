@@ -228,13 +228,16 @@ export async function deleteEntityWithMedia(
   entityType: MediaEntityType,
   entityId: number,
   options: {
+    readonly expectedRevision?: number
     readonly expectedUpdatedAt?: Date
     readonly idempotent?: boolean
   } = {},
 ): Promise<void> {
   if (
     entityType !== 'shots' &&
-    (options.expectedUpdatedAt || options.idempotent)
+    (options.expectedRevision !== undefined ||
+      options.expectedUpdatedAt ||
+      options.idempotent)
   ) {
     throw new Error('Revision-aware deletion is only supported for brews')
   }
@@ -244,7 +247,7 @@ export async function deleteEntityWithMedia(
       (options.expectedUpdatedAt || options.idempotent)
     ) {
       const [existing] = await tx
-        .select({ updatedAt: shots.updatedAt })
+        .select({ revision: shots.revision, updatedAt: shots.updatedAt })
         .from(shots)
         .where(eq(shots.id, entityId))
         .for('update')
@@ -253,8 +256,11 @@ export async function deleteEntityWithMedia(
         throw new Error('Brew not found')
       }
       if (
-        options.expectedUpdatedAt &&
-        existing.updatedAt.getTime() !== options.expectedUpdatedAt.getTime()
+        (options.expectedRevision !== undefined &&
+          existing.revision !== options.expectedRevision) ||
+        (options.expectedRevision === undefined &&
+          options.expectedUpdatedAt &&
+          existing.updatedAt.getTime() !== options.expectedUpdatedAt.getTime())
       ) {
         throw new Error(
           'This brew changed on the server. Reload and try again.',

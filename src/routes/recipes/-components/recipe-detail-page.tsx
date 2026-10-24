@@ -100,18 +100,14 @@ export function RecipeDetailPage() {
     offlineSnapshotSavedAt,
   ])
 
-  const recipeBaseUpdatedAt = recipe
-    ? recipe.updatedAt instanceof Date
-      ? recipe.updatedAt.toISOString()
-      : new Date(recipe.updatedAt).toISOString()
-    : null
+  const recipeBaseRevision = recipe ? String(recipe.revision) : null
   const recipeUpdateData = () =>
-    recipe && recipeBaseUpdatedAt
+    recipe && recipeBaseRevision
       ? {
           id: recipe.id,
           name,
           ...recipePayload(values),
-          baseUpdatedAt: recipeBaseUpdatedAt,
+          baseRevision: recipe.revision,
         }
       : null
 
@@ -126,7 +122,7 @@ export function RecipeDetailPage() {
       },
       submit: async () => {
         const data = recipeUpdateData()
-        if (!data || !recipe || !recipeBaseUpdatedAt) return
+        if (!data || !recipe || !recipeBaseRevision) return
         const updateOperationId = crypto.randomUUID()
         const updateData = {
           ...data,
@@ -140,7 +136,8 @@ export function RecipeDetailPage() {
             clientOperationId: updateOperationId,
             payload: {
               ...updateData,
-              baseUpdatedAt: baseRevision ?? undefined,
+              baseRevision:
+                baseRevision === null ? undefined : Number(baseRevision),
             },
             details: { label: name.trim(), detail: 'Recipe' },
             baseRevision,
@@ -150,7 +147,7 @@ export function RecipeDetailPage() {
         }
 
         if (!isOnline) {
-          await queueUpdate(recipeBaseUpdatedAt)
+          await queueUpdate(recipeBaseRevision)
           return
         }
 
@@ -164,7 +161,7 @@ export function RecipeDetailPage() {
           toast.success('Recipe updated')
         } catch (error) {
           if (isNetworkError(error) || !navigator.onLine) {
-            await queueUpdate(recipeBaseUpdatedAt)
+            await queueUpdate(recipeBaseRevision)
             return
           }
           throw error
@@ -272,7 +269,7 @@ export function RecipeDetailPage() {
                   }
 
                   if (!isOnline) {
-                    await queueDelete(recipeBaseUpdatedAt)
+                    await queueDelete(recipeBaseRevision)
                     return
                   }
 
@@ -280,7 +277,7 @@ export function RecipeDetailPage() {
                     await deleteRecipe({
                       data: {
                         id: recipe.id,
-                        baseUpdatedAt: recipeBaseUpdatedAt ?? undefined,
+                        baseRevision: recipe.revision,
                       },
                     })
                     await removeCached()
@@ -289,7 +286,7 @@ export function RecipeDetailPage() {
                     await navigate({ to: '/recipes' })
                   } catch (error) {
                     if (isNetworkError(error) || !navigator.onLine) {
-                      await queueDelete(recipeBaseUpdatedAt)
+                      await queueDelete(recipeBaseRevision)
                       return
                     }
                     toast.error(

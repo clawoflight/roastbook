@@ -562,6 +562,7 @@ export function updateShotOperation(
         brewingMethodId: true,
         drinkTypeId: true,
         machineId: true,
+        revision: true,
         updatedAt: true,
       },
       where: eq(shots.id, data.id),
@@ -579,8 +580,11 @@ export function updateShotOperation(
       }
     }
     if (
-      data.baseUpdatedAt &&
-      existingShot.updatedAt.toISOString() !== data.baseUpdatedAt
+      (data.baseRevision !== undefined &&
+        existingShot.revision !== data.baseRevision) ||
+      (data.baseRevision === undefined &&
+        data.baseUpdatedAt &&
+        existingShot.updatedAt.toISOString() !== data.baseUpdatedAt)
     ) {
       throw new ShotInputError(
         'This brew changed on the server. Reload and try again.',
@@ -612,12 +616,15 @@ export function updateShotOperation(
       .set({
         ...values,
         ...(machineChanged ? { machineSettingRevisionId } : undefined),
+        revision: sql`${shots.revision} + 1`,
         updatedAt: new Date(),
       })
       .where(
         and(
           eq(shots.id, id),
-          matchesRevision(shots.updatedAt, data.baseUpdatedAt),
+          data.baseRevision !== undefined
+            ? eq(shots.revision, data.baseRevision)
+            : matchesRevision(shots.updatedAt, data.baseUpdatedAt),
         ),
       )
       .returning()
@@ -666,10 +673,12 @@ export function updateShotOperation(
 
 export async function deleteShotOperation(data: {
   readonly id: number
+  readonly baseRevision?: number
   readonly baseUpdatedAt?: string
   readonly idempotent?: boolean
 }) {
   await deleteEntityWithMedia('shots', data.id, {
+    expectedRevision: data.baseRevision,
     expectedUpdatedAt: data.baseUpdatedAt
       ? new Date(data.baseUpdatedAt)
       : undefined,

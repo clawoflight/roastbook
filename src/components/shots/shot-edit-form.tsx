@@ -94,14 +94,12 @@ export function ShotEditForm({
   const handleSave = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault()
     const formElement = event.currentTarget
-    const baseUpdatedAt =
-      shot.updatedAt instanceof Date
-        ? shot.updatedAt.toISOString()
-        : new Date(shot.updatedAt).toISOString()
+    const baseRevision = String(shot.revision)
     const updateOperationId = crypto.randomUUID()
     const data = {
       id: shot.id,
       clientOperationId: updateOperationId,
+      baseRevision: shot.revision,
       ...shotParameterPayload(values),
       ...shotDrinkPayload(values),
       brewedAt: localDateTimeInputToDate(brewedAt) ?? shot.brewedAt,
@@ -110,7 +108,6 @@ export function ShotEditForm({
       ...shotSensoryPayload(values),
       notes: values.notes || null,
       tasteTagIds,
-      baseUpdatedAt,
     }
     const errors = getShotUpdateErrors(data)
     setFieldErrors(errors)
@@ -124,7 +121,11 @@ export function ShotEditForm({
         entityType: 'brew',
         entityId: shot.id,
         clientOperationId: updateOperationId,
-        payload: { ...data, baseUpdatedAt: baseRevision ?? undefined },
+        payload: {
+          ...data,
+          baseRevision:
+            baseRevision === null ? undefined : Number(baseRevision),
+        },
         details: {
           label: shot.bean?.name ?? 'Brew',
           detail: shot.brewingMethod.name,
@@ -139,7 +140,7 @@ export function ShotEditForm({
     setIsSaving(true)
     try {
       if (!isOnline) {
-        await queueUpdate(baseUpdatedAt)
+        await queueUpdate(baseRevision)
         return
       }
 
@@ -148,7 +149,7 @@ export function ShotEditForm({
     } catch (error) {
       if (isNetworkError(error) || !navigator.onLine) {
         try {
-          await queueUpdate(baseUpdatedAt)
+          await queueUpdate(baseRevision)
           return
         } catch (queueError) {
           toast.error(

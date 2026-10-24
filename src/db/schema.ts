@@ -1188,6 +1188,7 @@ export const recipes = pgTable(
     drinkTypeId: integer('drink_type_id').references(() => drinkTypes.id, {
       onDelete: 'set null',
     }),
+    revision: integer('revision').default(0).notNull(),
     ...shotContextColumns(),
     ...shotParameterColumns(5),
     ...timestamps(),
@@ -1323,6 +1324,7 @@ export const shots = pgTable(
   {
     id: serial('id').primaryKey(),
     brewedAt: timestamp('brewed_at').defaultNow().notNull(),
+    revision: integer('revision').default(0).notNull(),
     ...shotContextColumns(),
     beanPurchaseId: integer('bean_purchase_id'),
     drinkTypeId: integer('drink_type_id').references(() => drinkTypes.id, {
@@ -1418,7 +1420,10 @@ export const clientOperations = pgTable(
     }),
     createdAt: createdAt(),
   },
-  (table) => [index('client_operations_brew_id_idx').on(table.brewId)],
+  (table) => [
+    index('client_operations_brew_id_idx').on(table.brewId),
+    index('client_operations_recipe_id_idx').on(table.recipeId),
+  ],
 )
 
 export const shotsRelations = relations(shots, ({ one, many }) => ({

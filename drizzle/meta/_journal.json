@@ -421,6 +421,13 @@
       "when": 1792849631888,
       "tag": "0060_client_operations_recipe_id",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792850814012,
+      "tag": "0061_entity_revisions",
+      "breakpoints": true
     }
   ]
 }

@@ -27,6 +27,7 @@ import {
   markLocalEntitySynced,
   putLocalEntity,
   recordSuccessfulSync,
+  refreshServerEntitySyncState,
   removeLocalEntity,
   updateServerEntityRevision,
 } from '@/modules/offline/local-data'
@@ -61,13 +62,16 @@ const PREFETCH_TIMEOUT_MS = 3000
 let activeSyncOwner: object | null = null
 
 function updatePayload(operation: OfflineOperation): Record<string, unknown> {
-  const { baseUpdatedAt: _baseUpdatedAt, ...payload } =
-    operation.payload as Record<string, unknown>
+  const {
+    baseRevision: _baseRevision,
+    baseUpdatedAt: _baseUpdatedAt,
+    ...payload
+  } = operation.payload as Record<string, unknown>
   return {
     ...payload,
     clientOperationId: operation.id,
     ...(operation.baseRevision
-      ? { baseUpdatedAt: operation.baseRevision }
+      ? { baseRevision: Number(operation.baseRevision) }
       : {}),
   }
 }
@@ -89,7 +93,7 @@ async function executeBrewOperation(
     })
     return {
       serverId: String(shot.id),
-      revision: shot.updatedAt.toISOString(),
+      revision: String(shot.revision),
     }
   }
   if (operation.operationType === 'delete') {
@@ -98,7 +102,7 @@ async function executeBrewOperation(
       data: {
         id,
         ...(operation.baseRevision
-          ? { baseUpdatedAt: operation.baseRevision }
+          ? { baseRevision: Number(operation.baseRevision) }
           : {}),
         idempotent: true,
       },
@@ -154,7 +158,7 @@ async function executeRecipeOperation(
     })
     return {
       serverId: String(recipe.id),
-      revision: recipe.updatedAt.toISOString(),
+      revision: String(recipe.revision),
     }
   }
   if (operation.operationType === 'delete') {
@@ -163,7 +167,7 @@ async function executeRecipeOperation(
       data: {
         id,
         ...(operation.baseRevision
-          ? { baseUpdatedAt: operation.baseRevision }
+          ? { baseRevision: Number(operation.baseRevision) }
           : {}),
         idempotent: true,
       },
@@ -272,6 +276,7 @@ async function markBrewSynced(
       syncState: 'synced',
       updatedAt: new Date().toISOString(),
     })
+    await refreshServerEntitySyncState('brew', serverId)
     return
   }
 
@@ -287,6 +292,7 @@ async function markBrewSynced(
       syncState: 'synced',
     })
   }
+  await refreshServerEntitySyncState('brew', serverId)
 }
 
 export function OfflineSyncManager() {
@@ -370,17 +376,10 @@ export function OfflineSyncManager() {
                     operation.operationType === 'remove-image' &&
                     operation.entityServerId
                   ) {
-                    const cached = await getLocalEntityByServerId(
+                    await refreshServerEntitySyncState(
                       'brew',
                       operation.entityServerId,
                     )
-                    if (cached) {
-                      await putLocalEntity({
-                        ...cached,
-                        syncState: 'synced',
-                        updatedAt: new Date().toISOString(),
-                      })
-                    }
                   }
 
                   if (

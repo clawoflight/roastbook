@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { CloudOff, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { OfflineSyncManager } from '@/components/offline-sync-manager'
 import { DEMO_MODE } from '@/lib/build-mode'
 import { listOperations } from '@/modules/offline/operation-queue'
@@ -20,13 +20,17 @@ export function PendingSyncBanner() {
   const loadError = usePendingBrewsStore((state) => state.loadError)
   const [operations, setOperations] = useState<OfflineOperation[]>([])
   const [operationError, setOperationError] = useState<string | null>(null)
+  const loadGeneration = useRef(0)
 
   const load = useCallback(async () => {
+    const generation = ++loadGeneration.current
     try {
       const all = await listOperations()
+      if (generation !== loadGeneration.current) return
       setOperations(all.filter((item) => isVisibleOperationStatus(item.status)))
       setOperationError(null)
     } catch {
+      if (generation !== loadGeneration.current) return
       setOperations([])
       setOperationError('Could not read pending offline changes')
     }

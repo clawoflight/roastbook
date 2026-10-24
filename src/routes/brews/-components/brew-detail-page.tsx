@@ -100,10 +100,7 @@ export function BrewDetailPage() {
     )
   }
 
-  const baseUpdatedAt =
-    shot.updatedAt instanceof Date
-      ? shot.updatedAt.toISOString()
-      : new Date(shot.updatedAt).toISOString()
+  const baseRevision = String(shot.revision)
 
   const handleDelete = async () => {
     const queueDelete = async (baseRevision: string | null) => {
@@ -122,11 +119,13 @@ export function BrewDetailPage() {
 
     try {
       if (!isOnline) {
-        await queueDelete(baseUpdatedAt)
+        await queueDelete(baseRevision)
         return
       }
 
-      await deleteShot({ data: { id: shot.id, baseUpdatedAt } })
+      await deleteShot({
+        data: { id: shot.id, baseRevision: shot.revision },
+      })
       const { removeCachedBrewDetail } = await import(
         '@/modules/offline/brew-cache'
       )
@@ -136,7 +135,7 @@ export function BrewDetailPage() {
     } catch (error) {
       if (isNetworkError(error) || !navigator.onLine) {
         try {
-          await queueDelete(baseUpdatedAt)
+          await queueDelete(baseRevision)
           return
         } catch {
           toast.error('Could not save this deletion on this device')

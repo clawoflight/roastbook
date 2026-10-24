@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, count, desc, eq, exists, ilike, or } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, ilike, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/db'
 import { beans, brewingMethods, clientOperations, recipes } from '@/db/schema'
@@ -234,15 +234,18 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         data.brewingMethodId,
         data.drinkTypeId,
       )
-      const { id, baseUpdatedAt, ...input } = data
+      const { id, baseRevision, baseUpdatedAt, ...input } = data
       const existingRecipe = await tx.query.recipes.findFirst({
-        columns: { updatedAt: true },
+        columns: { revision: true, updatedAt: true },
         where: eq(recipes.id, id),
       })
       if (!existingRecipe) throw new RecipeInputError('Recipe not found')
       if (
-        baseUpdatedAt &&
-        existingRecipe.updatedAt.toISOString() !== baseUpdatedAt
+        (baseRevision !== undefined &&
+          existingRecipe.revision !== baseRevision) ||
+        (baseRevision === undefined &&
+          baseUpdatedAt &&
+          existingRecipe.updatedAt.toISOString() !== baseUpdatedAt)
       ) {
         throw new RecipeInputError(
           'This recipe changed on the server. Reload and try again.',
@@ -251,11 +254,16 @@ export const updateRecipe = createServerFn({ method: 'POST' })
       const projected = projectRecipeWrite(input, method.enabledParameters)
       const [recipe] = await tx
         .update(recipes)
-        .set(projected.values)
+        .set({
+          ...projected.values,
+          revision: sql`${recipes.revision} + 1`,
+        })
         .where(
           and(
             eq(recipes.id, id),
-            matchesRevision(recipes.updatedAt, baseUpdatedAt),
+            baseRevision !== undefined
+              ? eq(recipes.revision, baseRevision)
+              : matchesRevision(recipes.updatedAt, baseUpdatedAt),
           ),
         )
         .returning()
@@ -437,7 +445,9 @@ export const deleteRecipe = createServerFn({ method: 'POST' })
         .where(
           and(
             eq(recipes.id, data.id),
-            matchesRevision(recipes.updatedAt, data.baseUpdatedAt),
+            data.baseRevision !== undefined
+              ? eq(recipes.revision, data.baseRevision)
+              : matchesRevision(recipes.updatedAt, data.baseUpdatedAt),
           ),
         )
         .returning({ id: recipes.id })

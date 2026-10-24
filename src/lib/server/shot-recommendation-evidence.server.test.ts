@@ -141,6 +141,7 @@ describe('AI brew recommendation context', () => {
     const evidence = recommendationShotEvidence(
       {
         id: 42,
+        revision: 0,
         brewedAt,
         clientOperationId: null,
         brewingMethodId: 3,
