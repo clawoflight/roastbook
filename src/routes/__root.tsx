@@ -28,6 +28,7 @@ import { DEMO_MODE } from '@/lib/build-mode'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
 import { getAppSettings } from '@/lib/server/app-settings'
+import { isDarkTheme, THEME_COLORS, themeColor } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 export const Route = createRootRoute({
@@ -110,7 +111,7 @@ const THEME_BOOTSTRAP_SCRIPT = `(function () {
   try {
     var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     var dark = theme === 'dark' || (theme !== 'light' && systemDark)
-    var color = dark ? '#1f1a14' : '#f6eddf'
+    var color = dark ? '${THEME_COLORS.dark}' : '${THEME_COLORS.light}'
     document.documentElement.classList.toggle('dark', dark)
     document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
     document.documentElement.style.backgroundColor = color
@@ -193,9 +194,8 @@ function SettingsHydrator() {
 
     const browserTheme = window.matchMedia('(prefers-color-scheme: dark)')
     const applyTheme = () => {
-      const isDark =
-        theme === 'dark' || (theme === 'system' && browserTheme.matches)
-      const color = isDark ? '#1f1a14' : '#f6eddf'
+      const isDark = isDarkTheme(theme, browserTheme.matches)
+      const color = themeColor(isDark)
       document.documentElement.classList.toggle('dark', isDark)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
       document.documentElement.style.backgroundColor = color
