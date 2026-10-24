@@ -2,5 +2,14 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>michidk/workflows//templates/renovate"
+  ],
+  "packageRules": [
+    {
+      "description": "Do not pin or refresh the Roastbook application image digest",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/michidk/roastbook"],
+      "matchUpdateTypes": ["pinDigest", "digest"],
+      "enabled": false
+    }
   ]
 }
