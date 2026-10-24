@@ -28,6 +28,7 @@ interface EntityMutationInput {
   readonly payload: unknown
   readonly details: EntityMutationSummary
   readonly baseRevision?: string | null
+  readonly clientOperationId?: string
 }
 
 function newOperation(
@@ -104,6 +105,7 @@ export async function enqueueEntityUpdate(
   input: EntityMutationInput,
 ): Promise<string> {
   const operation = newOperation({
+    id: input.clientOperationId,
     entityType: input.entityType,
     operationType: 'update',
     entityLocalId: String(input.entityId),

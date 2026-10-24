@@ -566,6 +566,17 @@ export function updateShotOperation(
       where: eq(shots.id, data.id),
     })
     if (!existingShot) throw new ShotInputError('Brew not found')
+    if (data.clientOperationId) {
+      const completed = await tx.query.clientOperations.findFirst({
+        where: eq(clientOperations.operationId, data.clientOperationId),
+      })
+      if (completed?.brewId) {
+        const existing = await tx.query.shots.findFirst({
+          where: eq(shots.id, completed.brewId),
+        })
+        if (existing) return existing
+      }
+    }
     if (
       data.baseUpdatedAt &&
       existingShot.updatedAt.toISOString() !== data.baseUpdatedAt
@@ -643,6 +654,12 @@ export function updateShotOperation(
           })),
         )
       }
+    }
+    if (data.clientOperationId) {
+      await tx
+        .insert(clientOperations)
+        .values({ operationId: data.clientOperationId, brewId: id })
+        .onConflictDoNothing({ target: clientOperations.operationId })
     }
     return persistedShot
   })

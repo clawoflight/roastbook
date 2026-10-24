@@ -98,8 +98,10 @@ export function ShotEditForm({
       shot.updatedAt instanceof Date
         ? shot.updatedAt.toISOString()
         : new Date(shot.updatedAt).toISOString()
+    const updateOperationId = crypto.randomUUID()
     const data = {
       id: shot.id,
+      clientOperationId: updateOperationId,
       ...shotParameterPayload(values),
       ...shotDrinkPayload(values),
       brewedAt: localDateTimeInputToDate(brewedAt) ?? shot.brewedAt,
@@ -121,6 +123,7 @@ export function ShotEditForm({
       await enqueueEntityUpdate({
         entityType: 'brew',
         entityId: shot.id,
+        clientOperationId: updateOperationId,
         payload: { ...data, baseUpdatedAt: baseRevision ?? undefined },
         details: {
           label: shot.bean?.name ?? 'Brew',

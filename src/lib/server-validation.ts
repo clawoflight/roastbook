@@ -198,12 +198,10 @@ const baseUpdatedAtSchema = z
     { message: 'Expected an ISO timestamp with milliseconds' },
   )
 
-export const shotUpdateSchema = shotCreateSchema
-  .omit({ clientOperationId: true })
-  .extend({
-    id: positiveIdSchema,
-    baseUpdatedAt: baseUpdatedAtSchema.optional(),
-  })
+export const shotUpdateSchema = shotCreateSchema.extend({
+  id: positiveIdSchema,
+  baseUpdatedAt: baseUpdatedAtSchema.optional(),
+})
 
 export const deleteRecordSchema = z.union([
   positiveIdSchema,

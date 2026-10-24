@@ -62,9 +62,13 @@ let activeSyncOwner: object | null = null
 function updatePayload(operation: OfflineOperation): Record<string, unknown> {
   const { baseUpdatedAt: _baseUpdatedAt, ...payload } =
     operation.payload as Record<string, unknown>
-  return operation.baseRevision
-    ? { ...payload, baseUpdatedAt: operation.baseRevision }
-    : payload
+  return {
+    ...payload,
+    clientOperationId: operation.id,
+    ...(operation.baseRevision
+      ? { baseUpdatedAt: operation.baseRevision }
+      : {}),
+  }
 }
 
 async function executeBrewOperation(
@@ -82,7 +86,10 @@ async function executeBrewOperation(
         Parameters<typeof updateShot>[0]
       >['data'],
     })
-    return { serverId: String(shot.id) }
+    return {
+      serverId: String(shot.id),
+      revision: shot.updatedAt.toISOString(),
+    }
   }
   if (operation.operationType === 'delete') {
     const id = Number(operation.entityServerId ?? operation.entityLocalId)
@@ -143,7 +150,10 @@ async function executeRecipeOperation(
         Parameters<typeof updateRecipe>[0]
       >['data'],
     })
-    return { serverId: String(recipe.id) }
+    return {
+      serverId: String(recipe.id),
+      revision: recipe.updatedAt.toISOString(),
+    }
   }
   if (operation.operationType === 'delete') {
     const id = Number(operation.entityServerId ?? operation.entityLocalId)
@@ -222,6 +232,45 @@ async function executeOperation(
   throw new Error(
     `Unsupported offline operation: ${operation.entityType}/${operation.operationType}`,
   )
+}
+
+async function applyEntityRevision(
+  entityType: 'brew' | 'recipe',
+  serverId: string,
+  revision: string,
+): Promise<void> {
+  const cached = await getLocalEntityByServerId<Record<string, unknown>>(
+    entityType,
+    serverId,
+  )
+  const updates = await listOperations({
+    entityType,
+    operationType: 'update',
+  })
+  let hasPending = false
+  for (const operation of updates) {
+    if (
+      operation.entityServerId === serverId &&
+      (operation.status === 'pending' || operation.status === 'retryable')
+    ) {
+      hasPending = true
+      await updateOperation(operation.id, { baseRevision: revision })
+    }
+  }
+
+  if (!cached) return
+  const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
+  const entity = cached.data[entityKey]
+  if (!entity || typeof entity !== 'object') return
+  await putLocalEntity({
+    ...cached,
+    data: {
+      ...cached.data,
+      [entityKey]: { ...entity, updatedAt: revision },
+    },
+    syncState: hasPending ? 'pending' : 'synced',
+    updatedAt: new Date().toISOString(),
+  })
 }
 
 async function markBrewSynced(
@@ -331,6 +380,7 @@ export function OfflineSyncManager() {
                 onAcknowledged: async (operation, executionResult) => {
                   const serverId = executionResult.serverId
                   if (!serverId) return
+                  const revision = executionResult.revision
 
                   if (
                     operation.entityType === 'brew' &&
@@ -338,6 +388,9 @@ export function OfflineSyncManager() {
                       operation.operationType === 'update')
                   ) {
                     await markBrewSynced(operation, serverId)
+                    if (operation.operationType === 'update' && revision) {
+                      await applyEntityRevision('brew', serverId, revision)
+                    }
                     return
                   }
 
@@ -363,16 +416,20 @@ export function OfflineSyncManager() {
                     operation.entityType === 'recipe' &&
                     operation.operationType === 'update'
                   ) {
-                    const cached = await getLocalEntityByServerId(
-                      'recipe',
-                      serverId,
-                    )
-                    if (cached) {
-                      await putLocalEntity({
-                        ...cached,
-                        syncState: 'synced',
-                        updatedAt: new Date().toISOString(),
-                      })
+                    if (revision) {
+                      await applyEntityRevision('recipe', serverId, revision)
+                    } else {
+                      const cached = await getLocalEntityByServerId(
+                        'recipe',
+                        serverId,
+                      )
+                      if (cached) {
+                        await putLocalEntity({
+                          ...cached,
+                          syncState: 'synced',
+                          updatedAt: new Date().toISOString(),
+                        })
+                      }
                     }
                   }
                 },

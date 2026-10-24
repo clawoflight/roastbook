@@ -14,6 +14,7 @@ import {
 
 export interface OperationExecutionResult {
   readonly serverId?: string | null
+  readonly revision?: string | null
 }
 
 export interface SyncOperationsDependencies {
