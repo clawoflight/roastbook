@@ -87,10 +87,11 @@ async function mergeCachedEntity(
   const current = cached.data[key]
   if (!current || typeof current !== 'object') return
 
-  const { baseUpdatedAt: _baseUpdatedAt, ...entityChanges } = payload as Record<
-    string,
-    unknown
-  >
+  const {
+    baseRevision: _baseRevision,
+    baseUpdatedAt: _baseUpdatedAt,
+    ...entityChanges
+  } = payload as Record<string, unknown>
   await putLocalEntity({
     ...cached,
     data: {

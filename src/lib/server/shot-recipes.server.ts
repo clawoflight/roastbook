@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { db } from '@/db'
 import { recipes, shots } from '@/db/schema'
 import { expectReturnedRow, notFound } from '@/lib/domain-errors'
@@ -52,7 +52,7 @@ export async function saveShotToRecipeInTransaction(
 
     const [updatedRecipe] = await tx
       .update(recipes)
-      .set(values)
+      .set({ ...values, revision: sql`${recipes.revision} + 1` })
       .where(eq(recipes.id, target.recipeId))
       .returning()
     recipe = expectReturnedRow(updatedRecipe, 'Recipe')

@@ -248,6 +248,26 @@ export async function removeServerEntityImage(
   await transactionToPromise(transaction)
 }
 
+function hasPendingEntityOperations(
+  operations: readonly OfflineOperation[],
+  entity: LocalEntityRecord,
+  entityType: OfflineEntityType,
+  serverId: string,
+): boolean {
+  return operations.some(
+    (operation) =>
+      operation.ownerKey === entity.ownerKey &&
+      operation.entityServerId === serverId &&
+      isVisibleOperationStatus(operation.status) &&
+      ((operation.entityType === entityType &&
+        (operation.operationType === 'update' ||
+          operation.operationType === 'delete')) ||
+        (operation.entityType === 'brew-image' &&
+          (operation.operationType === 'upload' ||
+            operation.operationType === 'remove-image'))),
+  )
+}
+
 export async function updateServerEntityRevision(
   entityType: OfflineEntityType,
   serverId: string,
@@ -272,17 +292,11 @@ export async function updateServerEntityRevision(
   const operations = (await requestToPromise(
     transaction.objectStore(OPERATIONS_STORE).getAll(),
   )) as OfflineOperation[]
-  const hasPending = operations.some(
-    (operation) =>
-      operation.ownerKey === entity.ownerKey &&
-      operation.entityServerId === serverId &&
-      isVisibleOperationStatus(operation.status) &&
-      ((operation.entityType === entityType &&
-        (operation.operationType === 'update' ||
-          operation.operationType === 'delete')) ||
-        (operation.entityType === 'brew-image' &&
-          (operation.operationType === 'upload' ||
-            operation.operationType === 'remove-image'))),
+  const hasPending = hasPendingEntityOperations(
+    operations,
+    entity,
+    entityType,
+    serverId,
   )
   const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
   const data = entity.data[entityKey]
@@ -326,17 +340,11 @@ export async function refreshServerEntitySyncState(
   const operations = (await requestToPromise(
     transaction.objectStore(OPERATIONS_STORE).getAll(),
   )) as OfflineOperation[]
-  const hasPending = operations.some(
-    (operation) =>
-      operation.ownerKey === entity.ownerKey &&
-      operation.entityServerId === serverId &&
-      isVisibleOperationStatus(operation.status) &&
-      ((operation.entityType === entityType &&
-        (operation.operationType === 'update' ||
-          operation.operationType === 'delete')) ||
-        (operation.entityType === 'brew-image' &&
-          (operation.operationType === 'upload' ||
-            operation.operationType === 'remove-image'))),
+  const hasPending = hasPendingEntityOperations(
+    operations,
+    entity,
+    entityType,
+    serverId,
   )
   store.put({
     ...entity,
