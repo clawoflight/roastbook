@@ -143,9 +143,7 @@ export function BrewDetailPage() {
           return
         }
       }
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to delete brew',
-      )
+      toast.error(getErrorMessage(error, 'Failed to delete brew'))
     }
   }
 

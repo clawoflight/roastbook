@@ -71,9 +71,13 @@ self.addEventListener('message', (event) => {
   }
   if (event.data?.type === 'RESET_SHELL') {
     event.waitUntil(
-      resetShell().then(() => {
-        event.source?.postMessage({ type: 'SHELL_RESET_COMPLETE' })
-      }),
+      resetShell()
+        .then(() => {
+          event.source?.postMessage({ type: 'SHELL_RESET_COMPLETE' })
+        })
+        .catch(() => {
+          event.source?.postMessage({ type: 'SHELL_RESET_FAILED' })
+        }),
     )
   }
 })
@@ -199,7 +203,12 @@ async function cacheFirstPrecache(request) {
   const cached = await cache.match(request, { ignoreSearch: true })
   if (cached) {
     if (isCacheableStaticResponse(cached, pathname)) return cached
-    await cache.delete(request)
+    const keys = await cache.keys()
+    await Promise.all(
+      keys
+        .filter((key) => new URL(key.url).pathname === pathname)
+        .map((key) => cache.delete(key)),
+    )
   }
 
   if (pathname.startsWith('/assets/')) {
@@ -265,7 +274,11 @@ function isCacheableStaticResponse(response, pathname) {
   if (contentType.includes('text/html')) return pathname.endsWith('.html')
 
   const declaredLength = declaredContentLength(response)
-  if (declaredLength !== null && declaredLength > MAX_ASSET_BYTES) return false
+  if (declaredLength === null) {
+    if (pathname.startsWith('/assets/')) return false
+  } else if (declaredLength > MAX_ASSET_BYTES) {
+    return false
+  }
 
   const expected = expectedContentTypes(pathname)
   if (!expected) return true

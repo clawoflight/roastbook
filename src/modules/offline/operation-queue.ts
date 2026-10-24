@@ -1,4 +1,5 @@
 import { deleteOfflineBlob } from './blob-store'
+import { getLocalEntityByServerId, removeLocalEntity } from './local-data'
 import {
   canTransitionOperationStatus,
   DEFAULT_OWNER_KEY,
@@ -216,7 +217,25 @@ export async function forceOperation(id: string): Promise<void> {
 }
 
 export async function discardOperation(id: string): Promise<void> {
+  const operation = await getOperation(id)
   await cancelOperation(id)
+
+  if (!operation?.entityServerId) return
+  const cacheType =
+    operation.entityType === 'brew'
+      ? 'brew'
+      : operation.entityType === 'recipe'
+        ? 'recipe'
+        : null
+  if (!cacheType) return
+
+  const cached = await getLocalEntityByServerId(
+    cacheType,
+    operation.entityServerId,
+  )
+  if (cached) {
+    await removeLocalEntity(cacheType, cached.localId)
+  }
 }
 
 /**

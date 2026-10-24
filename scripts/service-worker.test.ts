@@ -151,9 +151,13 @@ async function createHarness(options: HarnessOptions = {}) {
       const contentType = new URL(url).pathname.endsWith('.css')
         ? 'text/css'
         : 'text/javascript'
-      return new Response(`network:${url}`, {
+      const body = `network:${url}`
+      return new Response(body, {
         status: 200,
-        headers: { 'content-type': contentType },
+        headers: {
+          'content-type': contentType,
+          'content-length': String(body.length),
+        },
       })
     }
     return new Response(`network:${url}`, { status: 200 })

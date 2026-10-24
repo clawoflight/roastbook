@@ -105,6 +105,7 @@ export function openOfflineDatabase(): Promise<IDBDatabase> {
 
   databasePromise ??= new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION)
+    let settled = false
 
     request.onupgradeneeded = () => {
       const database = request.result
@@ -145,11 +146,24 @@ export function openOfflineDatabase(): Promise<IDBDatabase> {
         migrateLegacyPendingBrews(database, transaction)
       }
     }
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () =>
+    request.onsuccess = () => {
+      if (settled) {
+        request.result.close()
+        return
+      }
+      settled = true
+      resolve(request.result)
+    }
+    request.onerror = () => {
+      if (settled) return
+      settled = true
       reject(request.error ?? new Error('Could not open offline storage'))
-    request.onblocked = () =>
+    }
+    request.onblocked = () => {
+      if (settled) return
+      settled = true
       reject(new Error('Offline storage is blocked by another tab'))
+    }
   })
     .then((database) => {
       database.onclose = () => {

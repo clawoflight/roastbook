@@ -137,6 +137,10 @@ export function OfflineSettings() {
         toast.success('Offline app shell reset. Reloading…')
         window.location.reload()
       }
+      if (event.data?.type === 'SHELL_RESET_FAILED') {
+        setIsResettingShell(false)
+        toast.error('Could not reset the offline app shell')
+      }
     }
     navigator.serviceWorker.addEventListener('message', handleMessage)
     return () =>
