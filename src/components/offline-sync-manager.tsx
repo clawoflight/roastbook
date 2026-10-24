@@ -61,120 +61,139 @@ function updatePayload(operation: OfflineOperation): Record<string, unknown> {
     : payload
 }
 
+async function executeBrewOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  if (operation.operationType === 'create') {
+    const shot = await createShot({
+      data: operation.payload as PendingBrewPayload,
+    })
+    return { serverId: String(shot.id) }
+  }
+  if (operation.operationType === 'update') {
+    const shot = await updateShot({
+      data: updatePayload(operation) as NonNullable<
+        Parameters<typeof updateShot>[0]
+      >['data'],
+    })
+    return { serverId: String(shot.id) }
+  }
+  if (operation.operationType === 'delete') {
+    const id = Number(operation.entityServerId ?? operation.entityLocalId)
+    await deleteShot({
+      data: {
+        id,
+        ...(operation.baseRevision
+          ? { baseUpdatedAt: operation.baseRevision }
+          : {}),
+        idempotent: true,
+      },
+    })
+    return { serverId: String(id) }
+  }
+  if (operation.operationType === 'save-to-recipe') {
+    const result = await createShotAndSaveRecipe({
+      data: operation.payload as NonNullable<
+        Parameters<typeof createShotAndSaveRecipe>[0]
+      >['data'],
+    })
+    return { serverId: String(result.shot.id) }
+  }
+
+  throw new Error(`Unsupported brew operation: ${operation.operationType}`)
+}
+
+async function executeRecipeOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  if (operation.operationType === 'create') {
+    const recipe = await createRecipe({
+      data: operation.payload as NonNullable<
+        Parameters<typeof createRecipe>[0]
+      >['data'],
+    })
+    return { serverId: String(recipe.id) }
+  }
+  if (operation.operationType === 'update') {
+    const recipe = await updateRecipe({
+      data: updatePayload(operation) as NonNullable<
+        Parameters<typeof updateRecipe>[0]
+      >['data'],
+    })
+    return { serverId: String(recipe.id) }
+  }
+  if (operation.operationType === 'delete') {
+    const id = Number(operation.entityServerId ?? operation.entityLocalId)
+    await deleteRecipe({
+      data: {
+        id,
+        ...(operation.baseRevision
+          ? { baseUpdatedAt: operation.baseRevision }
+          : {}),
+        idempotent: true,
+      },
+    })
+    return { serverId: String(id) }
+  }
+
+  throw new Error(`Unsupported recipe operation: ${operation.operationType}`)
+}
+
+async function executeBrewImageOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  const payload = operation.payload as {
+    readonly entityType?: EntityType
+    readonly entityId?: number
+    readonly imageId?: number
+    readonly clientOperationId?: string
+    readonly idempotent?: boolean
+  }
+  const entityType = payload.entityType ?? 'shots'
+  const entityId = payload.entityId ?? Number(operation.entityServerId)
+
+  if (operation.operationType === 'upload') {
+    const blobKey = operation.blobKeys[0]
+    if (!blobKey) throw new Error('Image data is missing from this device')
+    const record = await getOfflineBlob(blobKey)
+    if (!record) throw new Error('Image data is missing from this device')
+    const file = new File([record.blob], record.filename, {
+      type: record.mimeType,
+    })
+    const image = await uploadEntityImage({
+      data: createEntityImageUploadFormData(
+        entityType,
+        entityId,
+        file,
+        payload.clientOperationId,
+      ),
+    })
+    return { serverId: String(image.id) }
+  }
+  if (operation.operationType === 'remove-image') {
+    await deleteEntityImage({
+      data: {
+        entityType,
+        entityId,
+        imageId: payload.imageId ?? 0,
+        idempotent: true,
+      },
+    })
+    return { serverId: String(entityId) }
+  }
+
+  throw new Error(`Unsupported image operation: ${operation.operationType}`)
+}
+
 async function executeOperation(
   operation: OfflineOperation,
 ): Promise<OperationExecutionResult> {
-  if (operation.entityType === 'brew') {
-    if (operation.operationType === 'create') {
-      const shot = await createShot({
-        data: operation.payload as PendingBrewPayload,
-      })
-      return { serverId: String(shot.id) }
-    }
-    if (operation.operationType === 'update') {
-      const shot = await updateShot({
-        data: updatePayload(operation) as NonNullable<
-          Parameters<typeof updateShot>[0]
-        >['data'],
-      })
-      return { serverId: String(shot.id) }
-    }
-    if (operation.operationType === 'delete') {
-      const id = Number(operation.entityServerId ?? operation.entityLocalId)
-      await deleteShot({
-        data: {
-          id,
-          ...(operation.baseRevision
-            ? { baseUpdatedAt: operation.baseRevision }
-            : {}),
-          idempotent: true,
-        },
-      })
-      return { serverId: String(id) }
-    }
-    if (operation.operationType === 'save-to-recipe') {
-      const result = await createShotAndSaveRecipe({
-        data: operation.payload as NonNullable<
-          Parameters<typeof createShotAndSaveRecipe>[0]
-        >['data'],
-      })
-      return { serverId: String(result.shot.id) }
-    }
-  }
-
+  if (operation.entityType === 'brew') return executeBrewOperation(operation)
   if (operation.entityType === 'recipe') {
-    if (operation.operationType === 'create') {
-      const recipe = await createRecipe({
-        data: operation.payload as NonNullable<
-          Parameters<typeof createRecipe>[0]
-        >['data'],
-      })
-      return { serverId: String(recipe.id) }
-    }
-    if (operation.operationType === 'update') {
-      const recipe = await updateRecipe({
-        data: updatePayload(operation) as NonNullable<
-          Parameters<typeof updateRecipe>[0]
-        >['data'],
-      })
-      return { serverId: String(recipe.id) }
-    }
-    if (operation.operationType === 'delete') {
-      const id = Number(operation.entityServerId ?? operation.entityLocalId)
-      await deleteRecipe({
-        data: {
-          id,
-          ...(operation.baseRevision
-            ? { baseUpdatedAt: operation.baseRevision }
-            : {}),
-          idempotent: true,
-        },
-      })
-      return { serverId: String(id) }
-    }
+    return executeRecipeOperation(operation)
   }
-
   if (operation.entityType === 'brew-image') {
-    const payload = operation.payload as {
-      readonly entityType?: EntityType
-      readonly entityId?: number
-      readonly imageId?: number
-      readonly clientOperationId?: string
-      readonly idempotent?: boolean
-      readonly filename?: string
-      readonly mimeType?: string
-    }
-    if (operation.operationType === 'upload') {
-      const blobKey = operation.blobKeys[0]
-      if (!blobKey) throw new Error('Image data is missing from this device')
-      const record = await getOfflineBlob(blobKey)
-      if (!record) throw new Error('Image data is missing from this device')
-      const file = new File([record.blob], record.filename, {
-        type: record.mimeType,
-      })
-      const image = await uploadEntityImage({
-        data: createEntityImageUploadFormData(
-          payload.entityType ?? 'shots',
-          payload.entityId ?? Number(operation.entityServerId),
-          file,
-          payload.clientOperationId,
-        ),
-      })
-      return { serverId: String(image.id) }
-    }
-    if (operation.operationType === 'remove-image') {
-      await deleteEntityImage({
-        data: {
-          entityType: payload.entityType ?? 'shots',
-          entityId: payload.entityId ?? Number(operation.entityServerId),
-          imageId: payload.imageId ?? 0,
-          idempotent: true,
-        },
-      })
-      return {
-        serverId: String(payload.entityId ?? operation.entityServerId),
-      }
-    }
+    return executeBrewImageOperation(operation)
   }
 
   throw new Error(
