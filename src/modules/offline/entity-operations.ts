@@ -3,6 +3,7 @@ import {
   getLocalEntityByServerId,
   putLocalEntity,
   removeLocalEntity,
+  removeServerEntityImage,
 } from '@/modules/offline/local-data'
 import {
   cancelOperation,
@@ -289,24 +290,11 @@ export async function enqueueImageDelete(input: {
   await putOperation(operation)
 
   if (input.entityType === 'shots') {
-    const cached = await getLocalEntityByServerId<{
-      shot?: { images?: Array<{ id: number }> }
-    }>('brew', String(input.entityId))
-    const images = cached?.data.shot?.images
-    if (cached && images) {
-      await putLocalEntity({
-        ...cached,
-        data: {
-          ...cached.data,
-          shot: {
-            ...cached.data.shot,
-            images: images.filter((image) => image.id !== input.imageId),
-          },
-        },
-        syncState: 'pending',
-        updatedAt: new Date().toISOString(),
-      })
-    }
+    await removeServerEntityImage(
+      'brew',
+      String(input.entityId),
+      input.imageId,
+    )
   }
 
   requestPendingSync()

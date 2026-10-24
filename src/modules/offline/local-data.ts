@@ -205,6 +205,48 @@ export async function putServerEntity<T>(input: {
   await transactionToPromise(transaction)
 }
 
+export async function removeServerEntityImage(
+  entityType: OfflineEntityType,
+  serverId: string,
+  imageId: number,
+): Promise<void> {
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(LOCAL_ENTITIES_STORE, 'readwrite')
+  const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const record = (await requestToPromise(
+    store
+      .index(OWNER_ENTITY_SERVER_INDEX)
+      .get([DEFAULT_OWNER_KEY, entityType, serverId]),
+  )) as LocalEntityRecord<Record<string, unknown>> | undefined
+  if (!record) {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
+  const entity = record.data[entityKey] as
+    | { readonly images?: Array<{ readonly id: number }> }
+    | undefined
+  if (!entity?.images) {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  store.put({
+    ...record,
+    data: {
+      ...record.data,
+      [entityKey]: {
+        ...entity,
+        images: entity.images.filter((image) => image.id !== imageId),
+      },
+    },
+    syncState: 'pending',
+    updatedAt: new Date().toISOString(),
+  })
+  await transactionToPromise(transaction)
+}
+
 export async function updateServerEntityRevision(
   entityType: OfflineEntityType,
   serverId: string,
