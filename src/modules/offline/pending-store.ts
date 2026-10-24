@@ -52,6 +52,7 @@ export const usePendingBrewsStore = create<PendingBrewsState>((set) => ({
 export async function enqueuePendingBrew(item: PendingBrew): Promise<void> {
   await putPendingBrew(item)
   await usePendingBrewsStore.getState().refresh()
+  requestPendingSync()
 }
 
 export async function updateQueuedBrewPayload(

@@ -491,7 +491,6 @@ export function NewShotForm({
 
       operationIdRef.current = null
       setIsDirty(false)
-      requestPendingSync()
       // The tasting step is part of the core workflow, so keep it available
       // for a queued brew too. It updates the queued payload in place.
       if (shouldHoldForTasting) {

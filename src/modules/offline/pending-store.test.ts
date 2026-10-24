@@ -4,6 +4,7 @@ import { newShotPayload } from '@/lib/new-shot-payload'
 import { EMPTY_SHOT_FORM_VALUES } from '@/modules/brews/shot-form-values'
 import {
   discardPendingBrew,
+  enqueuePendingBrew,
   usePendingBrewsStore,
 } from '@/modules/offline/pending-store'
 import {
@@ -11,6 +12,7 @@ import {
   putPendingBrew,
   resetOfflineDatabaseForTests,
 } from '@/modules/offline/queue'
+import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
 import type { PendingBrew } from '@/modules/offline/types'
 
 function pendingBrew(): PendingBrew {
@@ -71,6 +73,22 @@ describe('pending brew store', () => {
     usePendingBrewsStore.setState({ isSyncing: false })
     await discardPendingBrew(item.operationId)
     expect(await getPendingBrew(item.operationId)).toBeUndefined()
+  })
+
+  test('requests a sync after enqueueing a brew', async () => {
+    let syncRequests = 0
+    const unsubscribe = subscribeToPendingSync(() => {
+      syncRequests += 1
+    })
+
+    try {
+      await enqueuePendingBrew(pendingBrew())
+    } finally {
+      unsubscribe()
+    }
+
+    expect(syncRequests).toBe(1)
+    expect(usePendingBrewsStore.getState().items).toHaveLength(1)
   })
 
   test('records a failed read and clears it after a successful refresh', async () => {

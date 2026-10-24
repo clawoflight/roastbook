@@ -19,8 +19,6 @@ import {
 import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
 import { isPendingBrewHeldForTasting } from '@/modules/offline/tasting-holds'
 
-let syncInFlight: Promise<void> | null = null
-let syncQueued = false
 const PREFETCH_TIMEOUT_MS = 3000
 
 export function OfflineSyncManager() {
@@ -58,6 +56,8 @@ export function OfflineSyncManager() {
     let retryDelay = INITIAL_SYNC_RETRY_DELAY_MS
     let authNotified = false
     let disposed = false
+    let syncInFlight: Promise<void> | null = null
+    let syncQueued = false
 
     const runSync = (): Promise<void> => {
       if (syncInFlight) {
@@ -82,6 +82,7 @@ export function OfflineSyncManager() {
             isOnline: () => navigator.onLine,
           })
           await usePendingBrewsStore.getState().refresh()
+          if (disposed) return
 
           if (result.synced > 0) {
             if (!router.state.location.pathname.startsWith('/brews/new')) {
@@ -121,16 +122,19 @@ export function OfflineSyncManager() {
           if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
           else clearRetry()
         } catch (error) {
+          if (disposed) return
           // A failed flush leaves the queue intact. Retry local/transient
           // failures while online; a successful sync resets the backoff.
           console.error('Offline sync flush failed', error)
           scheduleRetry()
         } finally {
-          usePendingBrewsStore.getState().setSyncing(false)
           syncInFlight = null
-          if (syncQueued) {
-            syncQueued = false
-            void runSync()
+          if (!disposed) {
+            usePendingBrewsStore.getState().setSyncing(false)
+            if (syncQueued) {
+              syncQueued = false
+              void runSync()
+            }
           }
         }
       })()
