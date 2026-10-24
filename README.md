@@ -219,6 +219,8 @@ as MIME type and byte count, not the image payload itself.
 - Search beans, cafés, and gear directly; jump to any page; start a new brew,
   bean, or visit; and switch theme from the command palette (<kbd>⌘</kbd>
   <kbd>K</kbd> or <kbd>Ctrl</kbd> <kbd>K</kbd>).
+- Install Roastbook as a PWA on your phone or desktop. Log brews offline;
+  pending brews stay on the device and sync when you reconnect.
 
 ### Self-hosting
 
@@ -244,6 +246,7 @@ from the database row to the rendered field:
 | Media storage | Local filesystem or any S3-compatible bucket |
 | AI | TanStack AI with any OpenAI-compatible endpoint |
 | Validation | Zod at every boundary, including environment variables |
+| PWA | Web app manifest and a hand-written service worker |
 | Tooling | Vite, Biome, Knip, `bun test` |
 | Deployment | Docker Compose or Helm, fronted by the Hodor auth proxy |
 
@@ -310,6 +313,7 @@ running.
 | [Development and testing](docs/development.md) | Workflow, tests, tooling |
 | [Configuration reference](docs/configuration.md) | Every environment variable |
 | [Read-only demo mode](docs/demo-mode.md) | How the PGlite demo is built |
+| [Offline journaling](docs/offline.md) | Pending brews, sync, and offline behavior |
 | [Deployment](docs/deployment.md) | Docker, Helm, security boundary |
 | [Shottimer API](docs/shottimer.md) | Device integration endpoints |
 | [Design system](DESIGN.md) | Layout contract and UI conventions |

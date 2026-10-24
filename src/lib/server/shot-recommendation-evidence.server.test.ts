@@ -142,6 +142,7 @@ describe('AI brew recommendation context', () => {
       {
         id: 42,
         brewedAt,
+        clientOperationId: null,
         brewingMethodId: 3,
         beanId: 12,
         drinkTypeId: null,

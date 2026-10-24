@@ -118,6 +118,9 @@ jobs:
       - name: Enforce client bundle budget
         run: bun run check:client-assets
 
+      - name: Validate PWA assets
+        run: bun run check:pwa
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30

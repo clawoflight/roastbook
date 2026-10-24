@@ -7,20 +7,23 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import type { FormEvent } from 'react'
-import { useEffect } from 'react'
+import type { ComponentType, FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import '../styles.css'
 import { AlertTriangle, Home, LockKeyhole, RefreshCw } from 'lucide-react'
 import { AppNavbar } from '@/components/app-navbar'
 import { ErrorDetails } from '@/components/error-details'
+import { OfflineBanner } from '@/components/offline-banner'
+import { PwaManager } from '@/components/pwa-manager'
 import { RouteNotFound } from '@/components/route-not-found'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import { DEMO_MODE } from '@/lib/build-mode'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
@@ -39,6 +42,30 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
       {
+        name: 'theme-color',
+        content: '#f6eddf',
+      },
+      {
+        name: 'application-name',
+        content: 'Roastbook',
+      },
+      {
+        name: 'mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'Roastbook',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
         title: 'Roastbook',
       },
       ...(DEMO_MODE ? [{ name: 'robots', content: 'noindex, nofollow' }] : []),
@@ -50,6 +77,12 @@ export const Route = createRootRoute({
         href: '/favicon.ico',
       },
       {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '192x192',
+        href: '/logo192.png',
+      },
+      {
         rel: 'apple-touch-icon',
         sizes: '180x180',
         href: '/apple-touch-icon.png',
@@ -57,6 +90,7 @@ export const Route = createRootRoute({
       {
         rel: 'manifest',
         href: '/manifest.json',
+        crossOrigin: 'use-credentials',
       },
     ],
   }),
@@ -80,6 +114,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         )}
       >
         <SettingsHydrator />
+        <PwaManager />
         {children}
         {import.meta.env.DEV ? (
           <TanStackDevtools
@@ -101,6 +136,26 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   )
 }
 
+function OfflineStatusMount() {
+  const [Status, setStatus] = useState<ComponentType | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    void import('@/components/pending-sync-banner')
+      .then((module) => {
+        if (!cancelled) setStatus(() => module.OfflineStatus)
+      })
+      .catch((error) => {
+        console.error('Could not load the offline status UI', error)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  return Status ? <Status /> : null
+}
+
 function SettingsHydrator() {
   const theme = usePreferencesStore((state) => state.theme)
   const hasHydrated = usePreferencesStore((state) => state.hasHydrated)
@@ -120,6 +175,9 @@ function SettingsHydrator() {
         theme === 'dark' || (theme === 'system' && browserTheme.matches)
       document.documentElement.classList.toggle('dark', isDark)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', isDark ? '#1f1a14' : '#f6eddf')
     }
 
     applyTheme()
@@ -134,12 +192,15 @@ function SettingsHydrator() {
 
 function RootErrorComponent({ error }: { error: unknown }) {
   const router = useRouter()
+  const isOnline = useOnlineStatus()
   const errorState = getErrorDisplayState(error)
 
   return (
     <TooltipProvider>
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppNavbar />
+        <OfflineStatusMount />
+        <OfflineBanner isOnline={isOnline} demoMode={DEMO_MODE} />
         <ScrollArea
           className="min-h-0 flex-1"
           viewportProps={{ id: 'app-scroll-area' }}
@@ -190,6 +251,7 @@ function RootErrorComponent({ error }: { error: unknown }) {
 
 function RootComponent() {
   const settings = Route.useLoaderData()
+  const isOnline = useOnlineStatus()
   const preventDemoSubmit = (event: FormEvent<HTMLElement>) => {
     event.preventDefault()
     toast.info('Demo mode is read-only. Changes are disabled.')
@@ -199,6 +261,8 @@ function RootComponent() {
     <TooltipProvider>
       <div className="flex h-[100dvh] flex-col overflow-hidden">
         <AppNavbar demoMode={settings.demoMode} />
+        {settings.demoMode ? null : <OfflineStatusMount />}
+        <OfflineBanner isOnline={isOnline} demoMode={settings.demoMode} />
         <ScrollArea
           className="min-h-0 flex-1"
           viewportProps={{ id: 'app-scroll-area' }}

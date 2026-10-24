@@ -1337,6 +1337,7 @@ export const shots = pgTable(
     body: integer('body'),
     astringency: integer('astringency'),
     notes: text('notes'),
+    clientOperationId: text('client_operation_id'),
     ...timestamps(),
   },
   (table) => [
@@ -1397,7 +1398,20 @@ export const shots = pgTable(
     index('brews_machine_id_idx').on(table.machineId),
     index('brews_grinder_id_idx').on(table.grinderId),
     index('brews_basket_id_idx').on(table.basketId),
+    uniqueIndex('brews_client_operation_id_unique').on(table.clientOperationId),
   ],
+)
+
+export const clientOperations = pgTable(
+  'client_operations',
+  {
+    operationId: text('operation_id').primaryKey(),
+    brewId: integer('brew_id').references(() => shots.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: createdAt(),
+  },
+  (table) => [index('client_operations_brew_id_idx').on(table.brewId)],
 )
 
 export const shotsRelations = relations(shots, ({ one, many }) => ({
