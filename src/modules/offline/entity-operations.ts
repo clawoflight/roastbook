@@ -290,11 +290,7 @@ export async function enqueueImageDelete(input: {
   await putOperation(operation)
 
   if (input.entityType === 'shots') {
-    await removeServerEntityImage(
-      'brew',
-      String(input.entityId),
-      input.imageId,
-    )
+    await removeServerEntityImage('brew', String(input.entityId), input.imageId)
   }
 
   requestPendingSync()
