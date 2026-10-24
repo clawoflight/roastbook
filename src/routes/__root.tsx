@@ -100,6 +100,23 @@ export const Route = createRootRoute({
   notFoundComponent: () => <RouteNotFound />,
 })
 
+const THEME_BOOTSTRAP_SCRIPT = `(function () {
+  try {
+    var raw = localStorage.getItem('roastbook-settings')
+    var stored = raw ? JSON.parse(raw) : null
+    var theme = stored && stored.state ? stored.state.theme : null
+    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    var dark = theme === 'dark' || ((theme === 'system' || !theme) && systemDark)
+    var color = dark ? '#1f1a14' : '#f6eddf'
+    document.documentElement.classList.toggle('dark', dark)
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+    document.documentElement.style.backgroundColor = color
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.setAttribute('content', color)
+    })
+  } catch (error) {}
+})()`
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   const settings = Route.useLoaderData()
 
@@ -107,6 +124,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static theme bootstrap must run before hydration */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body
         className={cn(
@@ -173,11 +192,13 @@ function SettingsHydrator() {
     const applyTheme = () => {
       const isDark =
         theme === 'dark' || (theme === 'system' && browserTheme.matches)
+      const color = isDark ? '#1f1a14' : '#f6eddf'
       document.documentElement.classList.toggle('dark', isDark)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', isDark ? '#1f1a14' : '#f6eddf')
+      document.documentElement.style.backgroundColor = color
+      document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+        meta.setAttribute('content', color)
+      })
     }
 
     applyTheme()
