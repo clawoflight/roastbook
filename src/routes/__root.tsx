@@ -28,6 +28,7 @@ import { DEMO_MODE } from '@/lib/build-mode'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
 import { getAppSettings } from '@/lib/server/app-settings'
+import { isDarkTheme, THEME_COLORS, themeColor } from '@/lib/theme'
 import { cn } from '@/lib/utils'
 
 export const Route = createRootRoute({
@@ -43,7 +44,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'theme-color',
-        content: '#f6eddf',
+        content: THEME_COLORS.light,
       },
       {
         name: 'application-name',
@@ -100,6 +101,26 @@ export const Route = createRootRoute({
   notFoundComponent: () => <RouteNotFound />,
 })
 
+const THEME_BOOTSTRAP_SCRIPT = `(function () {
+  var theme = null
+  try {
+    var raw = localStorage.getItem('roastbook-settings')
+    var stored = raw ? JSON.parse(raw) : null
+    theme = stored && stored.state ? stored.state.theme : null
+  } catch (error) {}
+  try {
+    var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    var dark = theme === 'dark' || (theme !== 'light' && systemDark)
+    var color = dark ? '${THEME_COLORS.dark}' : '${THEME_COLORS.light}'
+    document.documentElement.classList.toggle('dark', dark)
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+    document.documentElement.style.backgroundColor = color
+    document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+      meta.setAttribute('content', color)
+    })
+  } catch (error) {}
+})()`
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   const settings = Route.useLoaderData()
 
@@ -107,6 +128,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: static theme bootstrap must run before hydration */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body
         className={cn(
@@ -171,13 +194,14 @@ function SettingsHydrator() {
 
     const browserTheme = window.matchMedia('(prefers-color-scheme: dark)')
     const applyTheme = () => {
-      const isDark =
-        theme === 'dark' || (theme === 'system' && browserTheme.matches)
+      const isDark = isDarkTheme(theme, browserTheme.matches)
+      const color = themeColor(isDark)
       document.documentElement.classList.toggle('dark', isDark)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
-      document
-        .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', isDark ? '#1f1a14' : '#f6eddf')
+      document.documentElement.style.backgroundColor = color
+      document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+        meta.setAttribute('content', color)
+      })
     }
 
     applyTheme()
