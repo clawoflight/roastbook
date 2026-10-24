@@ -20,6 +20,7 @@ import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
 import { isPendingBrewHeldForTasting } from '@/modules/offline/tasting-holds'
 
 const PREFETCH_TIMEOUT_MS = 3000
+let activeSyncOwner: object | null = null
 
 export function OfflineSyncManager() {
   const router = useRouter()
@@ -58,6 +59,7 @@ export function OfflineSyncManager() {
     let disposed = false
     let syncInFlight: Promise<void> | null = null
     let syncQueued = false
+    const syncOwner = {}
 
     const runSync = (): Promise<void> => {
       if (syncInFlight) {
@@ -69,6 +71,7 @@ export function OfflineSyncManager() {
         try {
           if (!navigator.onLine) return
 
+          activeSyncOwner = syncOwner
           usePendingBrewsStore.getState().setSyncing(true)
           const result = await syncPendingBrews({
             list: async () =>
@@ -129,12 +132,13 @@ export function OfflineSyncManager() {
           scheduleRetry()
         } finally {
           syncInFlight = null
-          if (!disposed) {
+          if (activeSyncOwner === syncOwner) {
+            activeSyncOwner = null
             usePendingBrewsStore.getState().setSyncing(false)
-            if (syncQueued) {
-              syncQueued = false
-              void runSync()
-            }
+          }
+          if (!disposed && syncQueued) {
+            syncQueued = false
+            void runSync()
           }
         }
       })()
@@ -191,6 +195,10 @@ export function OfflineSyncManager() {
 
     return () => {
       disposed = true
+      if (activeSyncOwner === syncOwner) {
+        activeSyncOwner = null
+        usePendingBrewsStore.getState().setSyncing(false)
+      }
       clearRetry()
       window.removeEventListener('online', handleOnline)
       document.removeEventListener('visibilitychange', handleVisibility)
