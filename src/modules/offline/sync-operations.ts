@@ -18,7 +18,7 @@ export interface OperationExecutionResult {
 
 export interface SyncOperationsDependencies {
   readonly list: () => Promise<OfflineOperation[]>
-  readonly claim: (operation: OfflineOperation) => Promise<void>
+  readonly claim: (operation: OfflineOperation) => Promise<boolean>
   readonly acknowledge: (
     operation: OfflineOperation,
     result: OperationExecutionResult,
@@ -48,6 +48,8 @@ export interface SyncOperationsResult {
   readonly stoppedByNetwork: boolean
   readonly failed: number
 }
+
+const MAX_SYNC_ATTEMPTS = 5
 
 function syncResult(
   synced: number,
@@ -118,7 +120,7 @@ export async function syncOperations(
     )[0]
     if (!next) break
 
-    await dependencies.claim(next)
+    if (!(await dependencies.claim(next))) continue
 
     try {
       const result = (await dependencies.execute(next)) ?? {}
@@ -163,6 +165,14 @@ export async function syncOperations(
         continue
       }
       if (!isDefinitiveSyncError(error)) {
+        if (next.attempts + 1 >= MAX_SYNC_ATTEMPTS) {
+          await dependencies.mark(next, {
+            status: 'permanent',
+            lastError: `${message} (retry limit reached)`,
+          })
+          failed += 1
+          continue
+        }
         await dependencies.mark(next, {
           status: 'retryable',
           lastError: message,

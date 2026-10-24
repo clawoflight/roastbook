@@ -31,6 +31,7 @@ import {
 } from '@/modules/offline/local-data'
 import {
   acknowledgeOperation,
+  claimOperation,
   listOperations,
   recoverInterruptedOperations,
   updateOperation,
@@ -317,11 +318,7 @@ export function OfflineSyncManager() {
                   (await listOperations()).filter(
                     (operation) => !isPendingBrewHeldForTasting(operation.id),
                   ),
-                claim: (operation) =>
-                  updateOperation(operation.id, {
-                    status: 'in-flight',
-                    attempts: operation.attempts + 1,
-                  }),
+                claim: (operation) => claimOperation(operation.id),
                 acknowledge: (operation, executionResult) =>
                   acknowledgeOperation(operation.id, {
                     serverId: executionResult.serverId ?? null,

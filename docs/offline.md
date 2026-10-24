@@ -163,8 +163,8 @@ and account actions remain online-only.
 - The new-brew form queues brews and save-to-recipe operations; the recipe
   create/edit forms and brew detail edit/delete actions queue changes too. The
   tasting dialog updates the queued payload in place.
-- Brew detail picture uploads and removals are queued with local blobs until
-  the server acknowledges them.
+- Brew picture uploads keep a local blob until the server acknowledges them.
+  Picture removals are queued as operations without a local blob.
 
 ## Verification
 

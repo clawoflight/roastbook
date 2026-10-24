@@ -144,6 +144,32 @@ export async function updateOperation(
   await transactionToPromise(transaction)
 }
 
+export async function claimOperation(id: string): Promise<boolean> {
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(OPERATIONS_STORE, 'readwrite')
+  const store = transaction.objectStore(OPERATIONS_STORE)
+  const existing = (await requestToPromise(store.get(id))) as
+    | OfflineOperation
+    | undefined
+  if (
+    !existing ||
+    (existing.status !== 'pending' && existing.status !== 'retryable')
+  ) {
+    await transactionToPromise(transaction)
+    return false
+  }
+
+  const now = new Date().toISOString()
+  store.put({
+    ...existing,
+    status: 'in-flight',
+    attempts: existing.attempts + 1,
+    updatedAt: now,
+  })
+  await transactionToPromise(transaction)
+  return true
+}
+
 export async function acknowledgeOperation(
   id: string,
   options: { readonly serverId?: string | null } = {},

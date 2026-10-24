@@ -465,6 +465,7 @@ describe('service worker', () => {
     harness.seedCache('roastbook-precache-test')
     harness.seedCache('roastbook-documents-test')
     harness.seedCache('roastbook-assets')
+    harness.seedCache('unrelated-cache')
     const messages: unknown[] = []
 
     await harness.dispatch('message', {
@@ -479,6 +480,7 @@ describe('service worker', () => {
     expect(harness.hasCache('roastbook-precache-test')).toBe(false)
     expect(harness.hasCache('roastbook-documents-test')).toBe(false)
     expect(harness.hasCache('roastbook-assets')).toBe(false)
+    expect(harness.hasCache('unrelated-cache')).toBe(true)
     expect(harness.getUnregisterCalls()).toBe(1)
     expect(messages).toEqual([{ type: 'SHELL_RESET_COMPLETE' }])
   })

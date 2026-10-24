@@ -46,14 +46,15 @@ function createRepository(initial: readonly OfflineOperation[]) {
     list: () => Promise.resolve([...items.values()]),
     claim: (operation: OfflineOperation) => {
       const item = items.get(operation.id)
-      if (item) {
-        items.set(operation.id, {
-          ...item,
-          status: 'in-flight',
-          attempts: item.attempts + 1,
-        })
+      if (!item || (item.status !== 'pending' && item.status !== 'retryable')) {
+        return Promise.resolve(false)
       }
-      return Promise.resolve()
+      items.set(operation.id, {
+        ...item,
+        status: 'in-flight',
+        attempts: item.attempts + 1,
+      })
+      return Promise.resolve(true)
     },
     acknowledge: (
       operation: OfflineOperation,
@@ -82,7 +83,9 @@ function createRepository(initial: readonly OfflineOperation[]) {
         items.set(operation.id, {
           ...item,
           status: changes.status,
-          lastError: changes.lastError ?? item.lastError,
+          ...(changes.lastError === undefined
+            ? {}
+            : { lastError: changes.lastError }),
         })
       }
       return Promise.resolve()

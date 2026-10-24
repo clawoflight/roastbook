@@ -35,6 +35,7 @@ const STATUS_LABELS: Record<OfflineOperationStatus, string> = {
 type RunAction = (
   action: () => Promise<void>,
   successMessage: string,
+  rethrow?: boolean,
 ) => Promise<void>
 
 function operationLabel(operation: OfflineOperation): string {
@@ -244,6 +245,7 @@ function DiscardAction({
         runAction(
           () => discardOperation(operation.id),
           'Pending change discarded',
+          true,
         )
       }
     />
@@ -355,6 +357,7 @@ export function PendingChanges({
   const runAction = async (
     action: () => Promise<void>,
     successMessage: string,
+    rethrow = false,
   ) => {
     try {
       await action()
@@ -362,6 +365,7 @@ export function PendingChanges({
       toast.success(successMessage)
     } catch (error) {
       toast.error(getErrorMessage(error, 'Could not update this operation'))
+      if (rethrow) throw error
     }
   }
 

@@ -18,6 +18,7 @@ import {
   getOperation,
   listOperations,
   putOperation,
+  updateOperation,
 } from '@/modules/offline/operation-queue'
 import { DEFAULT_OWNER_KEY } from '@/modules/offline/operations'
 import { resetOfflineDatabaseForTests } from '@/modules/offline/storage'
@@ -80,6 +81,7 @@ describe('offline entity operations', () => {
       entityType: 'recipe',
       operationType: 'delete',
       entityServerId: '7',
+      baseRevision: '2026-10-24T08:00:00Z',
     })
     expect(await getLocalEntity('recipe', '7')).toBeUndefined()
   })
@@ -134,7 +136,9 @@ describe('offline entity operations', () => {
     })
 
     if (!upload) throw new Error('Upload operation missing')
-    await acceptServerConflict(upload)
+    await updateOperation(upload.id, { status: 'conflict' })
+    await acceptServerConflict({ ...upload, status: 'conflict' })
+    expect((await getOperation(upload.id))?.status).toBe('cancelled')
     expect(await listOfflineBlobs()).toHaveLength(0)
   })
 

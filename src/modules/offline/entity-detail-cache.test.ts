@@ -40,7 +40,7 @@ describe('cached entity details', () => {
     })
 
     expect(await readCachedEntityDetail('recipe', 7)).toMatchObject({
-      data: { recipe: { id: 7, name: 'Morning v2' } },
+      data: { recipe: { id: 7, name: 'Morning v2' }, beans: [] },
     })
     expect(await listLocalEntities({ entityType: 'recipe' })).toHaveLength(1)
   })
@@ -52,7 +52,26 @@ describe('cached entity details', () => {
 
     expect(await getLocalEntityByServerId('bean', '42')).toBeDefined()
     await removeCachedEntityDetail('bean', 42)
+    expect(await getLocalEntityByServerId('bean', '42')).toBeUndefined()
     expect(await readCachedEntityDetail('bean', 42)).toBeUndefined()
+  })
+
+  test('does not overwrite an entity with a conflict', async () => {
+    await putLocalEntity({
+      entityType: 'recipe',
+      localId: '7',
+      serverId: '7',
+      data: { recipe: { id: 7, name: 'Conflicted edit' } },
+      syncState: 'conflict',
+    })
+
+    await cacheEntityDetail('recipe', 7, {
+      recipe: { id: 7, name: 'Server copy' },
+    })
+
+    expect(await readCachedEntityDetail('recipe', 7)).toMatchObject({
+      data: { recipe: { id: 7, name: 'Conflicted edit' } },
+    })
   })
 
   test('does not overwrite an entity with pending local changes', async () => {

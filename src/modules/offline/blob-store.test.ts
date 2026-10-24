@@ -79,6 +79,12 @@ describe('offline blob store', () => {
       entityId: 1,
       file: imageFile('two.jpg'),
     })
+    const otherOwner = await putOfflineBlob({
+      ownerKey: 'other-owner',
+      entityType: 'brew-image',
+      entityId: 1,
+      file: imageFile('other.jpg'),
+    })
 
     await deleteOfflineBlob(first.key)
     expect(await getOfflineBlob(first.key)).toBeUndefined()
@@ -86,5 +92,7 @@ describe('offline blob store', () => {
 
     await deleteOfflineBlobsForEntity('brew-image', 1)
     expect(await getOfflineBlob(second.key)).toBeUndefined()
+    expect(await getOfflineBlob(otherOwner.key)).toBeDefined()
+    expect(await listOfflineBlobs({ ownerKey: 'other-owner' })).toHaveLength(1)
   })
 })

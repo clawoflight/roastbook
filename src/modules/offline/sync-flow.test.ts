@@ -8,6 +8,7 @@ import {
 } from '@/modules/offline/local-data'
 import {
   acknowledgeOperation,
+  claimOperation,
   getOperation,
   listOperations,
   updateOperation,
@@ -64,11 +65,7 @@ describe('offline sync flow', () => {
 
     const result = await syncOperations({
       list: () => listOperations(),
-      claim: (operation) =>
-        updateOperation(operation.id, {
-          status: 'in-flight',
-          attempts: operation.attempts + 1,
-        }),
+      claim: (operation) => claimOperation(operation.id),
       acknowledge: (operation, executionResult) =>
         acknowledgeOperation(operation.id, {
           serverId: executionResult.serverId ?? null,
