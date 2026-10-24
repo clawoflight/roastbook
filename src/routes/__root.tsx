@@ -101,12 +101,15 @@ export const Route = createRootRoute({
 })
 
 const THEME_BOOTSTRAP_SCRIPT = `(function () {
+  var theme = null
   try {
     var raw = localStorage.getItem('roastbook-settings')
     var stored = raw ? JSON.parse(raw) : null
-    var theme = stored && stored.state ? stored.state.theme : null
+    theme = stored && stored.state ? stored.state.theme : null
+  } catch (error) {}
+  try {
     var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    var dark = theme === 'dark' || ((theme === 'system' || !theme) && systemDark)
+    var dark = theme === 'dark' || (theme !== 'light' && systemDark)
     var color = dark ? '#1f1a14' : '#f6eddf'
     document.documentElement.classList.toggle('dark', dark)
     document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
