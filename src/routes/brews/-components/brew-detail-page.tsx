@@ -164,6 +164,7 @@ export function BrewDetailPage() {
 
   const handleSaveRecipe = async (target: SaveToRecipeTarget) => {
     const isNewRecipe = target.kind === 'new'
+    const clientOperationId = crypto.randomUUID()
     const targetPayload = isNewRecipe
       ? { name: target.name }
       : { recipeId: target.recipeId }
@@ -171,13 +172,13 @@ export function BrewDetailPage() {
       await enqueueSavedBrewToRecipe({
         shotId: shot.id,
         target: targetPayload,
+        clientOperationId,
         details: {
           label: shot.bean?.name ?? 'Brew',
           detail: isNewRecipe
             ? `New recipe: ${target.name}`
             : 'Existing recipe',
         },
-        baseRevision: baseUpdatedAt,
       })
       toast.success('Recipe save queued on this device')
       await navigate({ to: '/brews/pending' })
@@ -189,7 +190,7 @@ export function BrewDetailPage() {
       if (!isOnline) return await queueSaveRecipe()
 
       const recipe = await saveShotAsRecipe({
-        data: { shotId: shot.id, ...targetPayload },
+        data: { shotId: shot.id, ...targetPayload, clientOperationId },
       })
       if (!recipe) {
         toast.error('Could not save this recipe')

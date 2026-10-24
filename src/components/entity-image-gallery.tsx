@@ -38,6 +38,7 @@ import {
   deleteEntityImage,
   setImageAsThumbnail,
   uploadEntityImage,
+  uploadEntityImageBase64,
 } from '@/lib/server/images'
 import type { EntityImageUploadFailure } from '@/lib/upload-entity-images'
 import { cn } from '@/lib/utils'
@@ -143,19 +144,30 @@ export function EntityImageGallery({
             uploaded.push(picture)
             continue
           } catch (error) {
+            if (!canQueueOffline && isImageUploadNetworkError(error)) {
+              try {
+                await uploadEntityImageBase64({
+                  data: {
+                    entityType,
+                    entityId,
+                    fileBase64: picture.base64,
+                    filename: picture.file.name,
+                    mimeType: picture.file.type,
+                    sizeBytes: picture.file.size,
+                  },
+                })
+                uploaded.push(picture)
+                continue
+              } catch (fallbackError) {
+                failures.push({ image: picture, error: fallbackError })
+                continue
+              }
+            }
             if (!canQueueOffline || !isImageUploadNetworkError(error)) {
               failures.push({ image: picture, error })
               continue
             }
           }
-        }
-
-        if (!canQueueOffline) {
-          failures.push({
-            image: picture,
-            error: new Error('Pictures for this item need a connection'),
-          })
-          continue
         }
 
         try {
@@ -176,7 +188,10 @@ export function EntityImageGallery({
       }
 
       removeImages([...uploaded, ...queued])
-      setUploadFailures(failures)
+      setUploadFailures((current) => [
+        ...current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
+        ...failures,
+      ])
       if (queued.length > 0) {
         toast.success(
           queued.length === 1

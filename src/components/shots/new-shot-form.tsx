@@ -534,6 +534,9 @@ export function NewShotForm({
       operationIdRef.current = null
       setIsDirty(false)
       if (shouldHoldForTasting) {
+        toast.success(
+          'Saved on this device. Add tasting now; the brew and recipe will sync when you reconnect.',
+        )
         setTasting({ kind: 'pending', operationId, values: submittedValues })
       } else {
         toast.success(

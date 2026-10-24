@@ -34,6 +34,7 @@ import {
 } from '@/lib/server/drink-options.server'
 import { findCurrentOwnerMachineSettingRevisionId } from '@/lib/server/gear-properties.server'
 import { deleteEntityWithMedia } from '@/lib/server/media-lifecycle.server'
+import { matchesRevision } from '@/lib/server/revision.server'
 import { readTasteProfile } from '@/lib/server/settings.server'
 import type {
   CreateShotAndSaveRecipeInput,
@@ -616,9 +617,7 @@ export function updateShotOperation(
       .where(
         and(
           eq(shots.id, id),
-          data.baseUpdatedAt
-            ? eq(shots.updatedAt, new Date(data.baseUpdatedAt))
-            : undefined,
+          matchesRevision(shots.updatedAt, data.baseUpdatedAt),
         ),
       )
       .returning()

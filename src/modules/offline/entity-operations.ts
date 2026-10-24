@@ -176,17 +176,22 @@ export async function enqueueSavedBrewToRecipe(input: {
   readonly shotId: number
   readonly target: { readonly name: string } | { readonly recipeId: number }
   readonly details: EntityMutationSummary
-  readonly baseRevision?: string | null
+  readonly clientOperationId?: string
 }): Promise<string> {
   const operation = newOperation({
+    id: input.clientOperationId,
     entityType: 'brew',
     operationType: 'save-to-recipe',
     entityLocalId: String(input.shotId),
     entityServerId: String(input.shotId),
-    payload: { shotId: input.shotId, target: input.target },
+    payload: {
+      shotId: input.shotId,
+      target: input.target,
+      clientOperationId: input.clientOperationId,
+    },
     details: input.details,
     dependencyIds: [],
-    baseRevision: input.baseRevision ?? null,
+    baseRevision: null,
   })
   await putOperation(operation)
   requestPendingSync()

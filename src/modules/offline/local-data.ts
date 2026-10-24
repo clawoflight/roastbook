@@ -1,6 +1,12 @@
-import { DEFAULT_OWNER_KEY, type OfflineEntityType } from './operations'
+import {
+  DEFAULT_OWNER_KEY,
+  isVisibleOperationStatus,
+  type OfflineEntityType,
+  type OfflineOperation,
+} from './operations'
 import {
   LOCAL_ENTITIES_STORE,
+  OPERATIONS_STORE,
   OWNER_ENTITY_SERVER_INDEX,
   openOfflineDatabase,
   requestToPromise,
@@ -146,8 +152,26 @@ export async function putServerEntity<T>(input: {
 }): Promise<void> {
   const ownerKey = input.ownerKey ?? DEFAULT_OWNER_KEY
   const database = await openOfflineDatabase()
-  const transaction = database.transaction(LOCAL_ENTITIES_STORE, 'readwrite')
+  const transaction = database.transaction(
+    [LOCAL_ENTITIES_STORE, OPERATIONS_STORE],
+    'readwrite',
+  )
   const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const operations = (await requestToPromise(
+    transaction.objectStore(OPERATIONS_STORE).getAll(),
+  )) as OfflineOperation[]
+  const deleteQueued = operations.some(
+    (operation) =>
+      operation.entityType === input.entityType &&
+      operation.operationType === 'delete' &&
+      operation.entityLocalId === input.serverId &&
+      isVisibleOperationStatus(operation.status),
+  )
+  if (deleteQueued) {
+    await transactionToPromise(transaction)
+    return
+  }
+
   const existing = (await requestToPromise(
     store
       .index(OWNER_ENTITY_SERVER_INDEX)
@@ -178,6 +202,57 @@ export async function putServerEntity<T>(input: {
         updatedAt,
       }
   store.put(record)
+  await transactionToPromise(transaction)
+}
+
+export async function updateServerEntityRevision(
+  entityType: OfflineEntityType,
+  serverId: string,
+  revision: string,
+): Promise<void> {
+  const database = await openOfflineDatabase()
+  const transaction = database.transaction(
+    [LOCAL_ENTITIES_STORE, OPERATIONS_STORE],
+    'readwrite',
+  )
+  const store = transaction.objectStore(LOCAL_ENTITIES_STORE)
+  const entity = (await requestToPromise(
+    store
+      .index(OWNER_ENTITY_SERVER_INDEX)
+      .get([DEFAULT_OWNER_KEY, entityType, serverId]),
+  )) as LocalEntityRecord<Record<string, unknown>> | undefined
+  if (!entity) {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  const operations = (await requestToPromise(
+    transaction.objectStore(OPERATIONS_STORE).getAll(),
+  )) as OfflineOperation[]
+  const hasPending = operations.some(
+    (operation) =>
+      operation.entityType === entityType &&
+      operation.entityServerId === serverId &&
+      (operation.operationType === 'update' ||
+        operation.operationType === 'delete') &&
+      isVisibleOperationStatus(operation.status),
+  )
+  const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
+  const data = entity.data[entityKey]
+  if (!data || typeof data !== 'object') {
+    await transactionToPromise(transaction)
+    return
+  }
+
+  store.put({
+    ...entity,
+    data: {
+      ...entity.data,
+      [entityKey]: { ...data, updatedAt: revision },
+    },
+    syncState: hasPending ? 'pending' : 'synced',
+    updatedAt: new Date().toISOString(),
+  })
   await transactionToPromise(transaction)
 }
 

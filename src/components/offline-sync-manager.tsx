@@ -28,6 +28,7 @@ import {
   putLocalEntity,
   recordSuccessfulSync,
   removeLocalEntity,
+  updateServerEntityRevision,
 } from '@/modules/offline/local-data'
 import {
   acknowledgeOperation,
@@ -122,6 +123,7 @@ async function executeBrewOperation(
       await saveShotAsRecipe({
         data: {
           shotId: payload.shotId,
+          clientOperationId: operation.id,
           ...payload.target,
         } as NonNullable<Parameters<typeof saveShotAsRecipe>[0]>['data'],
       })
@@ -239,38 +241,19 @@ async function applyEntityRevision(
   serverId: string,
   revision: string,
 ): Promise<void> {
-  const cached = await getLocalEntityByServerId<Record<string, unknown>>(
-    entityType,
-    serverId,
-  )
-  const updates = await listOperations({
-    entityType,
-    operationType: 'update',
-  })
-  let hasPending = false
-  for (const operation of updates) {
+  const operations = await listOperations({ entityType })
+  for (const operation of operations) {
     if (
       operation.entityServerId === serverId &&
+      (operation.operationType === 'update' ||
+        operation.operationType === 'delete') &&
       (operation.status === 'pending' || operation.status === 'retryable')
     ) {
-      hasPending = true
       await updateOperation(operation.id, { baseRevision: revision })
     }
   }
 
-  if (!cached) return
-  const entityKey = entityType === 'brew' ? 'shot' : 'recipe'
-  const entity = cached.data[entityKey]
-  if (!entity || typeof entity !== 'object') return
-  await putLocalEntity({
-    ...cached,
-    data: {
-      ...cached.data,
-      [entityKey]: { ...entity, updatedAt: revision },
-    },
-    syncState: hasPending ? 'pending' : 'synced',
-    updatedAt: new Date().toISOString(),
-  })
+  await updateServerEntityRevision(entityType, serverId, revision)
 }
 
 async function markBrewSynced(
@@ -381,6 +364,24 @@ export function OfflineSyncManager() {
                   const serverId = executionResult.serverId
                   if (!serverId) return
                   const revision = executionResult.revision
+
+                  if (
+                    operation.entityType === 'brew-image' &&
+                    operation.operationType === 'remove-image' &&
+                    operation.entityServerId
+                  ) {
+                    const cached = await getLocalEntityByServerId(
+                      'brew',
+                      operation.entityServerId,
+                    )
+                    if (cached) {
+                      await putLocalEntity({
+                        ...cached,
+                        syncState: 'synced',
+                        updatedAt: new Date().toISOString(),
+                      })
+                    }
+                  }
 
                   if (
                     operation.entityType === 'brew' &&

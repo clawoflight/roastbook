@@ -1413,6 +1413,9 @@ export const clientOperations = pgTable(
     brewId: integer('brew_id').references(() => shots.id, {
       onDelete: 'set null',
     }),
+    recipeId: integer('recipe_id').references(() => recipes.id, {
+      onDelete: 'set null',
+    }),
     createdAt: createdAt(),
   },
   (table) => [index('client_operations_brew_id_idx').on(table.brewId)],

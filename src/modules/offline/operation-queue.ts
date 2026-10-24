@@ -15,7 +15,7 @@ import {
   requestToPromise,
   transactionToPromise,
 } from './storage'
-import { requestPendingSync } from './sync-trigger'
+import { notifyPendingSyncFinished, requestPendingSync } from './sync-trigger'
 
 export interface OfflineOperationChanges {
   readonly status?: OfflineOperationStatus
@@ -186,7 +186,7 @@ export async function acknowledgeOperation(
   }
 }
 
-export async function cancelOperation(id: string): Promise<void> {
+export async function cancelOperation(id: string): Promise<boolean> {
   const database = await openOfflineDatabase()
   const transaction = database.transaction(OPERATIONS_STORE, 'readwrite')
   const store = transaction.objectStore(OPERATIONS_STORE)
@@ -195,7 +195,7 @@ export async function cancelOperation(id: string): Promise<void> {
     | undefined
   if (!existing || isTerminalOperationStatus(existing.status)) {
     await transactionToPromise(transaction)
-    return
+    return false
   }
   if (existing.status === 'in-flight') {
     await transactionToPromise(transaction)
@@ -220,6 +220,8 @@ export async function cancelOperation(id: string): Promise<void> {
   for (const blobKey of existing.blobKeys) {
     await deleteOfflineBlob(blobKey).catch(() => undefined)
   }
+  notifyPendingSyncFinished()
+  return true
 }
 
 export async function retryOperation(id: string): Promise<void> {
@@ -244,16 +246,20 @@ export async function forceOperation(id: string): Promise<void> {
 
 export async function discardOperation(id: string): Promise<void> {
   const operation = await getOperation(id)
-  await cancelOperation(id)
+  const cancelled = await cancelOperation(id)
+  if (!cancelled || !operation?.entityServerId) return
 
-  if (!operation?.entityServerId) return
   const cacheType =
-    operation.entityType === 'brew'
+    operation.entityType === 'brew' || operation.entityType === 'brew-image'
       ? 'brew'
       : operation.entityType === 'recipe'
         ? 'recipe'
         : null
-  if (!cacheType) return
+  const mutatesEntity =
+    operation.operationType === 'update' ||
+    operation.operationType === 'delete' ||
+    operation.operationType === 'remove-image'
+  if (!cacheType || !mutatesEntity) return
 
   const cached = await getLocalEntityByServerId(
     cacheType,

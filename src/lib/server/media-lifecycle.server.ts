@@ -232,6 +232,12 @@ export async function deleteEntityWithMedia(
     readonly idempotent?: boolean
   } = {},
 ): Promise<void> {
+  if (
+    entityType !== 'shots' &&
+    (options.expectedUpdatedAt || options.idempotent)
+  ) {
+    throw new Error('Revision-aware deletion is only supported for brews')
+  }
   await db.transaction(async (tx) => {
     if (
       entityType === 'shots' &&

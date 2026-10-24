@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { and, asc, count, desc, eq, exists, ilike, or } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/db'
-import { beans, brewingMethods, recipes } from '@/db/schema'
+import { beans, brewingMethods, clientOperations, recipes } from '@/db/schema'
 import { escapedContainsPattern } from '@/lib/collection-query'
 import { expectReturnedRow } from '@/lib/domain-errors'
 import { getPaginationWindow } from '@/lib/pagination'
@@ -16,6 +16,7 @@ import {
   assertDrinkTypeAvailableForBrewingMethod,
   replaceRecipeDrinkOptions,
 } from '@/lib/server/drink-options.server'
+import { matchesRevision } from '@/lib/server/revision.server'
 import {
   projectAccessoryGearIds,
   projectShotParameters,
@@ -214,6 +215,18 @@ export const updateRecipe = createServerFn({ method: 'POST' })
   .validator((input: unknown) => validateRecipeInput(recipeUpdateSchema, input))
   .handler(async ({ data }) =>
     db.transaction(async (tx) => {
+      if (data.clientOperationId) {
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, data.clientOperationId),
+        })
+        if (completed?.recipeId) {
+          const existing = await tx.query.recipes.findFirst({
+            where: eq(recipes.id, completed.recipeId),
+          })
+          if (existing) return existing
+        }
+      }
+
       const method = await getBrewingMethod(tx, data.brewingMethodId)
       await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
       await assertDrinkTypeAvailableForBrewingMethod(
@@ -242,9 +255,7 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         .where(
           and(
             eq(recipes.id, id),
-            baseUpdatedAt
-              ? eq(recipes.updatedAt, new Date(baseUpdatedAt))
-              : undefined,
+            matchesRevision(recipes.updatedAt, baseUpdatedAt),
           ),
         )
         .returning()
@@ -265,6 +276,15 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         persistedRecipe.id,
         data.drinkOptionValueIds ?? [],
       )
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            recipeId: persistedRecipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+      }
       return persistedRecipe
     }),
   )
@@ -317,6 +337,15 @@ export const createRecipe = createServerFn({ method: 'POST' })
         persistedRecipe.id,
         data.drinkOptionValueIds ?? [],
       )
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            recipeId: persistedRecipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+      }
       return persistedRecipe
     }),
   )
@@ -368,9 +397,32 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
 export const saveShotAsRecipe = createServerFn({ method: 'POST' })
   .validator(shotRecipeTargetSchema)
   .handler(async ({ data }) =>
-    db.transaction((tx) =>
-      saveShotToRecipeInTransaction(tx, data.shotId, data),
-    ),
+    db.transaction(async (tx) => {
+      if (data.clientOperationId) {
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, data.clientOperationId),
+        })
+        if (completed?.recipeId) {
+          const existing = await tx.query.recipes.findFirst({
+            where: eq(recipes.id, completed.recipeId),
+          })
+          if (existing) return existing
+        }
+      }
+
+      const recipe = await saveShotToRecipeInTransaction(tx, data.shotId, data)
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            brewId: data.shotId,
+            recipeId: recipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+      }
+      return recipe
+    }),
   )
 
 export const deleteRecipe = createServerFn({ method: 'POST' })
@@ -385,9 +437,7 @@ export const deleteRecipe = createServerFn({ method: 'POST' })
         .where(
           and(
             eq(recipes.id, data.id),
-            data.baseUpdatedAt
-              ? eq(recipes.updatedAt, new Date(data.baseUpdatedAt))
-              : undefined,
+            matchesRevision(recipes.updatedAt, data.baseUpdatedAt),
           ),
         )
         .returning({ id: recipes.id })

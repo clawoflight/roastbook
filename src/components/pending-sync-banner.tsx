@@ -19,13 +19,16 @@ export function PendingSyncBanner() {
   const isSyncing = usePendingBrewsStore((state) => state.isSyncing)
   const loadError = usePendingBrewsStore((state) => state.loadError)
   const [operations, setOperations] = useState<OfflineOperation[]>([])
+  const [operationError, setOperationError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
       const all = await listOperations()
       setOperations(all.filter((item) => isVisibleOperationStatus(item.status)))
+      setOperationError(null)
     } catch {
       setOperations([])
+      setOperationError('Could not read pending offline changes')
     }
   }, [])
 
@@ -44,7 +47,7 @@ export function PendingSyncBanner() {
   }, [load])
 
   if (DEMO_MODE || !isHydrated) return null
-  if (operations.length === 0 && !loadError) return null
+  if (operations.length === 0 && !loadError && !operationError) return null
 
   const authRequired = operations.some(
     (item) => item.status === 'auth-required',
@@ -73,8 +76,8 @@ export function PendingSyncBanner() {
         )}
         <span>
           {operations.length === 0
-            ? 'Pending changes could not be loaded.'
-            : `${operations.length} offline change${operations.length === 1 ? '' : 's'} saved on this device. ${status}${loadError ? ' Could not refresh saved changes.' : ''}`}
+            ? (operationError ?? 'Pending changes could not be loaded.')
+            : `${operations.length} offline change${operations.length === 1 ? '' : 's'} saved on this device. ${status}${loadError || operationError ? ` ${operationError ?? 'Could not refresh saved changes.'}` : ''}`}
         </span>
         <Link
           to="/brews/pending"

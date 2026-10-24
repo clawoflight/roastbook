@@ -127,12 +127,21 @@ export function RecipeDetailPage() {
       submit: async () => {
         const data = recipeUpdateData()
         if (!data || !recipe || !recipeBaseUpdatedAt) return
+        const updateOperationId = crypto.randomUUID()
+        const updateData = {
+          ...data,
+          clientOperationId: updateOperationId,
+        }
 
         const queueUpdate = async (baseRevision: string | null) => {
           await enqueueEntityUpdate({
             entityType: 'recipe',
             entityId: recipe.id,
-            payload: { ...data, baseUpdatedAt: baseRevision ?? undefined },
+            clientOperationId: updateOperationId,
+            payload: {
+              ...updateData,
+              baseUpdatedAt: baseRevision ?? undefined,
+            },
             details: { label: name.trim(), detail: 'Recipe' },
             baseRevision,
           })
@@ -146,7 +155,7 @@ export function RecipeDetailPage() {
         }
 
         try {
-          await updateRecipe({ data })
+          await updateRecipe({ data: updateData })
           await navigate({
             search: (current) => ({ ...current, edit: undefined }),
             replace: true,
@@ -155,7 +164,7 @@ export function RecipeDetailPage() {
           toast.success('Recipe updated')
         } catch (error) {
           if (isNetworkError(error) || !navigator.onLine) {
-            await queueUpdate(null)
+            await queueUpdate(recipeBaseUpdatedAt)
             return
           }
           throw error
