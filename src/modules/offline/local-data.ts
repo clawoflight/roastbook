@@ -23,7 +23,6 @@ export interface LocalEntityRecord<T = unknown> {
   readonly revision: string | null
   readonly syncState: LocalEntitySyncState
   readonly updatedAt: string
-  readonly deletedAt: string | null
 }
 
 export interface LocalEntityInput<T> {
@@ -35,7 +34,6 @@ export interface LocalEntityInput<T> {
   readonly revision?: string | null
   readonly syncState?: LocalEntitySyncState
   readonly updatedAt?: string
-  readonly deletedAt?: string | null
 }
 
 export interface OfflineSyncMetadata {
@@ -70,7 +68,6 @@ export async function putLocalEntity<T>(
     revision: input.revision ?? null,
     syncState: input.syncState ?? 'local',
     updatedAt: input.updatedAt ?? new Date().toISOString(),
-    deletedAt: input.deletedAt ?? null,
   }
 
   const database = await openOfflineDatabase()
@@ -117,7 +114,6 @@ export async function listLocalEntities<T>(
   options: {
     readonly ownerKey?: string
     readonly entityType?: OfflineEntityType
-    readonly includeDeleted?: boolean
   } = {},
 ): Promise<LocalEntityRecord<T>[]> {
   const ownerKey = options.ownerKey ?? DEFAULT_OWNER_KEY
@@ -133,8 +129,7 @@ export async function listLocalEntities<T>(
       (record) =>
         record.ownerKey === ownerKey &&
         (options.entityType === undefined ||
-          record.entityType === options.entityType) &&
-        (options.includeDeleted === true || record.deletedAt === null),
+          record.entityType === options.entityType),
     )
     .sort(
       (left, right) =>
@@ -162,23 +157,6 @@ export async function markLocalEntitySynced(
     serverId: options.serverId,
     revision: options.revision ?? existing.revision,
     syncState: 'synced',
-    updatedAt: new Date().toISOString(),
-  })
-}
-
-export async function tombstoneLocalEntity(
-  entityType: OfflineEntityType,
-  localId: string,
-  ownerKey: string = DEFAULT_OWNER_KEY,
-): Promise<LocalEntityRecord | undefined> {
-  const existing = await getLocalEntity(entityType, localId, ownerKey)
-  if (!existing) return undefined
-
-  return putLocalEntity({
-    ...existing,
-    ownerKey,
-    syncState: 'pending',
-    deletedAt: existing.deletedAt ?? new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   })
 }

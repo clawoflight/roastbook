@@ -40,7 +40,7 @@ export async function readCachedSettingsData<T>(
     CACHE_ENTITY_TYPES[key],
     cacheLocalId(key),
   )
-  if (!record || record.deletedAt) return undefined
+  if (!record) return undefined
   return record.data
 }
 

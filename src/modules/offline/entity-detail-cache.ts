@@ -47,7 +47,7 @@ export async function readCachedEntityDetail<T>(
   serverId: number | string,
 ): Promise<CachedEntityDetail<T> | undefined> {
   const record = await getLocalEntityByServerId<T>(entityType, String(serverId))
-  if (!record || record.deletedAt) return undefined
+  if (!record) return undefined
   return { savedAt: record.updatedAt, data: record.data }
 }
 

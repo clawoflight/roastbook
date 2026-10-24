@@ -105,8 +105,8 @@ Settings → Offline shows waiting, attention, and auth-required operation count
 the last successful sync, and browser storage usage. It offers a re-sync action,
 a cached-data clear that preserves pending operations, and a full local-data
 clear. The full clear warns explicitly when unsynced operations would be
-discarded. A direct setting mutation also checks connectivity, so a keyboard or
-programmatic activation cannot bypass the offline UI state.
+discarded. Server-backed controls are disabled while offline; if a mutation
+still reaches the server and fails, the optimistic value rolls back.
 
 Server-backed settings loaders cache their last successful response. Drinks,
 taste tags, AI usage, shottimer status, and storage statistics therefore render

@@ -201,12 +201,9 @@ export async function deleteOfflineDatabase(): Promise<void> {
     request.onsuccess = () => resolve()
     request.onerror = () =>
       reject(request.error ?? new Error('Could not clear offline storage'))
-    request.onblocked = () =>
-      reject(
-        new Error(
-          'Close other Roastbook tabs before clearing local offline data',
-        ),
-      )
+    // Keep waiting for success if another tab blocks the versionchange. The
+    // delete request is already queued and completes once that tab closes.
+    request.onblocked = () => undefined
   })
 }
 

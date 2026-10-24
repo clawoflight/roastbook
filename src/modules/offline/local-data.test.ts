@@ -9,7 +9,6 @@ import {
   readOfflineSyncMetadata,
   recordSuccessfulSync,
   removeLocalEntity,
-  tombstoneLocalEntity,
 } from '@/modules/offline/local-data'
 import { resetOfflineDatabaseForTests } from '@/modules/offline/storage'
 
@@ -71,12 +70,6 @@ describe('offline local data', () => {
       syncState: 'synced',
       revision: '2026-10-24T08:00:00.000Z',
     })
-
-    const tombstoned = await tombstoneLocalEntity('brew', 'brew-1')
-    expect(tombstoned?.deletedAt).not.toBeNull()
-    expect(tombstoned?.syncState).toBe('pending')
-    expect(await listLocalEntities()).toHaveLength(1)
-    expect(await listLocalEntities({ includeDeleted: true })).toHaveLength(2)
 
     await removeLocalEntity('brew', 'brew-1')
     expect(await getLocalEntity('brew', 'brew-1')).toBeUndefined()
