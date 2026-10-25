@@ -11,6 +11,7 @@ import {
   replaceRecipeAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
+import { pruneClientOperations } from '@/lib/server/client-operations.server'
 import {
   assertDrinkSelection,
   assertDrinkTypeAvailableForBrewingMethod,
@@ -219,11 +220,16 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         const completed = await tx.query.clientOperations.findFirst({
           where: eq(clientOperations.operationId, data.clientOperationId),
         })
-        if (completed?.recipeId) {
-          const existing = await tx.query.recipes.findFirst({
-            where: eq(recipes.id, completed.recipeId),
-          })
-          if (existing) return existing
+        if (completed) {
+          if (completed.recipeId) {
+            const existing = await tx.query.recipes.findFirst({
+              where: eq(recipes.id, completed.recipeId),
+            })
+            if (existing) return existing
+          }
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
         }
       }
 
@@ -292,6 +298,7 @@ export const updateRecipe = createServerFn({ method: 'POST' })
             recipeId: persistedRecipe.id,
           })
           .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
       }
       return persistedRecipe
     }),
@@ -307,6 +314,14 @@ export const createRecipe = createServerFn({ method: 'POST' })
           where: eq(recipes.clientOperationId, operationId),
         })
         if (existing) return existing
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, operationId),
+        })
+        if (completed) {
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
+        }
       }
 
       const method = await getBrewingMethod(tx, data.brewingMethodId)
@@ -353,6 +368,7 @@ export const createRecipe = createServerFn({ method: 'POST' })
             recipeId: persistedRecipe.id,
           })
           .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
       }
       return persistedRecipe
     }),
@@ -410,11 +426,16 @@ export const saveShotAsRecipe = createServerFn({ method: 'POST' })
         const completed = await tx.query.clientOperations.findFirst({
           where: eq(clientOperations.operationId, data.clientOperationId),
         })
-        if (completed?.recipeId) {
-          const existing = await tx.query.recipes.findFirst({
-            where: eq(recipes.id, completed.recipeId),
-          })
-          if (existing) return existing
+        if (completed) {
+          if (completed.recipeId) {
+            const existing = await tx.query.recipes.findFirst({
+              where: eq(recipes.id, completed.recipeId),
+            })
+            if (existing) return existing
+          }
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
         }
       }
 
@@ -428,6 +449,7 @@ export const saveShotAsRecipe = createServerFn({ method: 'POST' })
             recipeId: recipe.id,
           })
           .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
       }
       return recipe
     }),

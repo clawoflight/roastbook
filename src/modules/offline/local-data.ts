@@ -254,18 +254,37 @@ function hasPendingEntityOperations(
   entityType: OfflineEntityType,
   serverId: string,
 ): boolean {
-  return operations.some(
-    (operation) =>
-      operation.ownerKey === entity.ownerKey &&
+  return operations.some((operation) => {
+    if (
+      operation.ownerKey !== entity.ownerKey ||
+      !isVisibleOperationStatus(operation.status)
+    ) {
+      return false
+    }
+    if (
+      operation.entityType === entityType &&
       operation.entityServerId === serverId &&
-      isVisibleOperationStatus(operation.status) &&
-      ((operation.entityType === entityType &&
-        (operation.operationType === 'update' ||
-          operation.operationType === 'delete')) ||
-        (operation.entityType === 'brew-image' &&
-          (operation.operationType === 'upload' ||
-            operation.operationType === 'remove-image'))),
-  )
+      (operation.operationType === 'update' ||
+        operation.operationType === 'delete')
+    ) {
+      return true
+    }
+    if (
+      operation.entityType !== 'brew-image' ||
+      (operation.operationType !== 'upload' &&
+        operation.operationType !== 'remove-image')
+    ) {
+      return false
+    }
+    const payload = operation.payload as {
+      readonly entityType?: string
+      readonly entityId?: number
+    } | null
+    return (
+      payload?.entityType === 'shots' &&
+      String(payload.entityId ?? operation.entityServerId) === serverId
+    )
+  })
 }
 
 export async function updateServerEntityRevision(

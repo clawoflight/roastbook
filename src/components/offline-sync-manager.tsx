@@ -283,7 +283,7 @@ async function markBrewSynced(
   const synced = await markLocalEntitySynced('brew', operation.entityLocalId, {
     serverId,
   })
-  if (!synced) {
+  if (!synced && operation.operationType === 'create') {
     await putLocalEntity({
       entityType: 'brew',
       localId: operation.entityLocalId,
@@ -371,15 +371,20 @@ export function OfflineSyncManager() {
                   if (!serverId) return
                   const revision = executionResult.revision
 
-                  if (
-                    operation.entityType === 'brew-image' &&
-                    operation.operationType === 'remove-image' &&
-                    operation.entityServerId
-                  ) {
-                    await refreshServerEntitySyncState(
-                      'brew',
-                      operation.entityServerId,
-                    )
+                  if (operation.entityType === 'brew-image') {
+                    const imagePayload = operation.payload as {
+                      readonly entityType?: string
+                      readonly entityId?: number
+                    }
+                    if (
+                      imagePayload.entityType === 'shots' &&
+                      imagePayload.entityId !== undefined
+                    ) {
+                      await refreshServerEntitySyncState(
+                        'brew',
+                        String(imagePayload.entityId),
+                      )
+                    }
                   }
 
                   if (
@@ -438,7 +443,8 @@ export function OfflineSyncManager() {
               if (
                 (syncResult.synced > 0 || syncResult.failed > 0) &&
                 !syncResult.authRequired &&
-                !syncResult.stoppedByNetwork
+                !syncResult.stoppedByNetwork &&
+                !syncResult.retryable
               ) {
                 await recordSuccessfulSync().catch(() => undefined)
               }
@@ -487,8 +493,12 @@ export function OfflineSyncManager() {
           }
 
           authNotified = result.authRequired
-          if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
-          else clearRetry()
+          if (
+            (result.stoppedByNetwork || result.retryable) &&
+            navigator.onLine
+          ) {
+            scheduleRetry()
+          } else clearRetry()
         } catch (error) {
           if (disposed) return
           // A failed flush leaves the queue intact. Retry local/transient

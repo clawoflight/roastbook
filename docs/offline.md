@@ -148,6 +148,10 @@ and account actions remain online-only.
 - Queued creates are independent across devices. Edits carry a base revision,
   so a concurrent server change is surfaced as a conflict instead of being
   silently overwritten.
+- IndexedDB migrations are forward-only. After a newer build has upgraded the
+  local schema, rolling back to an older build can fail with `VersionError`.
+  Recover by clearing site data for the origin, which also removes pending
+  local work.
 
 ## Offline readiness
 

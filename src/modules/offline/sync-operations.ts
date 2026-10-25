@@ -29,6 +29,7 @@ export interface SyncOperationsDependencies {
     changes: {
       readonly status: OfflineOperationStatus
       readonly lastError?: string | null
+      readonly nextAttemptAt?: string | null
     },
   ) => Promise<void>
   readonly execute: (
@@ -48,15 +49,24 @@ export interface SyncOperationsResult {
   readonly authRequired: boolean
   readonly stoppedByNetwork: boolean
   readonly failed: number
+  readonly retryable: boolean
 }
 
-const MAX_SYNC_ATTEMPTS = 5
+const RETRY_BASE_MS = 5_000
+const RETRY_MAX_MS = 5 * 60 * 1_000
+
+function retryDelayMs(attempts: number): number {
+  return Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.min(attempts, 6))
+}
 
 function syncResult(
   synced: number,
   failed: number,
   options: Partial<
-    Pick<SyncOperationsResult, 'authRequired' | 'stoppedByNetwork'>
+    Pick<
+      SyncOperationsResult,
+      'authRequired' | 'stoppedByNetwork' | 'retryable'
+    >
   > = {},
 ): SyncOperationsResult {
   return {
@@ -64,6 +74,7 @@ function syncResult(
     failed,
     authRequired: options.authRequired ?? false,
     stoppedByNetwork: options.stoppedByNetwork ?? false,
+    retryable: options.retryable ?? false,
   }
 }
 
@@ -98,7 +109,11 @@ export async function syncOperations(
       dependencies.now?.() ?? new Date(),
     ).length === 0
   ) {
-    return syncResult(0, 0)
+    return syncResult(0, 0, {
+      retryable: initialOperations.some(
+        (operation) => operation.status === 'retryable',
+      ),
+    })
   }
 
   const authentication = await dependencies.authenticate()
@@ -112,6 +127,7 @@ export async function syncOperations(
 
   let synced = 0
   let failed = 0
+  let retryable = false
 
   while (dependencies.isOnline()) {
     const operations = await dependencies.list()
@@ -119,7 +135,12 @@ export async function syncOperations(
       operations,
       dependencies.now?.() ?? new Date(),
     )[0]
-    if (!next) break
+    if (!next) {
+      retryable ||= operations.some(
+        (operation) => operation.status === 'retryable',
+      )
+      break
+    }
 
     if (!(await dependencies.claim(next))) continue
 
@@ -166,19 +187,16 @@ export async function syncOperations(
         continue
       }
       if (!isDefinitiveSyncError(error)) {
-        if (next.attempts + 1 >= MAX_SYNC_ATTEMPTS) {
-          await dependencies.mark(next, {
-            status: 'permanent',
-            lastError: `${message} (retry limit reached)`,
-          })
-          failed += 1
-          continue
-        }
+        const now = dependencies.now?.() ?? new Date()
         await dependencies.mark(next, {
           status: 'retryable',
           lastError: message,
+          nextAttemptAt: new Date(
+            now.getTime() + retryDelayMs(next.attempts + 1),
+          ).toISOString(),
         })
-        return syncResult(synced, failed, { stoppedByNetwork: true })
+        retryable = true
+        continue
       }
 
       await dependencies.mark(next, {
@@ -191,5 +209,6 @@ export async function syncOperations(
 
   return syncResult(synced, failed, {
     stoppedByNetwork: !dependencies.isOnline(),
+    retryable,
   })
 }

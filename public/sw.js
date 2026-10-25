@@ -106,7 +106,7 @@ async function precacheStatic(cache, url) {
   const request = new Request(url, { cache: 'reload' })
   const response = await fetch(request)
   const pathname = new URL(url, self.location.origin).pathname
-  if (!isCacheableStaticResponse(response, pathname)) {
+  if (!(await isCacheableStaticResponse(response, pathname))) {
     throw new Error(`Refusing to precache an invalid response for ${url}`)
   }
   await cache.put(url, response)
@@ -202,7 +202,7 @@ async function cacheFirstPrecache(request) {
   const pathname = new URL(request.url).pathname
   const cached = await cache.match(request, { ignoreSearch: true })
   if (cached) {
-    if (isCacheableStaticResponse(cached, pathname)) return cached
+    if (await isCacheableStaticResponse(cached, pathname)) return cached
     const keys = await cache.keys()
     await Promise.all(
       keys
@@ -222,12 +222,12 @@ async function cacheFirstAsset(request) {
   const cache = await caches.open(ASSET_CACHE)
   const cached = await cache.match(request)
   if (cached) {
-    if (isCacheableStaticResponse(cached, pathname)) return cached
+    if (await isCacheableStaticResponse(cached, pathname)) return cached
     await cache.delete(request)
   }
 
   const response = await fetch(request)
-  if (isCacheableStaticResponse(response, pathname)) {
+  if (await isCacheableStaticResponse(response, pathname)) {
     try {
       await cache.put(request, response.clone())
       await trimCache(cache, MAX_ASSET_ENTRIES)
@@ -266,7 +266,7 @@ function declaredContentLength(response) {
   return Number.isFinite(length) && length >= 0 ? length : null
 }
 
-function isCacheableStaticResponse(response, pathname) {
+async function isCacheableStaticResponse(response, pathname) {
   if (!response.ok || response.redirected) return false
 
   const contentType = response.headers.get('content-type')?.toLowerCase()
@@ -274,10 +274,15 @@ function isCacheableStaticResponse(response, pathname) {
   if (contentType.includes('text/html')) return pathname.endsWith('.html')
 
   const declaredLength = declaredContentLength(response)
-  if (declaredLength === null) {
-    if (pathname.startsWith('/assets/')) return false
-  } else if (declaredLength > MAX_ASSET_BYTES) {
-    return false
+  if (declaredLength !== null) {
+    if (declaredLength > MAX_ASSET_BYTES) return false
+  } else {
+    try {
+      const body = await response.clone().blob()
+      if (body.size > MAX_ASSET_BYTES) return false
+    } catch {
+      return false
+    }
   }
 
   const expected = expectedContentTypes(pathname)

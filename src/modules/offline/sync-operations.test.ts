@@ -76,6 +76,7 @@ function createRepository(initial: readonly OfflineOperation[]) {
       changes: {
         readonly status: OfflineOperationStatus
         readonly lastError?: string | null
+        readonly nextAttemptAt?: string | null
       },
     ) => {
       const item = items.get(operation.id)
@@ -86,6 +87,9 @@ function createRepository(initial: readonly OfflineOperation[]) {
           ...(changes.lastError === undefined
             ? {}
             : { lastError: changes.lastError }),
+          ...(changes.nextAttemptAt === undefined
+            ? {}
+            : { nextAttemptAt: changes.nextAttemptAt }),
         })
       }
       return Promise.resolve()
@@ -149,6 +153,7 @@ describe('offline operation sync', () => {
       synced: 3,
       authRequired: false,
       stoppedByNetwork: false,
+      retryable: false,
       failed: 0,
     })
     expect(executed).toEqual(['create', 'image', 'recipe'])
@@ -201,6 +206,7 @@ describe('offline operation sync', () => {
       synced: 0,
       authRequired: false,
       stoppedByNetwork: false,
+      retryable: false,
       failed: 0,
     })
     expect(probes).toBe(0)
@@ -302,12 +308,34 @@ describe('offline operation sync', () => {
       }),
     )
 
-    expect(result.stoppedByNetwork).toBe(true)
+    expect(result.stoppedByNetwork).toBe(false)
+    expect(result.retryable).toBe(true)
     expect(result.failed).toBe(0)
     expect(repository.get('transient')).toMatchObject({
       status: 'retryable',
       lastError: 'Internal Server Error',
     })
+    expect(repository.get('transient')?.nextAttemptAt).toBeString()
+  })
+
+  test('continues with later operations after a transient server failure', async () => {
+    const first = operation({ id: 'first' })
+    const second = operation({ id: 'second' })
+    const repository = createRepository([first, second])
+
+    const result = await syncOperations(
+      dependencies(repository, {
+        execute: (item) =>
+          item.id === 'first'
+            ? Promise.reject(new Error('Service Unavailable'))
+            : Promise.resolve({ serverId: item.id }),
+      }),
+    )
+
+    expect(result.retryable).toBe(true)
+    expect(result.synced).toBe(1)
+    expect(repository.get('first')).toMatchObject({ status: 'retryable' })
+    expect(repository.get('second')).toMatchObject({ status: 'acknowledged' })
   })
 
   test('marks a server conflict without retrying it automatically', async () => {

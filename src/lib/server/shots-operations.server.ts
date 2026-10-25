@@ -27,6 +27,7 @@ import {
   replaceShotAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
+import { pruneClientOperations } from '@/lib/server/client-operations.server'
 import {
   assertDrinkSelection,
   assertDrinkTypeAvailableForBrewingMethod,
@@ -404,6 +405,7 @@ async function createShotInTransaction(
         .insert(clientOperations)
         .values({ operationId, brewId: existingShot.id })
         .onConflictDoNothing({ target: clientOperations.operationId })
+      await pruneClientOperations(tx)
       return {
         shot: existingShot,
         created: false,
@@ -416,6 +418,7 @@ async function createShotInTransaction(
       .values({ operationId })
       .onConflictDoNothing({ target: clientOperations.operationId })
       .returning()
+    await pruneClientOperations(tx)
 
     if (!operation) {
       const existingOperation = await tx.query.clientOperations.findFirst({
@@ -556,7 +559,6 @@ export function updateShotOperation(
   data: ReturnType<typeof shotUpdateSchema.parse>,
 ) {
   return db.transaction(async (tx) => {
-    const method = await getBrewingMethod(tx, data.brewingMethodId)
     const existingShot = await tx.query.shots.findFirst({
       columns: {
         brewingMethodId: true,
@@ -579,6 +581,7 @@ export function updateShotOperation(
         if (existing) return existing
       }
     }
+    const method = await getBrewingMethod(tx, data.brewingMethodId)
     if (
       (data.baseRevision !== undefined &&
         existingShot.revision !== data.baseRevision) ||
@@ -666,6 +669,7 @@ export function updateShotOperation(
         .insert(clientOperations)
         .values({ operationId: data.clientOperationId, brewId: id })
         .onConflictDoNothing({ target: clientOperations.operationId })
+      await pruneClientOperations(tx)
     }
     return persistedShot
   })
