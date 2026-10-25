@@ -1,7 +1,8 @@
 const BUILD_ID = '__BUILD_ID__'
 const PRECACHE_CACHE = `roastbook-precache-${BUILD_ID}`
 const DOCUMENT_CACHE = `roastbook-documents-${BUILD_ID}`
-const ASSET_CACHE = 'roastbook-assets'
+const ASSET_CACHE = 'roastbook-assets-v2'
+const LEGACY_ASSET_CACHES = ['roastbook-assets']
 const OFFLINE_URL = '/offline.html'
 const MAX_ASSET_ENTRIES = 100
 const MAX_DOCUMENT_ENTRIES = 20
@@ -136,7 +137,8 @@ async function activate() {
       .filter(
         (key) =>
           (key.startsWith('roastbook-precache-') && key !== PRECACHE_CACHE) ||
-          (key.startsWith('roastbook-documents-') && key !== DOCUMENT_CACHE),
+          (key.startsWith('roastbook-documents-') && key !== DOCUMENT_CACHE) ||
+          LEGACY_ASSET_CACHES.includes(key),
       )
       .map((key) => caches.delete(key)),
   )

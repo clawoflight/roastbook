@@ -259,7 +259,7 @@ async function createHarness(options: HarnessOptions = {}) {
   }
 
   function getAssetCache(): MockCache | undefined {
-    return stores.get('roastbook-assets')
+    return stores.get('roastbook-assets-v2')
   }
 
   function setAssetResponse(path: string, response: Response) {
@@ -460,7 +460,7 @@ describe('service worker', () => {
 
   test('repairs a corrupt cached asset', async () => {
     const harness = await createHarness()
-    harness.seedCache('roastbook-assets')
+    harness.seedCache('roastbook-assets-v2')
     const cache = harness.getAssetCache()
     if (!cache) throw new Error('Asset cache missing')
     await cache.put(
@@ -483,7 +483,7 @@ describe('service worker', () => {
     const harness = await createHarness()
     harness.seedCache('roastbook-precache-test')
     harness.seedCache('roastbook-documents-test')
-    harness.seedCache('roastbook-assets')
+    harness.seedCache('roastbook-assets-v2')
     harness.seedCache('unrelated-cache')
     const messages: unknown[] = []
 
@@ -498,7 +498,7 @@ describe('service worker', () => {
 
     expect(harness.hasCache('roastbook-precache-test')).toBe(false)
     expect(harness.hasCache('roastbook-documents-test')).toBe(false)
-    expect(harness.hasCache('roastbook-assets')).toBe(false)
+    expect(harness.hasCache('roastbook-assets-v2')).toBe(false)
     expect(harness.hasCache('unrelated-cache')).toBe(true)
     expect(harness.getUnregisterCalls()).toBe(1)
     expect(messages).toEqual([{ type: 'SHELL_RESET_COMPLETE' }])
@@ -563,11 +563,13 @@ describe('service worker', () => {
     const harness = await createHarness()
     harness.seedCache('roastbook-precache-stale')
     harness.seedCache('roastbook-documents-stale')
+    harness.seedCache('roastbook-assets')
 
     await harness.dispatch('activate')
 
     expect(harness.hasCache('roastbook-precache-stale')).toBe(false)
     expect(harness.hasCache('roastbook-documents-stale')).toBe(false)
+    expect(harness.hasCache('roastbook-assets')).toBe(false)
     expect(harness.getClaimCalls()).toBe(1)
   })
 
