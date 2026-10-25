@@ -202,7 +202,11 @@ async function cacheFirstPrecache(request) {
   const pathname = new URL(request.url).pathname
   const cached = await cache.match(request, { ignoreSearch: true })
   if (cached) {
-    if (await isCacheableStaticResponse(cached, pathname)) return cached
+    if (
+      await isCacheableStaticResponse(cached, pathname, { checkSize: false })
+    ) {
+      return cached
+    }
     const keys = await cache.keys()
     await Promise.all(
       keys
@@ -222,7 +226,11 @@ async function cacheFirstAsset(request) {
   const cache = await caches.open(ASSET_CACHE)
   const cached = await cache.match(request)
   if (cached) {
-    if (await isCacheableStaticResponse(cached, pathname)) return cached
+    if (
+      await isCacheableStaticResponse(cached, pathname, { checkSize: false })
+    ) {
+      return cached
+    }
     await cache.delete(request)
   }
 
@@ -266,22 +274,28 @@ function declaredContentLength(response) {
   return Number.isFinite(length) && length >= 0 ? length : null
 }
 
-async function isCacheableStaticResponse(response, pathname) {
+async function isCacheableStaticResponse(
+  response,
+  pathname,
+  options = { checkSize: true },
+) {
   if (!response.ok || response.redirected) return false
 
   const contentType = response.headers.get('content-type')?.toLowerCase()
   if (!contentType) return false
   if (contentType.includes('text/html')) return pathname.endsWith('.html')
 
-  const declaredLength = declaredContentLength(response)
-  if (declaredLength !== null) {
-    if (declaredLength > MAX_ASSET_BYTES) return false
-  } else {
-    try {
-      const body = await response.clone().blob()
-      if (body.size > MAX_ASSET_BYTES) return false
-    } catch {
-      return false
+  if (options.checkSize) {
+    const declaredLength = declaredContentLength(response)
+    if (declaredLength !== null) {
+      if (declaredLength > MAX_ASSET_BYTES) return false
+    } else {
+      try {
+        const body = await response.clone().blob()
+        if (body.size > MAX_ASSET_BYTES) return false
+      } catch {
+        return false
+      }
     }
   }
 

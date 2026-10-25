@@ -157,7 +157,10 @@ export async function syncOperations(
           status: 'retryable',
           lastError: getErrorMessage(error, 'The connection was lost'),
         })
-        return syncResult(synced, failed, { stoppedByNetwork: true })
+        return syncResult(synced, failed, {
+          stoppedByNetwork: true,
+          retryable,
+        })
       }
 
       const authenticationAfterFailure = await dependencies.authenticate()
@@ -166,7 +169,10 @@ export async function syncOperations(
           status: 'retryable',
           lastError: getErrorMessage(error, 'The connection was lost'),
         })
-        return syncResult(synced, failed, { stoppedByNetwork: true })
+        return syncResult(synced, failed, {
+          stoppedByNetwork: true,
+          retryable,
+        })
       }
       if (authenticationAfterFailure === 'auth-required') {
         await dependencies.mark(next, {

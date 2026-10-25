@@ -439,6 +439,25 @@ describe('service worker', () => {
     )
   })
 
+  test('measures an asset body when Content-Length is absent', async () => {
+    const harness = await createHarness()
+    harness.setAssetResponse(
+      '/assets/chunked.js',
+      new Response(new Uint8Array(MAX_PRECACHE_ASSET_BYTES + 1), {
+        headers: { 'content-type': 'text/javascript' },
+      }),
+    )
+
+    const response = await harness.dispatch('fetch', {
+      request: request('/assets/chunked.js'),
+    })
+
+    expect((response as Response).ok).toBe(true)
+    expect((await harness.getAssetCache()?.keys()) ?? []).not.toContain(
+      absoluteUrl('/assets/chunked.js'),
+    )
+  })
+
   test('repairs a corrupt cached asset', async () => {
     const harness = await createHarness()
     harness.seedCache('roastbook-assets')

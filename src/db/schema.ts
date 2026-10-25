@@ -1423,6 +1423,7 @@ export const clientOperations = pgTable(
   (table) => [
     index('client_operations_brew_id_idx').on(table.brewId),
     index('client_operations_recipe_id_idx').on(table.recipeId),
+    index('client_operations_created_at_idx').on(table.createdAt),
   ],
 )
 

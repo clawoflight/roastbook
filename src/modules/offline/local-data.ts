@@ -270,6 +270,7 @@ function hasPendingEntityOperations(
       return true
     }
     if (
+      entityType !== 'brew' ||
       operation.entityType !== 'brew-image' ||
       (operation.operationType !== 'upload' &&
         operation.operationType !== 'remove-image')

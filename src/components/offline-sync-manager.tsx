@@ -443,8 +443,7 @@ export function OfflineSyncManager() {
               if (
                 (syncResult.synced > 0 || syncResult.failed > 0) &&
                 !syncResult.authRequired &&
-                !syncResult.stoppedByNetwork &&
-                !syncResult.retryable
+                !syncResult.stoppedByNetwork
               ) {
                 await recordSuccessfulSync().catch(() => undefined)
               }
