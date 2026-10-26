@@ -75,19 +75,11 @@ face when you don't.
 
 <p align="center">
   <img src=".github/images/new-brew-desktop.png"
-    alt="Logging a new espresso brew with method suggestions, taste controls,
-    a selected coffee, and the brew timer"
-    width="1200">
+    width="900">
 </p>
 
 Roastbook runs equally well on the phone in your hand at the machine and on the
 desktop where you dig through the numbers afterwards.
-
-<p align="center">
-  <img src=".github/images/overview-mobile.png"
-    alt="Roastbook overview on a mobile phone"
-    width="375">
-</p>
 
 ## ✨ Why Roastbook
 
