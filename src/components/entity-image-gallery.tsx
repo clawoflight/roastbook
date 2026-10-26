@@ -267,10 +267,13 @@ export function EntityImageGallery({
           imageId: image.id,
           details: { label: 'Brew', detail: 'Remove picture' },
         })
-        try {
-          await onImagesChange()
-        } catch {
-          // The cached detail will refresh on the next online visit.
+        if (!navigator.onLine) {
+          try {
+            await onImagesChange()
+          } catch {
+            // removeServerEntityImage already updated the cached brew. Only
+            // this rendered gallery may be stale until the next refresh.
+          }
         }
         toast.success('Picture removal saved on this device')
         return
@@ -296,10 +299,13 @@ export function EntityImageGallery({
               imageId: image.id,
               details: { label: 'Brew', detail: 'Remove picture' },
             })
-            try {
-              await onImagesChange()
-            } catch {
-              // The cached detail will refresh on the next online visit.
+            if (!navigator.onLine) {
+              try {
+                await onImagesChange()
+              } catch {
+                // removeServerEntityImage already updated the cached brew. Only
+                // this rendered gallery may be stale until the next refresh.
+              }
             }
             toast.success('Picture removal saved on this device')
             return
