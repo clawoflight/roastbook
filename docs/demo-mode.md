@@ -36,7 +36,8 @@ image. The edition cannot be toggled at runtime.
 
 The enforcement boundary is server-side request middleware. With demo mode enabled,
 GET and HEAD requests proceed. Journal writes, uploads, settings changes, AI
-actions, and POST endpoints fail with a read-only error. The UI also
+actions, and POST endpoints fail with a plain-text 403 that the UI shows as a
+"this is just a demo" message wherever the action was attempted. The UI also
 shows a persistent banner, prevents form submissions, and disables its global
 create controls. Both demo and standard editions redirect `/` to `/overview`.
 The bean-package seed images are emitted as static assets

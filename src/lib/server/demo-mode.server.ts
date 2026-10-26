@@ -1,7 +1,5 @@
 import '@tanstack/react-start/server-only'
-
-export const DEMO_MODE_READ_ONLY_MESSAGE =
-  'Demo mode is read-only. Changes are disabled.'
+import { DEMO_MODE_READ_ONLY_MESSAGE } from '@/lib/build-mode'
 
 export function isDemoModeWriteRequest(
   demoMode: boolean,
@@ -11,8 +9,10 @@ export function isDemoModeWriteRequest(
 }
 
 export function demoModeReadOnlyResponse(): Response {
-  return Response.json(
-    { error: DEMO_MODE_READ_ONLY_MESSAGE },
-    { status: 403, statusText: 'Forbidden' },
-  )
+  // Plain text: the server-fn client returns JSON bodies as data but throws non-OK text as an Error.
+  return new Response(DEMO_MODE_READ_ONLY_MESSAGE, {
+    status: 403,
+    statusText: 'Forbidden',
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  })
 }

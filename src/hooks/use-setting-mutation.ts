@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import type { AppSettings } from '@/lib/app-settings'
+import { getErrorMessage } from '@/lib/error-message'
 
 /**
  * Optimistically saves a single application setting: the new value is applied
@@ -35,9 +36,9 @@ export function useSettingMutation<Value>({
       applyValue(selectValue(updated))
       onSaved()
       if (successMessage) toast.success(successMessage)
-    } catch {
+    } catch (error) {
       applyValue(savedValue)
-      toast.error(errorMessage)
+      toast.error(getErrorMessage(error, errorMessage))
     } finally {
       setIsSaving(false)
     }

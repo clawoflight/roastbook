@@ -24,7 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useOnlineStatus } from '@/hooks/use-online-status'
-import { DEMO_MODE } from '@/lib/build-mode'
+import { DEMO_MODE, DEMO_MODE_READ_ONLY_MESSAGE } from '@/lib/build-mode'
 import { getErrorDisplayState } from '@/lib/error-display'
 import { usePreferencesStore } from '@/lib/preferences-store'
 import { getAppSettings } from '@/lib/server/app-settings'
@@ -278,7 +278,7 @@ function RootComponent() {
   const isOnline = useOnlineStatus()
   const preventDemoSubmit = (event: FormEvent<HTMLElement>) => {
     event.preventDefault()
-    toast.info('Demo mode is read-only. Changes are disabled.')
+    toast.info(DEMO_MODE_READ_ONLY_MESSAGE)
   }
 
   return (

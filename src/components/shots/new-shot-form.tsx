@@ -49,7 +49,7 @@ import {
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { useTasteProfile } from '@/hooks/use-taste-profile'
 import { useUnsavedChanges } from '@/hooks/use-unsaved-changes'
-import { DEMO_MODE } from '@/lib/build-mode'
+import { DEMO_MODE, DEMO_MODE_READ_ONLY_MESSAGE } from '@/lib/build-mode'
 import {
   type DrinkConfiguration,
   drinkConfigurationForBrewingMethod,
@@ -432,7 +432,7 @@ export function NewShotForm({
     formElement?: HTMLFormElement,
   ) => {
     if (DEMO_MODE) {
-      toast.info('Demo mode is read-only. Changes are disabled.')
+      toast.info(DEMO_MODE_READ_ONLY_MESSAGE)
       return false
     }
 

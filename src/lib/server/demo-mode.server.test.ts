@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
+import { DEMO_MODE_READ_ONLY_MESSAGE } from '@/lib/build-mode'
 import {
-  DEMO_MODE_READ_ONLY_MESSAGE,
   demoModeReadOnlyResponse,
   isDemoModeWriteRequest,
 } from '@/lib/server/demo-mode.server'
@@ -20,8 +20,7 @@ describe('demo mode mutation guard', () => {
     const response = demoModeReadOnlyResponse()
 
     expect(response.status).toBe(403)
-    expect(await response.json()).toEqual({
-      error: DEMO_MODE_READ_ONLY_MESSAGE,
-    })
+    expect(response.headers.get('content-type')).toStartWith('text/plain')
+    expect(await response.text()).toBe(DEMO_MODE_READ_ONLY_MESSAGE)
   })
 })
