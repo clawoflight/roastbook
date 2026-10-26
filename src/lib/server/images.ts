@@ -52,6 +52,7 @@ const entityImageIdSchema = z.object({
   entityType: entityTypeSchema,
   entityId: positiveIdSchema,
   imageId: positiveIdSchema,
+  idempotent: z.boolean().optional(),
 })
 
 const thumbnailImageIdSchema = entityImageIdSchema.extend({
@@ -130,12 +131,37 @@ async function getVisitImageCount(entityId: number): Promise<number> {
 type EntityImageData = {
   entityType: EntityType
   entityId: number
+  clientOperationId?: string
   filename: string
   mimeType: string
   binaryData: Buffer
 }
 
 async function storeEntityImage(data: EntityImageData) {
+  const storage = getStorage()
+
+  if (data.entityType === 'shots' && data.clientOperationId) {
+    const existing = await db.query.shotImages.findFirst({
+      where: and(
+        eq(shotImages.clientOperationId, data.clientOperationId),
+        eq(shotImages.shotId, data.entityId),
+      ),
+    })
+    if (existing) {
+      return {
+        ...existing,
+        url: storage.getUrl(existing.storagePath),
+      }
+    }
+    const usedElsewhere = await db.query.shotImages.findFirst({
+      columns: { id: true },
+      where: eq(shotImages.clientOperationId, data.clientOperationId),
+    })
+    if (usedElsewhere) {
+      throw new Error('Image operation id is already used for another brew')
+    }
+  }
+
   if (
     (await getEntityImageCount(data.entityType, data.entityId)) >=
     MAX_IMAGES_PER_ENTITY
@@ -145,7 +171,6 @@ async function storeEntityImage(data: EntityImageData) {
     )
   }
 
-  const storage = getStorage()
   const storagePathType = storagePathTypeMap[data.entityType]
   const storagePath = generateStoragePath(
     storagePathType,
@@ -210,8 +235,29 @@ async function storeEntityImage(data: EntityImageData) {
       case 'shots': {
         const [result] = await db
           .insert(shotImages)
-          .values({ ...baseValues, shotId: data.entityId })
+          .values({
+            ...baseValues,
+            shotId: data.entityId,
+            clientOperationId: data.clientOperationId ?? null,
+          })
+          .onConflictDoNothing({ target: shotImages.clientOperationId })
           .returning()
+        if (!result) {
+          const existing = data.clientOperationId
+            ? await db.query.shotImages.findFirst({
+                where: and(
+                  eq(shotImages.clientOperationId, data.clientOperationId),
+                  eq(shotImages.shotId, data.entityId),
+                ),
+              })
+            : undefined
+          if (!existing) throw new Error('Could not save this picture')
+          await cleanupUncommittedUpload(storagePath)
+          return {
+            ...existing,
+            url: storage.getUrl(existing.storagePath),
+          }
+        }
         image = expectReturnedRow(result, 'Image')
         break
       }
@@ -374,6 +420,7 @@ async function deleteVisitImageRecord(
 export const deleteEntityImage = createServerFn({ method: 'POST' })
   .validator(entityImageIdSchema)
   .handler(async ({ data }) => {
+    let deleted = false
     await db.transaction(async (tx) => {
       const image = await deleteImageRecord(
         tx,
@@ -381,9 +428,11 @@ export const deleteEntityImage = createServerFn({ method: 'POST' })
         data.entityId,
         data.imageId,
       )
+      if (!image && data.idempotent) return
       const persistedImage = expectReturnedRow(image, 'Image')
       await queueMediaCleanup(tx, [persistedImage.storagePath])
+      deleted = true
     })
 
-    await drainMediaCleanupQueue()
+    if (deleted) await drainMediaCleanupQueue()
   })

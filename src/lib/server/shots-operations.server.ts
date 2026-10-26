@@ -27,6 +27,7 @@ import {
   replaceShotAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
+import { pruneClientOperations } from '@/lib/server/client-operations.server'
 import {
   assertDrinkSelection,
   assertDrinkTypeAvailableForBrewingMethod,
@@ -34,6 +35,7 @@ import {
 } from '@/lib/server/drink-options.server'
 import { findCurrentOwnerMachineSettingRevisionId } from '@/lib/server/gear-properties.server'
 import { deleteEntityWithMedia } from '@/lib/server/media-lifecycle.server'
+import { matchesRevision } from '@/lib/server/revision.server'
 import { readTasteProfile } from '@/lib/server/settings.server'
 import type {
   CreateShotAndSaveRecipeInput,
@@ -403,6 +405,7 @@ async function createShotInTransaction(
         .insert(clientOperations)
         .values({ operationId, brewId: existingShot.id })
         .onConflictDoNothing({ target: clientOperations.operationId })
+      await pruneClientOperations(tx)
       return {
         shot: existingShot,
         created: false,
@@ -415,6 +418,7 @@ async function createShotInTransaction(
       .values({ operationId })
       .onConflictDoNothing({ target: clientOperations.operationId })
       .returning()
+    await pruneClientOperations(tx)
 
     if (!operation) {
       const existingOperation = await tx.query.clientOperations.findFirst({
@@ -555,16 +559,40 @@ export function updateShotOperation(
   data: ReturnType<typeof shotUpdateSchema.parse>,
 ) {
   return db.transaction(async (tx) => {
-    const method = await getBrewingMethod(tx, data.brewingMethodId)
     const existingShot = await tx.query.shots.findFirst({
       columns: {
         brewingMethodId: true,
         drinkTypeId: true,
         machineId: true,
+        revision: true,
+        updatedAt: true,
       },
       where: eq(shots.id, data.id),
     })
     if (!existingShot) throw new ShotInputError('Brew not found')
+    if (data.clientOperationId) {
+      const completed = await tx.query.clientOperations.findFirst({
+        where: eq(clientOperations.operationId, data.clientOperationId),
+      })
+      if (completed?.brewId) {
+        const existing = await tx.query.shots.findFirst({
+          where: eq(shots.id, completed.brewId),
+        })
+        if (existing) return existing
+      }
+    }
+    const method = await getBrewingMethod(tx, data.brewingMethodId)
+    if (
+      (data.baseRevision !== undefined &&
+        existingShot.revision !== data.baseRevision) ||
+      (data.baseRevision === undefined &&
+        data.baseUpdatedAt &&
+        existingShot.updatedAt.toISOString() !== data.baseUpdatedAt)
+    ) {
+      throw new ShotInputError(
+        'This brew changed on the server. Reload and try again.',
+      )
+    }
     if (
       existingShot.brewingMethodId !== data.brewingMethodId ||
       existingShot.drinkTypeId !== data.drinkTypeId
@@ -591,10 +619,28 @@ export function updateShotOperation(
       .set({
         ...values,
         ...(machineChanged ? { machineSettingRevisionId } : undefined),
+        revision: sql`${shots.revision} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(shots.id, id))
+      .where(
+        and(
+          eq(shots.id, id),
+          data.baseRevision !== undefined
+            ? eq(shots.revision, data.baseRevision)
+            : matchesRevision(shots.updatedAt, data.baseUpdatedAt),
+        ),
+      )
       .returning()
+    if (!shot) {
+      const current = await tx.query.shots.findFirst({
+        columns: { id: true },
+        where: eq(shots.id, id),
+      })
+      if (!current) throw new ShotInputError('Brew not found')
+      throw new ShotInputError(
+        'This brew changed on the server. Reload and try again.',
+      )
+    }
     const persistedShot = expectReturnedRow(shot, 'Shot')
 
     if (data.drinkOptionValueIds !== undefined) {
@@ -618,12 +664,30 @@ export function updateShotOperation(
         )
       }
     }
+    if (data.clientOperationId) {
+      await tx
+        .insert(clientOperations)
+        .values({ operationId: data.clientOperationId, brewId: id })
+        .onConflictDoNothing({ target: clientOperations.operationId })
+      await pruneClientOperations(tx)
+    }
     return persistedShot
   })
 }
 
-export function deleteShotOperation(id: number) {
-  return deleteEntityWithMedia('shots', id)
+export async function deleteShotOperation(data: {
+  readonly id: number
+  readonly baseRevision?: number
+  readonly baseUpdatedAt?: string
+  readonly idempotent?: boolean
+}) {
+  await deleteEntityWithMedia('shots', data.id, {
+    expectedRevision: data.baseRevision,
+    expectedUpdatedAt: data.baseUpdatedAt
+      ? new Date(data.baseUpdatedAt)
+      : undefined,
+    idempotent: data.idempotent,
+  })
 }
 
 export async function getLastShotForBeanAndMethodOperation(data: {

@@ -1184,14 +1184,19 @@ export const recipes = pgTable(
   {
     id: serial('id').primaryKey(),
     name: text('name').notNull(),
+    clientOperationId: text('client_operation_id'),
     drinkTypeId: integer('drink_type_id').references(() => drinkTypes.id, {
       onDelete: 'set null',
     }),
+    revision: integer('revision').default(0).notNull(),
     ...shotContextColumns(),
     ...shotParameterColumns(5),
     ...timestamps(),
   },
   (table) => [
+    uniqueIndex('recipes_client_operation_id_unique').on(
+      table.clientOperationId,
+    ),
     check(
       'recipes_ratio_basis_check',
       sql`${table.ratioBasis} in ('target_yield', 'brew_water')`,
@@ -1319,6 +1324,7 @@ export const shots = pgTable(
   {
     id: serial('id').primaryKey(),
     brewedAt: timestamp('brewed_at').defaultNow().notNull(),
+    revision: integer('revision').default(0).notNull(),
     ...shotContextColumns(),
     beanPurchaseId: integer('bean_purchase_id'),
     drinkTypeId: integer('drink_type_id').references(() => drinkTypes.id, {
@@ -1409,9 +1415,16 @@ export const clientOperations = pgTable(
     brewId: integer('brew_id').references(() => shots.id, {
       onDelete: 'set null',
     }),
+    recipeId: integer('recipe_id').references(() => recipes.id, {
+      onDelete: 'set null',
+    }),
     createdAt: createdAt(),
   },
-  (table) => [index('client_operations_brew_id_idx').on(table.brewId)],
+  (table) => [
+    index('client_operations_brew_id_idx').on(table.brewId),
+    index('client_operations_recipe_id_idx').on(table.recipeId),
+    index('client_operations_created_at_idx').on(table.createdAt),
+  ],
 )
 
 export const shotsRelations = relations(shots, ({ one, many }) => ({
@@ -1609,10 +1622,16 @@ export const shotImages = pgTable(
     shotId: integer('brew_id')
       .references(() => shots.id, { onDelete: 'cascade' })
       .notNull(),
+    clientOperationId: text('client_operation_id'),
     ...imageFile(),
     createdAt: createdAt(),
   },
-  (table) => [index('brew_images_brew_id_idx').on(table.shotId)],
+  (table) => [
+    index('brew_images_brew_id_idx').on(table.shotId),
+    uniqueIndex('brew_images_client_operation_id_unique').on(
+      table.clientOperationId,
+    ),
+  ],
 )
 
 export const shotImagesRelations = relations(shotImages, ({ one }) => ({

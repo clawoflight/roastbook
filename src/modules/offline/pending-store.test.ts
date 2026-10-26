@@ -2,9 +2,13 @@ import 'fake-indexeddb/auto'
 import { afterAll, beforeEach, describe, expect, test } from 'bun:test'
 import { newShotPayload } from '@/lib/new-shot-payload'
 import { EMPTY_SHOT_FORM_VALUES } from '@/modules/brews/shot-form-values'
+import { enqueueBrewSaveToRecipe } from '@/modules/offline/entity-operations'
+import { getLocalEntity } from '@/modules/offline/local-data'
+import { getOperation } from '@/modules/offline/operation-queue'
 import {
   discardPendingBrew,
   enqueuePendingBrew,
+  updateQueuedBrewPayload,
   usePendingBrewsStore,
 } from '@/modules/offline/pending-store'
 import {
@@ -89,6 +93,42 @@ describe('pending brew store', () => {
 
     expect(syncRequests).toBe(1)
     expect(usePendingBrewsStore.getState().items).toHaveLength(1)
+  })
+
+  test('creates a local entity for a queued brew', async () => {
+    const item = pendingBrew()
+    await enqueuePendingBrew(item)
+
+    expect(await getLocalEntity('brew', item.operationId)).toMatchObject({
+      localId: item.operationId,
+      data: item.payload,
+      syncState: 'pending',
+      serverId: null,
+    })
+  })
+
+  test('updates a queued save-to-recipe shot without dropping its target', async () => {
+    const item = pendingBrew()
+    await enqueueBrewSaveToRecipe(
+      item.operationId,
+      {
+        shot: item.payload,
+        target: { name: 'Morning' },
+      },
+      { label: 'Konga', detail: 'New recipe' },
+    )
+
+    await updateQueuedBrewPayload(item.operationId, {
+      ...item.payload,
+      notes: 'Updated after tasting',
+    })
+
+    expect(await getOperation(item.operationId)).toMatchObject({
+      payload: {
+        shot: { notes: 'Updated after tasting' },
+        target: { name: 'Morning' },
+      },
+    })
   })
 
   test('records a failed read and clears it after a successful refresh', async () => {

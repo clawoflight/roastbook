@@ -227,8 +227,49 @@ async function deleteVisitRow(
 export async function deleteEntityWithMedia(
   entityType: MediaEntityType,
   entityId: number,
+  options: {
+    readonly expectedRevision?: number
+    readonly expectedUpdatedAt?: Date
+    readonly idempotent?: boolean
+  } = {},
 ): Promise<void> {
+  if (
+    entityType !== 'shots' &&
+    (options.expectedRevision !== undefined ||
+      options.expectedUpdatedAt ||
+      options.idempotent)
+  ) {
+    throw new Error('Revision-aware deletion is only supported for brews')
+  }
   await db.transaction(async (tx) => {
+    if (
+      entityType === 'shots' &&
+      (options.expectedRevision !== undefined ||
+        options.expectedUpdatedAt ||
+        options.idempotent)
+    ) {
+      const [existing] = await tx
+        .select({ revision: shots.revision, updatedAt: shots.updatedAt })
+        .from(shots)
+        .where(eq(shots.id, entityId))
+        .for('update')
+      if (!existing) {
+        if (options.idempotent) return
+        throw new Error('Brew not found')
+      }
+      if (
+        (options.expectedRevision !== undefined &&
+          existing.revision !== options.expectedRevision) ||
+        (options.expectedRevision === undefined &&
+          options.expectedUpdatedAt &&
+          existing.updatedAt.getTime() !== options.expectedUpdatedAt.getTime())
+      ) {
+        throw new Error(
+          'This brew changed on the server. Reload and try again.',
+        )
+      }
+    }
+
     const paths = await selectEntityImagePaths(tx, entityType, entityId)
     await queueMediaCleanup(tx, paths)
     await deleteEntityRow(tx, entityType, entityId)

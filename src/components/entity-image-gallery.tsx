@@ -8,6 +8,7 @@ import {
   X,
 } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
+import { toast } from 'sonner'
 import { ImageWithFallback } from '@/components/image-with-fallback'
 import { PictureUploader } from '@/components/picture-uploader'
 import { Button } from '@/components/ui/button'
@@ -27,20 +28,29 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useImageUpload } from '@/hooks/use-image-upload'
+import { useOnlineStatus } from '@/hooks/use-online-status'
+import { createEntityImageUploadFormData } from '@/lib/entity-image-upload-form'
 import { getErrorMessage } from '@/lib/error-message'
 import type { ImageFile } from '@/lib/image-file'
+import { isImageUploadNetworkError } from '@/lib/image-upload-error'
 import { imageUrl, thumbnailUrl } from '@/lib/image-url'
-import { deleteEntityImage, setImageAsThumbnail } from '@/lib/server/images'
 import {
-  type EntityImageUploadFailure,
-  uploadEntityImages,
-} from '@/lib/upload-entity-images'
+  deleteEntityImage,
+  setImageAsThumbnail,
+  uploadEntityImage,
+  uploadEntityImageBase64,
+} from '@/lib/server/images'
+import type { EntityImageUploadFailure } from '@/lib/upload-entity-images'
 import { cn } from '@/lib/utils'
+import {
+  enqueueImageDelete,
+  enqueueImageUpload,
+} from '@/modules/offline/entity-operations'
 
 export interface EntityImage {
   readonly id: number
   readonly storagePath: string
-  readonly isThumbnail: boolean
+  readonly isThumbnail?: boolean
   readonly beanPurchaseId?: number
 }
 
@@ -53,7 +63,7 @@ interface EntityImageAction {
 }
 
 interface EntityImageGalleryProps {
-  readonly entityType: 'bean-purchases' | 'gear'
+  readonly entityType: 'bean-purchases' | 'gear' | 'shots'
   readonly entityId: number
   readonly images: readonly EntityImage[]
   readonly onImagesChange: () => void | Promise<void>
@@ -79,6 +89,7 @@ export function EntityImageGallery({
   >([])
   const [galleryError, setGalleryError] = useState<string | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const isOnline = useOnlineStatus()
   const {
     images: queuedImages,
     fileInputRef,
@@ -100,14 +111,95 @@ export function EntityImageGallery({
       current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
     )
     setIsUploading(true)
+
+    const entityLabelForFiles =
+      entityType === 'bean-purchases'
+        ? 'Coffee'
+        : entityType === 'gear'
+          ? 'Gear'
+          : 'Brew'
+    const canQueueOffline = entityType === 'shots'
+    const uploaded: ImageFile[] = []
+    const queued: ImageFile[] = []
+    const failures: EntityImageUploadFailure[] = []
+
     try {
-      const result = await uploadEntityImages(entityType, entityId, pictures)
-      removeImages(result.uploaded)
+      if (!isOnline && !canQueueOffline) {
+        setGalleryError('Pictures for this item need a connection')
+        return
+      }
+
+      for (const picture of pictures) {
+        const clientOperationId = crypto.randomUUID()
+        if (isOnline) {
+          try {
+            await uploadEntityImage({
+              data: createEntityImageUploadFormData(
+                entityType,
+                entityId,
+                picture.file,
+                clientOperationId,
+              ),
+            })
+            uploaded.push(picture)
+            continue
+          } catch (error) {
+            if (!canQueueOffline && isImageUploadNetworkError(error)) {
+              try {
+                await uploadEntityImageBase64({
+                  data: {
+                    entityType,
+                    entityId,
+                    fileBase64: picture.base64,
+                    filename: picture.file.name,
+                    mimeType: picture.file.type,
+                    sizeBytes: picture.file.size,
+                  },
+                })
+                uploaded.push(picture)
+                continue
+              } catch (fallbackError) {
+                failures.push({ image: picture, error: fallbackError })
+                continue
+              }
+            }
+            if (!canQueueOffline || !isImageUploadNetworkError(error)) {
+              failures.push({ image: picture, error })
+              continue
+            }
+          }
+        }
+
+        try {
+          await enqueueImageUpload({
+            entityType,
+            entityId,
+            file: picture.file,
+            clientOperationId,
+            details: {
+              label: entityLabelForFiles,
+              detail: picture.file.name,
+            },
+          })
+          queued.push(picture)
+        } catch (error) {
+          failures.push({ image: picture, error })
+        }
+      }
+
+      removeImages([...uploaded, ...queued])
       setUploadFailures((current) => [
         ...current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
-        ...result.failures,
+        ...failures,
       ])
-      if (result.uploaded.length > 0) {
+      if (queued.length > 0) {
+        toast.success(
+          queued.length === 1
+            ? 'Picture saved on this device'
+            : 'Pictures saved on this device',
+        )
+      }
+      if (uploaded.length > 0) {
         try {
           await onImagesChange()
         } catch (error) {
@@ -120,10 +212,7 @@ export function EntityImageGallery({
         }
       }
     } catch (error) {
-      setUploadFailures((current) => [
-        ...current.filter(({ image }) => !attemptedPreviews.has(image.preview)),
-        ...pictures.map((image) => ({ image, error })),
-      ])
+      setGalleryError(getErrorMessage(error, 'Could not save these pictures'))
     } finally {
       setIsUploading(false)
     }
@@ -135,6 +224,7 @@ export function EntityImageGallery({
       : entityId
 
   const handleSetThumbnail = async (image: EntityImage) => {
+    if (entityType === 'shots') return
     setGalleryError(null)
     setIsSettingThumbnail(image.id)
     try {
@@ -166,6 +256,29 @@ export function EntityImageGallery({
     setGalleryError(null)
     setIsDeletingImage(image.id)
     try {
+      if (!isOnline) {
+        if (entityType !== 'shots') {
+          setGalleryError('Removing pictures for this item needs a connection')
+          return
+        }
+        await enqueueImageDelete({
+          entityType,
+          entityId: entityIdForImage(image),
+          imageId: image.id,
+          details: { label: 'Brew', detail: 'Remove picture' },
+        })
+        if (!navigator.onLine) {
+          try {
+            await onImagesChange()
+          } catch {
+            // removeServerEntityImage already updated the cached brew. Only
+            // this rendered gallery may be stale until the next refresh.
+          }
+        }
+        toast.success('Picture removal saved on this device')
+        return
+      }
+
       try {
         await deleteEntityImage({
           data: {
@@ -175,6 +288,34 @@ export function EntityImageGallery({
           },
         })
       } catch (error) {
+        if (
+          entityType === 'shots' &&
+          (!navigator.onLine || isImageUploadNetworkError(error))
+        ) {
+          try {
+            await enqueueImageDelete({
+              entityType,
+              entityId: entityIdForImage(image),
+              imageId: image.id,
+              details: { label: 'Brew', detail: 'Remove picture' },
+            })
+            if (!navigator.onLine) {
+              try {
+                await onImagesChange()
+              } catch {
+                // removeServerEntityImage already updated the cached brew. Only
+                // this rendered gallery may be stale until the next refresh.
+              }
+            }
+            toast.success('Picture removal saved on this device')
+            return
+          } catch (queueError) {
+            setGalleryError(
+              getErrorMessage(queueError, 'Could not save this removal'),
+            )
+            return
+          }
+        }
         setGalleryError(getErrorMessage(error, 'Failed to delete image'))
         return
       }
@@ -190,7 +331,12 @@ export function EntityImageGallery({
     }
   }
 
-  const entityLabel = entityType === 'bean-purchases' ? 'Coffee' : 'Gear'
+  const entityLabel =
+    entityType === 'bean-purchases'
+      ? 'Coffee'
+      : entityType === 'gear'
+        ? 'Gear'
+        : 'Brew'
   const lightboxImage =
     lightboxIndex === null ? undefined : images[lightboxIndex]
 
@@ -294,32 +440,34 @@ export function EntityImageGallery({
                         {imageAction.help}
                       </div>
                     )}
-                    <Button
-                      size="icon"
-                      variant={image.isThumbnail ? 'default' : 'secondary'}
-                      className="pointer-events-auto absolute left-1 top-1 size-7 after:absolute after:-inset-2 focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-solid focus-visible:!outline-primary"
-                      onClick={() => handleSetThumbnail(image)}
-                      disabled={
-                        isSettingThumbnail === image.id || image.isThumbnail
-                      }
-                      aria-label={
-                        image.isThumbnail
-                          ? 'Current thumbnail'
-                          : `Set picture ${index + 1} as thumbnail`
-                      }
-                      title={
-                        image.isThumbnail
-                          ? 'Current thumbnail'
-                          : 'Set as thumbnail'
-                      }
-                    >
-                      <Star
-                        className={cn(
-                          'size-3.5',
-                          image.isThumbnail && 'fill-current',
-                        )}
-                      />
-                    </Button>
+                    {entityType !== 'shots' ? (
+                      <Button
+                        size="icon"
+                        variant={image.isThumbnail ? 'default' : 'secondary'}
+                        className="pointer-events-auto absolute left-1 top-1 size-7 after:absolute after:-inset-2 focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-solid focus-visible:!outline-primary"
+                        onClick={() => handleSetThumbnail(image)}
+                        disabled={
+                          isSettingThumbnail === image.id || image.isThumbnail
+                        }
+                        aria-label={
+                          image.isThumbnail
+                            ? 'Current thumbnail'
+                            : `Set picture ${index + 1} as thumbnail`
+                        }
+                        title={
+                          image.isThumbnail
+                            ? 'Current thumbnail'
+                            : 'Set as thumbnail'
+                        }
+                      >
+                        <Star
+                          className={cn(
+                            'size-3.5',
+                            image.isThumbnail && 'fill-current',
+                          )}
+                        />
+                      </Button>
+                    ) : null}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -392,10 +540,16 @@ export function EntityImageGallery({
             prompt={
               entityType === 'bean-purchases'
                 ? 'Add pictures of this coffee'
-                : 'Add equipment pictures'
+                : entityType === 'gear'
+                  ? 'Add equipment pictures'
+                  : 'Add pictures of this brew'
             }
             previewAltPrefix={
-              entityType === 'bean-purchases' ? 'Coffee' : 'Gear'
+              entityType === 'bean-purchases'
+                ? 'Coffee'
+                : entityType === 'gear'
+                  ? 'Gear'
+                  : 'Brew'
             }
             isBusy={isUploading}
             statusText={isUploading ? 'Uploading pictures' : undefined}

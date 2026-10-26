@@ -5,9 +5,10 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { DeleteConfirmation } from '@/components/delete-confirmation'
+import { EntityImageGallery } from '@/components/entity-image-gallery'
 import { EntityNotFound } from '@/components/entity-not-found'
 import { Page, PageHeader } from '@/components/page-layout'
 import { AiRecommendationDialog } from '@/components/shots/ai-recommendation-dialog'
@@ -25,6 +26,7 @@ import { Separator } from '@/components/ui/separator'
 import { StarRating } from '@/components/ui/star-rating'
 import { useDateTimeFormatter } from '@/hooks/use-date-formatter'
 import { useNumberFormatter } from '@/hooks/use-number-formatter'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 import { useTasteProfile } from '@/hooks/use-taste-profile'
 import { getErrorMessage } from '@/lib/error-message'
 import { hasExtractionBalance } from '@/lib/extraction-balance'
@@ -36,6 +38,11 @@ import {
 } from '@/lib/shot-sensory'
 import { enabledSensoryRatingKeys } from '@/lib/taste-profile'
 import { isNegativeTasteTag } from '@/lib/taste-tags'
+import {
+  enqueueEntityDelete,
+  enqueueSavedBrewToRecipe,
+} from '@/modules/offline/entity-operations'
+import { isNetworkError } from '@/modules/offline/errors'
 
 const routeApi = getRouteApi('/brews/$shotId')
 
@@ -56,16 +63,36 @@ function ShotDataFields({
 
 export function BrewDetailPage() {
   const formatDateTime = useDateTimeFormatter()
-  const { shot, recipes, editData, recommendationEnabled } =
-    routeApi.useLoaderData()
+  const {
+    shot,
+    recipes,
+    editData,
+    recommendationEnabled,
+    offlineSnapshotSavedAt,
+  } = routeApi.useLoaderData()
   const { edit: isEditing = false } = routeApi.useSearch()
   const formatNumber = useNumberFormatter()
   const tasteProfile = useTasteProfile()
   const navigate = useNavigate({ from: '/brews/$shotId' })
   const router = useRouter()
+  const isOnline = useOnlineStatus()
 
   const [isSavingRecipe, setIsSavingRecipe] = useState(false)
   const editButtonRef = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    if (!shot || offlineSnapshotSavedAt) return
+    void import('@/modules/offline/brew-cache')
+      .then(({ cacheBrewDetail }) =>
+        cacheBrewDetail(shot.id, {
+          shot,
+          recipes,
+          editData,
+          recommendationEnabled,
+        }),
+      )
+      .catch(() => undefined)
+  }, [shot, recipes, editData, recommendationEnabled, offlineSnapshotSavedAt])
 
   if (!shot) {
     return (
@@ -73,13 +100,49 @@ export function BrewDetailPage() {
     )
   }
 
+  const baseRevision = String(shot.revision)
+
   const handleDelete = async () => {
+    const queueDelete = async (baseRevision: string | null) => {
+      await enqueueEntityDelete({
+        entityType: 'brew',
+        entityId: shot.id,
+        details: {
+          label: shot.bean?.name ?? 'Brew',
+          detail: shot.brewingMethod.name,
+        },
+        baseRevision,
+      })
+      toast.success('Brew deletion saved on this device')
+      await navigate({ to: '/brews/pending' })
+    }
+
     try {
-      await deleteShot({ data: shot.id })
+      if (!isOnline) {
+        await queueDelete(baseRevision)
+        return
+      }
+
+      await deleteShot({
+        data: { id: shot.id, baseRevision: shot.revision },
+      })
+      const { removeCachedBrewDetail } = await import(
+        '@/modules/offline/brew-cache'
+      )
+      await removeCachedBrewDetail(shot.id).catch(() => undefined)
       await router.invalidate()
       await navigate({ to: '/brews' })
-    } catch {
-      toast.error('Failed to delete brew')
+    } catch (error) {
+      if (isNetworkError(error) || !navigator.onLine) {
+        try {
+          await queueDelete(baseRevision)
+          return
+        } catch {
+          toast.error('Could not save this deletion on this device')
+          return
+        }
+      }
+      toast.error(getErrorMessage(error, 'Failed to delete brew'))
     }
   }
 
@@ -94,14 +157,39 @@ export function BrewDetailPage() {
     requestAnimationFrame(() => editButtonRef.current?.focus())
   }
 
+  const handleQueued = async () => {
+    await navigate({ to: '/brews/pending' })
+  }
+
   const handleSaveRecipe = async (target: SaveToRecipeTarget) => {
     const isNewRecipe = target.kind === 'new'
+    const clientOperationId = crypto.randomUUID()
+    const targetPayload = isNewRecipe
+      ? { name: target.name }
+      : { recipeId: target.recipeId }
+    const queueSaveRecipe = async () => {
+      await enqueueSavedBrewToRecipe({
+        shotId: shot.id,
+        target: targetPayload,
+        clientOperationId,
+        details: {
+          label: shot.bean?.name ?? 'Brew',
+          detail: isNewRecipe
+            ? `New recipe: ${target.name}`
+            : 'Existing recipe',
+        },
+      })
+      toast.success('Recipe save queued on this device')
+      await navigate({ to: '/brews/pending' })
+      return true
+    }
+
     setIsSavingRecipe(true)
     try {
+      if (!isOnline) return await queueSaveRecipe()
+
       const recipe = await saveShotAsRecipe({
-        data: isNewRecipe
-          ? { shotId: shot.id, name: target.name }
-          : { shotId: shot.id, recipeId: target.recipeId },
+        data: { shotId: shot.id, ...targetPayload, clientOperationId },
       })
       if (!recipe) {
         toast.error('Could not save this recipe')
@@ -111,6 +199,16 @@ export function BrewDetailPage() {
       toast.success(isNewRecipe ? 'Recipe created' : 'Recipe updated')
       return true
     } catch (error) {
+      if (isNetworkError(error) || !navigator.onLine) {
+        try {
+          return await queueSaveRecipe()
+        } catch (queueError) {
+          toast.error(
+            getErrorMessage(queueError, 'Could not queue this recipe save'),
+          )
+          return false
+        }
+      }
       toast.error(getErrorMessage(error, 'Could not save this recipe'))
       return false
     } finally {
@@ -265,12 +363,27 @@ export function BrewDetailPage() {
         }
       />
 
+      {offlineSnapshotSavedAt ? (
+        <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          Showing a saved copy from {formatDateTime(offlineSnapshotSavedAt)}.
+        </p>
+      ) : null}
+
+      <EntityImageGallery
+        entityType="shots"
+        entityId={shot.id}
+        images={shot.images}
+        editable
+        onImagesChange={() => router.invalidate()}
+      />
+
       {isEditing && editData ? (
         <ShotEditForm
           shot={shot}
           editData={editData}
           onCancel={handleCancel}
           onSaved={handleSaved}
+          onQueued={handleQueued}
         />
       ) : (
         <>

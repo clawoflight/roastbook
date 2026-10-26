@@ -1,8 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, count, desc, eq, exists, ilike, or } from 'drizzle-orm'
+import { and, asc, count, desc, eq, exists, ilike, or, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { db } from '@/db'
-import { beans, brewingMethods, recipes } from '@/db/schema'
+import { beans, brewingMethods, clientOperations, recipes } from '@/db/schema'
 import { escapedContainsPattern } from '@/lib/collection-query'
 import { expectReturnedRow } from '@/lib/domain-errors'
 import { getPaginationWindow } from '@/lib/pagination'
@@ -11,17 +11,20 @@ import {
   replaceRecipeAccessoryGear,
   withAccessoryGearIds,
 } from '@/lib/server/accessory-gear.server'
+import { pruneClientOperations } from '@/lib/server/client-operations.server'
 import {
   assertDrinkSelection,
   assertDrinkTypeAvailableForBrewingMethod,
   replaceRecipeDrinkOptions,
 } from '@/lib/server/drink-options.server'
+import { matchesRevision } from '@/lib/server/revision.server'
 import {
   projectAccessoryGearIds,
   projectShotParameters,
 } from '@/lib/server/shot-parameter-projection'
 import { saveShotToRecipeInTransaction } from '@/lib/server/shot-recipes.server'
 import {
+  deleteRecordSchema,
   nameSchema,
   positiveIdSchema,
   shotUpdateSchema,
@@ -41,7 +44,12 @@ const recipeUpdateSchema = shotUpdateSchema
     tasteTagIds: true,
   })
   .extend({ name: nameSchema })
-const recipeCreateSchema = recipeUpdateSchema.omit({ id: true })
+const recipeCreateSchema = recipeUpdateSchema
+  .omit({
+    id: true,
+    baseUpdatedAt: true,
+  })
+  .extend({ clientOperationId: z.uuid().optional() })
 type RecipeUpdateInput = z.infer<typeof recipeUpdateSchema>
 type RecipeCreateInput = z.infer<typeof recipeCreateSchema>
 type RecipeInput = RecipeUpdateInput | RecipeCreateInput
@@ -84,6 +92,7 @@ function projectRecipeWrite(
     beanId,
     drinkTypeId,
     drinkOptionValueIds: _drinkOptionValueIds,
+    clientOperationId: _clientOperationId,
     ...parameters
   } = data
   return {
@@ -207,6 +216,23 @@ export const updateRecipe = createServerFn({ method: 'POST' })
   .validator((input: unknown) => validateRecipeInput(recipeUpdateSchema, input))
   .handler(async ({ data }) =>
     db.transaction(async (tx) => {
+      if (data.clientOperationId) {
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, data.clientOperationId),
+        })
+        if (completed) {
+          if (completed.recipeId) {
+            const existing = await tx.query.recipes.findFirst({
+              where: eq(recipes.id, completed.recipeId),
+            })
+            if (existing) return existing
+          }
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
+        }
+      }
+
       const method = await getBrewingMethod(tx, data.brewingMethodId)
       await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
       await assertDrinkTypeAvailableForBrewingMethod(
@@ -214,13 +240,49 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         data.brewingMethodId,
         data.drinkTypeId,
       )
-      const { id, ...input } = data
+      const { id, baseRevision, baseUpdatedAt, ...input } = data
+      const existingRecipe = await tx.query.recipes.findFirst({
+        columns: { revision: true, updatedAt: true },
+        where: eq(recipes.id, id),
+      })
+      if (!existingRecipe) throw new RecipeInputError('Recipe not found')
+      if (
+        (baseRevision !== undefined &&
+          existingRecipe.revision !== baseRevision) ||
+        (baseRevision === undefined &&
+          baseUpdatedAt &&
+          existingRecipe.updatedAt.toISOString() !== baseUpdatedAt)
+      ) {
+        throw new RecipeInputError(
+          'This recipe changed on the server. Reload and try again.',
+        )
+      }
       const projected = projectRecipeWrite(input, method.enabledParameters)
       const [recipe] = await tx
         .update(recipes)
-        .set(projected.values)
-        .where(eq(recipes.id, id))
+        .set({
+          ...projected.values,
+          revision: sql`${recipes.revision} + 1`,
+        })
+        .where(
+          and(
+            eq(recipes.id, id),
+            baseRevision !== undefined
+              ? eq(recipes.revision, baseRevision)
+              : matchesRevision(recipes.updatedAt, baseUpdatedAt),
+          ),
+        )
         .returning()
+      if (!recipe) {
+        const current = await tx.query.recipes.findFirst({
+          columns: { id: true },
+          where: eq(recipes.id, id),
+        })
+        if (!current) throw new RecipeInputError('Recipe not found')
+        throw new RecipeInputError(
+          'This recipe changed on the server. Reload and try again.',
+        )
+      }
       const persistedRecipe = expectReturnedRow(recipe, 'Recipe')
       await replaceRecipeAccessoryGear(tx, id, projected.accessoryGearIds)
       await replaceRecipeDrinkOptions(
@@ -228,6 +290,16 @@ export const updateRecipe = createServerFn({ method: 'POST' })
         persistedRecipe.id,
         data.drinkOptionValueIds ?? [],
       )
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            recipeId: persistedRecipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
+      }
       return persistedRecipe
     }),
   )
@@ -236,6 +308,22 @@ export const createRecipe = createServerFn({ method: 'POST' })
   .validator((input: unknown) => validateRecipeInput(recipeCreateSchema, input))
   .handler(async ({ data }) =>
     db.transaction(async (tx) => {
+      const operationId = data.clientOperationId
+      if (operationId) {
+        const existing = await tx.query.recipes.findFirst({
+          where: eq(recipes.clientOperationId, operationId),
+        })
+        if (existing) return existing
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, operationId),
+        })
+        if (completed) {
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
+        }
+      }
+
       const method = await getBrewingMethod(tx, data.brewingMethodId)
       await assertDrinkSelection(tx, data.drinkTypeId, data.drinkOptionValueIds)
       await assertDrinkTypeAvailableForBrewingMethod(
@@ -246,8 +334,21 @@ export const createRecipe = createServerFn({ method: 'POST' })
       const projected = projectRecipeWrite(data, method.enabledParameters)
       const [recipe] = await tx
         .insert(recipes)
-        .values(projected.values)
+        .values({
+          ...projected.values,
+          clientOperationId: operationId ?? null,
+        })
+        .onConflictDoNothing({ target: recipes.clientOperationId })
         .returning()
+      if (!recipe) {
+        const existing = operationId
+          ? await tx.query.recipes.findFirst({
+              where: eq(recipes.clientOperationId, operationId),
+            })
+          : undefined
+        if (existing) return existing
+        throw new RecipeInputError('Could not create recipe')
+      }
       const persistedRecipe = expectReturnedRow(recipe, 'Recipe')
       await replaceRecipeAccessoryGear(
         tx,
@@ -259,6 +360,16 @@ export const createRecipe = createServerFn({ method: 'POST' })
         persistedRecipe.id,
         data.drinkOptionValueIds ?? [],
       )
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            recipeId: persistedRecipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
+      }
       return persistedRecipe
     }),
   )
@@ -279,6 +390,7 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
       const { accessoryGearLinks, drinkOptions, ...sourceRecipe } = source
       const {
         id: _sourceId,
+        clientOperationId: _sourceOperationId,
         createdAt: _sourceCreatedAt,
         updatedAt: _sourceUpdatedAt,
         ...recipeValues
@@ -309,17 +421,70 @@ export const duplicateRecipe = createServerFn({ method: 'POST' })
 export const saveShotAsRecipe = createServerFn({ method: 'POST' })
   .validator(shotRecipeTargetSchema)
   .handler(async ({ data }) =>
-    db.transaction((tx) =>
-      saveShotToRecipeInTransaction(tx, data.shotId, data),
-    ),
+    db.transaction(async (tx) => {
+      if (data.clientOperationId) {
+        const completed = await tx.query.clientOperations.findFirst({
+          where: eq(clientOperations.operationId, data.clientOperationId),
+        })
+        if (completed) {
+          if (completed.recipeId) {
+            const existing = await tx.query.recipes.findFirst({
+              where: eq(recipes.id, completed.recipeId),
+            })
+            if (existing) return existing
+          }
+          throw new RecipeInputError(
+            'This recipe was already synced and deleted',
+          )
+        }
+      }
+
+      const recipe = await saveShotToRecipeInTransaction(tx, data.shotId, data)
+      if (data.clientOperationId) {
+        await tx
+          .insert(clientOperations)
+          .values({
+            operationId: data.clientOperationId,
+            brewId: data.shotId,
+            recipeId: recipe.id,
+          })
+          .onConflictDoNothing({ target: clientOperations.operationId })
+        await pruneClientOperations(tx)
+      }
+      return recipe
+    }),
   )
 
 export const deleteRecipe = createServerFn({ method: 'POST' })
-  .validator(positiveIdSchema)
-  .handler(async ({ data: id }) => {
-    const [recipe] = await db
-      .delete(recipes)
-      .where(eq(recipes.id, id))
-      .returning({ id: recipes.id })
-    expectReturnedRow(recipe, 'Recipe')
+  .validator((input: unknown) => {
+    const data = deleteRecordSchema.parse(input)
+    return typeof data === 'number' ? { id: data } : data
+  })
+  .handler(async ({ data }) => {
+    await db.transaction(async (tx) => {
+      const [recipe] = await tx
+        .delete(recipes)
+        .where(
+          and(
+            eq(recipes.id, data.id),
+            data.baseRevision !== undefined
+              ? eq(recipes.revision, data.baseRevision)
+              : matchesRevision(recipes.updatedAt, data.baseUpdatedAt),
+          ),
+        )
+        .returning({ id: recipes.id })
+
+      if (recipe) return
+      const existing = await tx.query.recipes.findFirst({
+        columns: { id: true },
+        where: eq(recipes.id, data.id),
+      })
+      if (!existing) {
+        if (data.idempotent) return
+        throw new RecipeInputError('Recipe not found')
+      }
+      throw new RecipeInputError(
+        'This recipe changed on the server. Reload and try again.',
+      )
+    })
   })

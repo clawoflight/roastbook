@@ -99,6 +99,7 @@ import {
   shotFormValuesWithGearSet,
   shotFormValuesWithRecipe,
 } from '@/modules/brews/shot-form-values'
+import { enqueueBrewSaveToRecipe } from '@/modules/offline/entity-operations'
 import { isNetworkError } from '@/modules/offline/errors'
 import {
   enqueuePendingBrew,
@@ -501,17 +502,57 @@ export function NewShotForm({
       return true
     }
 
-    setIsSubmitting(true)
-    try {
-      if (targetRecipe && !isOnline) {
-        toast.error(
-          'Saving into a recipe needs a connection. Use Save brew to keep it on this device.',
+    const enqueueSaveToRecipe = async (target: SaveToRecipeTarget) => {
+      const shouldHoldForTasting = hasEnabledTasteProfileField(tasteProfile)
+      if (shouldHoldForTasting) holdPendingBrewForTasting(operationId)
+
+      try {
+        await enqueueBrewSaveToRecipe(
+          operationId,
+          {
+            shot: { ...baseData, clientOperationId: operationId },
+            target:
+              target.kind === 'new'
+                ? { name: target.name }
+                : { recipeId: target.recipeId },
+          },
+          {
+            label: selectedBean?.name ?? 'Brew',
+            detail:
+              target.kind === 'new'
+                ? `New recipe: ${target.name}`
+                : 'Existing recipe',
+          },
         )
-        return false
+      } catch (error) {
+        if (shouldHoldForTasting) {
+          releasePendingBrewForTasting(operationId)
+        }
+        throw error
       }
 
-      if (!targetRecipe && !isOnline) {
-        return await enqueueBrew()
+      operationIdRef.current = null
+      setIsDirty(false)
+      if (shouldHoldForTasting) {
+        toast.success(
+          'Saved on this device. Add tasting now; the brew and recipe will sync when you reconnect.',
+        )
+        setTasting({ kind: 'pending', operationId, values: submittedValues })
+      } else {
+        toast.success(
+          'Saved on this device. The brew and recipe will sync when you reconnect.',
+        )
+        await onQueued()
+      }
+      return true
+    }
+
+    setIsSubmitting(true)
+    try {
+      if (!isOnline) {
+        return targetRecipe
+          ? await enqueueSaveToRecipe(targetRecipe)
+          : await enqueueBrew()
       }
 
       const shot = targetRecipe
@@ -538,9 +579,11 @@ export function NewShotForm({
       else await onSaved()
       return true
     } catch (error) {
-      if (!targetRecipe && (isNetworkError(error) || !navigator.onLine)) {
+      if (isNetworkError(error) || !navigator.onLine) {
         try {
-          return await enqueueBrew()
+          return targetRecipe
+            ? await enqueueSaveToRecipe(targetRecipe)
+            : await enqueueBrew()
         } catch (queueError) {
           toast.error(
             queueError instanceof Error
@@ -848,12 +891,7 @@ export function NewShotForm({
               variant="outline"
               size="lg"
               className="w-full"
-              disabled={!canSave || !isOnline}
-              title={
-                !isOnline
-                  ? 'Saving into a recipe needs a connection'
-                  : undefined
-              }
+              disabled={!canSave}
             />,
           )}
           <Button
@@ -877,10 +915,7 @@ export function NewShotForm({
             type="button"
             variant="outline"
             className="min-w-0 flex-1 px-3"
-            disabled={!canSave || !isOnline}
-            title={
-              !isOnline ? 'Saving into a recipe needs a connection' : undefined
-            }
+            disabled={!canSave}
           />,
         )}
         <Button

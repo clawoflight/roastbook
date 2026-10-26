@@ -1,26 +1,70 @@
 import { Link } from '@tanstack/react-router'
 import { CloudOff, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { OfflineSyncManager } from '@/components/offline-sync-manager'
 import { DEMO_MODE } from '@/lib/build-mode'
+import { listOperations } from '@/modules/offline/operation-queue'
+import {
+  isVisibleOperationStatus,
+  type OfflineOperation,
+} from '@/modules/offline/operations'
 import { usePendingBrewsStore } from '@/modules/offline/pending-store'
+import {
+  subscribeToPendingSync,
+  subscribeToPendingSyncFinished,
+} from '@/modules/offline/sync-trigger'
 
 export function PendingSyncBanner() {
-  const items = usePendingBrewsStore((state) => state.items)
   const isHydrated = usePendingBrewsStore((state) => state.isHydrated)
   const isSyncing = usePendingBrewsStore((state) => state.isSyncing)
   const loadError = usePendingBrewsStore((state) => state.loadError)
+  const [operations, setOperations] = useState<OfflineOperation[]>([])
+  const [operationError, setOperationError] = useState<string | null>(null)
+  const loadGeneration = useRef(0)
+
+  const load = useCallback(async () => {
+    const generation = ++loadGeneration.current
+    try {
+      const all = await listOperations()
+      if (generation !== loadGeneration.current) return
+      setOperations(all.filter((item) => isVisibleOperationStatus(item.status)))
+      setOperationError(null)
+    } catch {
+      if (generation !== loadGeneration.current) return
+      setOperations([])
+      setOperationError('Could not read pending offline changes')
+    }
+  }, [])
+
+  useEffect(() => {
+    void load()
+    const unsubscribeRequested = subscribeToPendingSync(() => {
+      void load()
+    })
+    const unsubscribeFinished = subscribeToPendingSyncFinished(() => {
+      void load()
+    })
+    return () => {
+      unsubscribeRequested()
+      unsubscribeFinished()
+    }
+  }, [load])
 
   if (DEMO_MODE || !isHydrated) return null
-  if (items.length === 0 && !loadError) return null
+  if (operations.length === 0 && !loadError && !operationError) return null
 
-  const authRequired = items.some((item) => item.status === 'auth-required')
-  const failed = items.some((item) => item.status === 'failed')
+  const authRequired = operations.some(
+    (item) => item.status === 'auth-required',
+  )
+  const failed = operations.some(
+    (item) => item.status === 'permanent' || item.status === 'conflict',
+  )
   const status = isSyncing
     ? 'Syncing now…'
     : authRequired
       ? 'Sign in to sync.'
       : failed
-        ? 'Some brews need attention.'
+        ? 'Some changes need attention.'
         : 'Waiting to sync.'
 
   return (
@@ -35,9 +79,9 @@ export function PendingSyncBanner() {
           <CloudOff className="h-4 w-4" aria-hidden="true" />
         )}
         <span>
-          {items.length === 0
-            ? 'Pending brews could not be loaded.'
-            : `${items.length} brew${items.length === 1 ? '' : 's'} saved on this device. ${status}${loadError ? ' Could not refresh saved brews.' : ''}`}
+          {operations.length === 0
+            ? (operationError ?? 'Pending changes could not be loaded.')
+            : `${operations.length} offline change${operations.length === 1 ? '' : 's'} saved on this device. ${status}${loadError || operationError ? ` ${operationError ?? 'Could not refresh saved changes.'}` : ''}`}
         </span>
         <Link
           to="/brews/pending"

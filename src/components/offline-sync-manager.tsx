@@ -2,25 +2,298 @@ import { useRouter } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { DEMO_MODE } from '@/lib/build-mode'
-import { createShot } from '@/lib/server/shots'
-import { checkAuthentication } from '@/modules/offline/auth'
+import { createEntityImageUploadFormData } from '@/lib/entity-image-upload-form'
 import {
-  markPendingBrew,
-  usePendingBrewsStore,
-} from '@/modules/offline/pending-store'
-import { deletePendingBrew, listPendingBrews } from '@/modules/offline/queue'
-import { syncPendingBrews } from '@/modules/offline/sync-pending-brews'
+  deleteEntityImage,
+  type EntityType,
+  uploadEntityImage,
+} from '@/lib/server/images'
+import {
+  createRecipe,
+  deleteRecipe,
+  saveShotAsRecipe,
+  updateRecipe,
+} from '@/lib/server/recipes'
+import {
+  createShot,
+  createShotAndSaveRecipe,
+  deleteShot,
+  updateShot,
+} from '@/lib/server/shots'
+import { checkAuthentication } from '@/modules/offline/auth'
+import { getOfflineBlob } from '@/modules/offline/blob-store'
+import {
+  getLocalEntityByServerId,
+  markLocalEntitySynced,
+  putLocalEntity,
+  recordSuccessfulSync,
+  refreshServerEntitySyncState,
+  removeLocalEntity,
+  updateServerEntityRevision,
+} from '@/modules/offline/local-data'
+import {
+  acknowledgeOperation,
+  claimOperation,
+  listOperations,
+  recoverInterruptedOperations,
+  updateOperation,
+} from '@/modules/offline/operation-queue'
+import type { OfflineOperation } from '@/modules/offline/operations'
+import { usePendingBrewsStore } from '@/modules/offline/pending-store'
+import { withOfflineSyncLock } from '@/modules/offline/sync-lock'
+import {
+  type OperationExecutionResult,
+  syncOperations,
+} from '@/modules/offline/sync-operations'
 import {
   INITIAL_SYNC_RETRY_DELAY_MS,
   nextSyncRetryDelay,
   shouldAnnounceAuthRequired,
   shouldScheduleSyncRetry,
 } from '@/modules/offline/sync-policy'
-import { subscribeToPendingSync } from '@/modules/offline/sync-trigger'
+import {
+  notifyPendingSyncFinished,
+  subscribeToPendingSync,
+} from '@/modules/offline/sync-trigger'
 import { isPendingBrewHeldForTasting } from '@/modules/offline/tasting-holds'
+import type { PendingBrewPayload } from '@/modules/offline/types'
 
 const PREFETCH_TIMEOUT_MS = 3000
 let activeSyncOwner: object | null = null
+
+function updatePayload(operation: OfflineOperation): Record<string, unknown> {
+  const {
+    baseRevision: _baseRevision,
+    baseUpdatedAt: _baseUpdatedAt,
+    ...payload
+  } = operation.payload as Record<string, unknown>
+  return {
+    ...payload,
+    clientOperationId: operation.id,
+    ...(operation.baseRevision
+      ? { baseRevision: Number(operation.baseRevision) }
+      : {}),
+  }
+}
+
+async function executeBrewOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  if (operation.operationType === 'create') {
+    const shot = await createShot({
+      data: operation.payload as PendingBrewPayload,
+    })
+    return { serverId: String(shot.id) }
+  }
+  if (operation.operationType === 'update') {
+    const shot = await updateShot({
+      data: updatePayload(operation) as NonNullable<
+        Parameters<typeof updateShot>[0]
+      >['data'],
+    })
+    return {
+      serverId: String(shot.id),
+      revision: String(shot.revision),
+    }
+  }
+  if (operation.operationType === 'delete') {
+    const id = Number(operation.entityServerId ?? operation.entityLocalId)
+    await deleteShot({
+      data: {
+        id,
+        ...(operation.baseRevision
+          ? { baseRevision: Number(operation.baseRevision) }
+          : {}),
+        idempotent: true,
+      },
+    })
+    return { serverId: String(id) }
+  }
+  if (operation.operationType === 'save-to-recipe') {
+    const payload = operation.payload as {
+      readonly shot?: unknown
+      readonly shotId?: number
+      readonly target: { readonly name: string } | { readonly recipeId: number }
+    }
+    if (payload.shot) {
+      const result = await createShotAndSaveRecipe({
+        data: operation.payload as NonNullable<
+          Parameters<typeof createShotAndSaveRecipe>[0]
+        >['data'],
+      })
+      return { serverId: String(result.shot.id) }
+    }
+    if (payload.shotId) {
+      await saveShotAsRecipe({
+        data: {
+          shotId: payload.shotId,
+          clientOperationId: operation.id,
+          ...payload.target,
+        } as NonNullable<Parameters<typeof saveShotAsRecipe>[0]>['data'],
+      })
+      return { serverId: String(payload.shotId) }
+    }
+    throw new Error('Save-to-recipe operation is missing its brew')
+  }
+
+  throw new Error(`Unsupported brew operation: ${operation.operationType}`)
+}
+
+async function executeRecipeOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  if (operation.operationType === 'create') {
+    const recipe = await createRecipe({
+      data: operation.payload as NonNullable<
+        Parameters<typeof createRecipe>[0]
+      >['data'],
+    })
+    return { serverId: String(recipe.id) }
+  }
+  if (operation.operationType === 'update') {
+    const recipe = await updateRecipe({
+      data: updatePayload(operation) as NonNullable<
+        Parameters<typeof updateRecipe>[0]
+      >['data'],
+    })
+    return {
+      serverId: String(recipe.id),
+      revision: String(recipe.revision),
+    }
+  }
+  if (operation.operationType === 'delete') {
+    const id = Number(operation.entityServerId ?? operation.entityLocalId)
+    await deleteRecipe({
+      data: {
+        id,
+        ...(operation.baseRevision
+          ? { baseRevision: Number(operation.baseRevision) }
+          : {}),
+        idempotent: true,
+      },
+    })
+    return { serverId: String(id) }
+  }
+
+  throw new Error(`Unsupported recipe operation: ${operation.operationType}`)
+}
+
+async function executeBrewImageOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  const payload = operation.payload as {
+    readonly entityType?: EntityType
+    readonly entityId?: number
+    readonly imageId?: number
+    readonly clientOperationId?: string
+    readonly idempotent?: boolean
+  }
+  const entityType = payload.entityType ?? 'shots'
+  const entityId = payload.entityId ?? Number(operation.entityServerId)
+
+  if (operation.operationType === 'upload') {
+    const blobKey = operation.blobKeys[0]
+    if (!blobKey) throw new Error('Image data is missing from this device')
+    const record = await getOfflineBlob(blobKey)
+    if (!record) throw new Error('Image data is missing from this device')
+    const file = new File([record.blob], record.filename, {
+      type: record.mimeType,
+    })
+    const image = await uploadEntityImage({
+      data: createEntityImageUploadFormData(
+        entityType,
+        entityId,
+        file,
+        payload.clientOperationId,
+      ),
+    })
+    return { serverId: String(image.id) }
+  }
+  if (operation.operationType === 'remove-image') {
+    await deleteEntityImage({
+      data: {
+        entityType,
+        entityId,
+        imageId: payload.imageId ?? 0,
+        idempotent: true,
+      },
+    })
+    return { serverId: String(entityId) }
+  }
+
+  throw new Error(`Unsupported image operation: ${operation.operationType}`)
+}
+
+async function executeOperation(
+  operation: OfflineOperation,
+): Promise<OperationExecutionResult> {
+  if (operation.entityType === 'brew') return executeBrewOperation(operation)
+  if (operation.entityType === 'recipe') {
+    return executeRecipeOperation(operation)
+  }
+  if (operation.entityType === 'brew-image') {
+    return executeBrewImageOperation(operation)
+  }
+
+  throw new Error(
+    `Unsupported offline operation: ${operation.entityType}/${operation.operationType}`,
+  )
+}
+
+async function applyEntityRevision(
+  entityType: 'brew' | 'recipe',
+  serverId: string,
+  revision: string,
+): Promise<void> {
+  const operations = await listOperations({ entityType })
+  for (const operation of operations) {
+    if (
+      operation.entityServerId === serverId &&
+      (operation.operationType === 'update' ||
+        operation.operationType === 'delete') &&
+      (operation.status === 'pending' || operation.status === 'retryable')
+    ) {
+      await updateOperation(operation.id, { baseRevision: revision })
+    }
+  }
+
+  await updateServerEntityRevision(entityType, serverId, revision)
+}
+
+async function markBrewSynced(
+  operation: OfflineOperation,
+  serverId: string,
+): Promise<void> {
+  const existingByServer = await getLocalEntityByServerId('brew', serverId)
+  if (existingByServer) {
+    if (existingByServer.localId !== operation.entityLocalId) {
+      await removeLocalEntity('brew', operation.entityLocalId).catch(
+        () => undefined,
+      )
+    }
+    await putLocalEntity({
+      ...existingByServer,
+      syncState: 'synced',
+      updatedAt: new Date().toISOString(),
+    })
+    await refreshServerEntitySyncState('brew', serverId)
+    return
+  }
+
+  const synced = await markLocalEntitySynced('brew', operation.entityLocalId, {
+    serverId,
+  })
+  if (!synced && operation.operationType === 'create') {
+    await putLocalEntity({
+      entityType: 'brew',
+      localId: operation.entityLocalId,
+      serverId,
+      data: operation.payload,
+      syncState: 'synced',
+    })
+  }
+  await refreshServerEntitySyncState('brew', serverId)
+}
 
 export function OfflineSyncManager() {
   const router = useRouter()
@@ -71,21 +344,118 @@ export function OfflineSyncManager() {
         try {
           if (!navigator.onLine) return
 
-          activeSyncOwner = syncOwner
-          usePendingBrewsStore.getState().setSyncing(true)
-          const result = await syncPendingBrews({
-            list: async () =>
-              (await listPendingBrews()).filter(
-                (item) => !isPendingBrewHeldForTasting(item.operationId),
-              ),
-            remove: deletePendingBrew,
-            mark: markPendingBrew,
-            create: (payload) => createShot({ data: payload }),
-            authenticate: checkAuthentication,
-            isOnline: () => navigator.onLine,
+          const result = await withOfflineSyncLock(async () => {
+            if (disposed || !navigator.onLine) return null
+
+            activeSyncOwner = syncOwner
+            usePendingBrewsStore.getState().setSyncing(true)
+            try {
+              await recoverInterruptedOperations()
+              const syncResult = await syncOperations({
+                list: async () =>
+                  (await listOperations()).filter(
+                    (operation) => !isPendingBrewHeldForTasting(operation.id),
+                  ),
+                claim: (operation) => claimOperation(operation.id),
+                acknowledge: (operation, executionResult) =>
+                  acknowledgeOperation(operation.id, {
+                    serverId: executionResult.serverId ?? null,
+                  }),
+                mark: (operation, changes) =>
+                  updateOperation(operation.id, changes),
+                execute: executeOperation,
+                authenticate: checkAuthentication,
+                isOnline: () => navigator.onLine,
+                onAcknowledged: async (operation, executionResult) => {
+                  const serverId = executionResult.serverId
+                  if (!serverId) return
+                  const revision = executionResult.revision
+
+                  if (operation.entityType === 'brew-image') {
+                    const imagePayload = operation.payload as {
+                      readonly entityType?: string
+                      readonly entityId?: number
+                    }
+                    if (
+                      imagePayload.entityType === 'shots' &&
+                      imagePayload.entityId !== undefined
+                    ) {
+                      await refreshServerEntitySyncState(
+                        'brew',
+                        String(imagePayload.entityId),
+                      )
+                    }
+                  }
+
+                  if (
+                    operation.entityType === 'brew' &&
+                    (operation.operationType === 'create' ||
+                      operation.operationType === 'update')
+                  ) {
+                    await markBrewSynced(operation, serverId)
+                    if (operation.operationType === 'update' && revision) {
+                      await applyEntityRevision('brew', serverId, revision)
+                    }
+                    return
+                  }
+
+                  if (
+                    (operation.entityType === 'brew' ||
+                      operation.entityType === 'recipe') &&
+                    operation.operationType === 'delete'
+                  ) {
+                    const cached = await getLocalEntityByServerId(
+                      operation.entityType,
+                      serverId,
+                    )
+                    if (cached) {
+                      await removeLocalEntity(
+                        operation.entityType,
+                        cached.localId,
+                      ).catch(() => undefined)
+                    }
+                    return
+                  }
+
+                  if (
+                    operation.entityType === 'recipe' &&
+                    operation.operationType === 'update'
+                  ) {
+                    if (revision) {
+                      await applyEntityRevision('recipe', serverId, revision)
+                    } else {
+                      const cached = await getLocalEntityByServerId(
+                        'recipe',
+                        serverId,
+                      )
+                      if (cached) {
+                        await putLocalEntity({
+                          ...cached,
+                          syncState: 'synced',
+                          updatedAt: new Date().toISOString(),
+                        })
+                      }
+                    }
+                  }
+                },
+              })
+              await usePendingBrewsStore.getState().refresh()
+              if (
+                (syncResult.synced > 0 || syncResult.failed > 0) &&
+                !syncResult.authRequired &&
+                !syncResult.stoppedByNetwork
+              ) {
+                await recordSuccessfulSync().catch(() => undefined)
+              }
+              return syncResult
+            } finally {
+              if (activeSyncOwner === syncOwner) {
+                activeSyncOwner = null
+                usePendingBrewsStore.getState().setSyncing(false)
+              }
+            }
           })
-          await usePendingBrewsStore.getState().refresh()
-          if (disposed) return
+          if (!result || disposed) return
 
           if (result.synced > 0) {
             if (!router.state.location.pathname.startsWith('/brews/new')) {
@@ -122,8 +492,12 @@ export function OfflineSyncManager() {
           }
 
           authNotified = result.authRequired
-          if (result.stoppedByNetwork && navigator.onLine) scheduleRetry()
-          else clearRetry()
+          if (
+            (result.stoppedByNetwork || result.retryable) &&
+            navigator.onLine
+          ) {
+            scheduleRetry()
+          } else clearRetry()
         } catch (error) {
           if (disposed) return
           // A failed flush leaves the queue intact. Retry local/transient
@@ -132,10 +506,7 @@ export function OfflineSyncManager() {
           scheduleRetry()
         } finally {
           syncInFlight = null
-          if (activeSyncOwner === syncOwner) {
-            activeSyncOwner = null
-            usePendingBrewsStore.getState().setSyncing(false)
-          }
+          notifyPendingSyncFinished()
           if (!disposed && syncQueued) {
             syncQueued = false
             void runSync()
