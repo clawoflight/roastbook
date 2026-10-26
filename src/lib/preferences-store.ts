@@ -24,6 +24,7 @@ type PreferencesState = {
   readonly theme: ThemePreference
   readonly collectionViews: CollectionViews
   readonly timerSoundsEnabled: boolean
+  readonly installHintDismissed: boolean
   readonly hasHydrated: boolean
   readonly setTheme: (theme: ThemePreference) => void
   readonly setCollectionView: (
@@ -31,6 +32,7 @@ type PreferencesState = {
     view: CollectionView,
   ) => void
   readonly setTimerSoundsEnabled: (enabled: boolean) => void
+  readonly dismissInstallHint: () => void
   readonly markHydrated: () => void
 }
 
@@ -60,12 +62,17 @@ function readTimerSoundsEnabled(state: object): boolean {
   return typeof enabled === 'boolean' ? enabled : true
 }
 
+function readInstallHintDismissed(state: object): boolean {
+  return Reflect.get(state, 'installHintDismissed') === true
+}
+
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set) => ({
       theme: 'system',
       collectionViews: {},
       timerSoundsEnabled: true,
+      installHintDismissed: false,
       hasHydrated: false,
       setTheme: (theme) => set({ theme }),
       setCollectionView: (collection, view) =>
@@ -74,6 +81,7 @@ export const usePreferencesStore = create<PreferencesState>()(
         })),
       setTimerSoundsEnabled: (timerSoundsEnabled) =>
         set({ timerSoundsEnabled }),
+      dismissInstallHint: () => set({ installHintDismissed: true }),
       markHydrated: () => set({ hasHydrated: true }),
     }),
     {
@@ -81,10 +89,16 @@ export const usePreferencesStore = create<PreferencesState>()(
       name: 'roastbook-settings',
       version: 6,
       skipHydration: true,
-      partialize: ({ theme, collectionViews, timerSoundsEnabled }) => ({
+      partialize: ({
         theme,
         collectionViews,
         timerSoundsEnabled,
+        installHintDismissed,
+      }) => ({
+        theme,
+        collectionViews,
+        timerSoundsEnabled,
+        installHintDismissed,
       }),
       migrate: (persistedState) => {
         if (typeof persistedState !== 'object' || persistedState === null) {
@@ -92,12 +106,14 @@ export const usePreferencesStore = create<PreferencesState>()(
             theme: 'system',
             collectionViews: {},
             timerSoundsEnabled: true,
+            installHintDismissed: false,
           }
         }
         return {
           theme: readTheme(persistedState) ?? 'system',
           collectionViews: readCollectionViews(persistedState),
           timerSoundsEnabled: readTimerSoundsEnabled(persistedState),
+          installHintDismissed: readInstallHintDismissed(persistedState),
         }
       },
       merge: (persistedState, currentState) => {
@@ -110,6 +126,7 @@ export const usePreferencesStore = create<PreferencesState>()(
           ...(theme ? { theme } : {}),
           collectionViews: readCollectionViews(persistedState),
           timerSoundsEnabled: readTimerSoundsEnabled(persistedState),
+          installHintDismissed: readInstallHintDismissed(persistedState),
         }
       },
     },

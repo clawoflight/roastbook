@@ -32,6 +32,12 @@ secure context, so terminate TLS at an ingress or reverse proxy in front of
 Hodor (or use an equivalent HTTPS proxy) for production deployments. Plain
 `http://localhost` also counts as secure for local testing.
 
+Until a device installs the app or dismisses it, a small hint below the
+header offers installation for offline use. Chromium browsers get an
+**Install** button that opens the native prompt; iOS Safari, which has no
+prompt API, gets the Share → Add to Home Screen steps. Dismissal is stored in
+the browser's local preferences.
+
 The application serves `/sw.js`, `/manifest.json`, and `/offline.html` with
 `Cache-Control: no-cache`. Keep those responses uncached at any additional CDN
 or reverse proxy. Hodor passes them through without special configuration.

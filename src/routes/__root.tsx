@@ -15,6 +15,7 @@ import '../styles.css'
 import { AlertTriangle, Home, LockKeyhole, RefreshCw } from 'lucide-react'
 import { AppNavbar } from '@/components/app-navbar'
 import { ErrorDetails } from '@/components/error-details'
+import { InstallAppHint } from '@/components/install-app-hint'
 import { OfflineBanner } from '@/components/offline-banner'
 import { PwaManager } from '@/components/pwa-manager'
 import { RouteNotFound } from '@/components/route-not-found'
@@ -301,6 +302,7 @@ function RootComponent() {
                 </div>
               </div>
             ) : null}
+            <InstallAppHint />
             <main
               id="main-content"
               onSubmitCapture={
