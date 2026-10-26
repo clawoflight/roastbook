@@ -1,17 +1,12 @@
 import type { TokenUsage } from '@tanstack/ai'
+import { MODEL_TOKEN_RATES, type ModelTokenRates } from '@/lib/ai-model-pricing'
 
-type ModelTokenRates = {
-  readonly input: number
-  readonly cachedInput: number
-  readonly output: number
-}
-
-// OpenAI standard API prices in USD per one million tokens. Unknown or
-// custom-endpoint models still have their tokens tracked without attaching a
-// potentially misleading cost estimate.
-const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
-  'gpt-4o': { input: 2.5, cachedInput: 1.25, output: 10 },
-  'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.6 },
+function ratesForModel(model: string): ModelTokenRates | undefined {
+  // Responses can report a dated snapshot such as `gpt-5.1-2025-11-13`.
+  return (
+    MODEL_TOKEN_RATES[model] ??
+    MODEL_TOKEN_RATES[model.replace(/-\d{4}-\d{2}-\d{2}$/, '')]
+  )
 }
 
 export function estimateTokenCostUsd(
@@ -22,7 +17,7 @@ export function estimateTokenCostUsd(
     return Math.max(0, usage.cost)
   }
 
-  const rates = MODEL_TOKEN_RATES[model]
+  const rates = ratesForModel(model)
   if (!rates) return null
 
   const cachedTokens = Math.min(
