@@ -107,6 +107,10 @@ async function readRates(): Promise<Map<string, Rates>> {
   return rates
 }
 
+function formatModelKey(model: string): string {
+  return /^[A-Za-z_$][\w$]*$/.test(model) ? model : `'${model}'`
+}
+
 async function main(): Promise<void> {
   const rates = await readRates()
   const missing = CHAT_MODELS.filter((model) => !rates.has(model))
@@ -118,7 +122,7 @@ async function main(): Promise<void> {
     .sort(([left], [right]) => left.localeCompare(right))
     .map(
       ([model, rate]) =>
-        `  '${model}': { input: ${rate.input}, cachedInput: ${rate.cachedInput}, output: ${rate.output} },`,
+        `  ${formatModelKey(model)}: { input: ${rate.input}, cachedInput: ${rate.cachedInput}, output: ${rate.output} },`,
     )
     .join('\n')
 
@@ -135,6 +139,19 @@ export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
 ${entries}
 }
 `
+
+  if (process.argv.includes('--check')) {
+    const current = await readFile(OUTPUT, 'utf8').catch(() => '')
+    if (current !== output) {
+      console.error(
+        'AI pricing table is out of date. Run `bun run sync:ai-pricing`.',
+      )
+      process.exitCode = 1
+      return
+    }
+    console.info('AI pricing table is up to date')
+    return
+  }
 
   await writeFile(OUTPUT, output)
   console.info(`Wrote ${rates.size} model prices to ${OUTPUT}`)
