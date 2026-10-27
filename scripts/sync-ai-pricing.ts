@@ -119,7 +119,7 @@ async function main(): Promise<void> {
   }
 
   const entries = [...rates.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
+    .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(
       ([model, rate]) =>
         `  ${formatModelKey(model)}: { input: ${rate.input}, cachedInput: ${rate.cachedInput}, output: ${rate.output} },`,
