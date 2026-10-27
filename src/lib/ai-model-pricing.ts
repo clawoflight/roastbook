@@ -8,9 +8,6 @@ export type ModelTokenRates = {
 }
 
 export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
-  'chatgpt-4o-latest': { input: 5, cachedInput: 5, output: 15 },
-  'codex-mini-latest': { input: 1.5, cachedInput: 0.375, output: 6 },
-  'computer-use-preview': { input: 3, cachedInput: 3, output: 12 },
   'gpt-3.5-turbo': { input: 0.5, cachedInput: 0.5, output: 1.5 },
   'gpt-4': { input: 30, cachedInput: 30, output: 60 },
   'gpt-4-turbo': { input: 10, cachedInput: 10, output: 30 },
@@ -18,9 +15,7 @@ export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
   'gpt-4.1-mini': { input: 0.4, cachedInput: 0.1, output: 1.6 },
   'gpt-4.1-nano': { input: 0.1, cachedInput: 0.025, output: 0.4 },
   'gpt-4o': { input: 2.5, cachedInput: 1.25, output: 10 },
-  'gpt-4o-audio': { input: 2.5, cachedInput: 2.5, output: 10 },
   'gpt-4o-mini': { input: 0.15, cachedInput: 0.075, output: 0.6 },
-  'gpt-4o-mini-audio': { input: 0.15, cachedInput: 0.15, output: 0.6 },
   'gpt-4o-mini-search-preview': { input: 0.15, cachedInput: 0.15, output: 0.6 },
   'gpt-4o-search-preview': { input: 2.5, cachedInput: 2.5, output: 10 },
   'gpt-5': { input: 1.25, cachedInput: 0.125, output: 10 },
@@ -41,7 +36,6 @@ export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
   'gpt-5.4-nano': { input: 0.2, cachedInput: 0.02, output: 1.25 },
   'gpt-5.5': { input: 5, cachedInput: 0.5, output: 30 },
   'gpt-5.5-pro': { input: 30, cachedInput: 30, output: 180 },
-  'gpt-5.6': { input: 5, cachedInput: 0.5, output: 30 },
   'gpt-5.6-luna': { input: 0.2, cachedInput: 0.02, output: 1.2 },
   'gpt-5.6-luna-pro': { input: 0.2, cachedInput: 0.02, output: 1.2 },
   'gpt-5.6-sol': { input: 5, cachedInput: 0.5, output: 30 },
