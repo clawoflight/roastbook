@@ -5,6 +5,12 @@ export type ModelTokenRates = {
   readonly input: number
   readonly cachedInput: number
   readonly output: number
+  readonly longContext?: {
+    readonly thresholdTokens: number
+    readonly input: number
+    readonly cachedInput: number
+    readonly output: number
+  }
 }
 
 export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
@@ -34,21 +40,111 @@ export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
   'gpt-5.4-image-2': { input: 8, cachedInput: 2, output: 15 },
   'gpt-5.4-mini': { input: 0.75, cachedInput: 0.075, output: 4.5 },
   'gpt-5.4-nano': { input: 0.2, cachedInput: 0.02, output: 1.25 },
-  'gpt-5.5': { input: 5, cachedInput: 0.5, output: 30 },
-  'gpt-5.5-pro': { input: 30, cachedInput: 30, output: 180 },
-  'gpt-5.6-luna': { input: 0.2, cachedInput: 0.02, output: 1.2 },
+  'gpt-5.5': {
+    input: 5,
+    cachedInput: 0.5,
+    output: 30,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 10,
+      cachedInput: 1,
+      output: 45,
+    },
+  },
+  'gpt-5.5-pro': {
+    input: 30,
+    cachedInput: 30,
+    output: 180,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 60,
+      cachedInput: 60,
+      output: 270,
+    },
+  },
+  'gpt-5.6-luna': {
+    input: 0.2,
+    cachedInput: 0.02,
+    output: 1.2,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 0.4,
+      cachedInput: 0.04,
+      output: 1.8,
+    },
+  },
   'gpt-5.6-luna-pro': { input: 0.2, cachedInput: 0.02, output: 1.2 },
-  'gpt-5.6-sol': { input: 4, cachedInput: 0.4, output: 20 },
+  'gpt-5.6-sol': {
+    input: 4,
+    cachedInput: 0.4,
+    output: 20,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 8,
+      cachedInput: 0.8,
+      output: 30,
+    },
+  },
   'gpt-5.6-sol-pro': { input: 2.5, cachedInput: 0.25, output: 15 },
-  'gpt-5.6-terra': { input: 2, cachedInput: 0.2, output: 12 },
+  'gpt-5.6-terra': {
+    input: 2,
+    cachedInput: 0.2,
+    output: 12,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 4,
+      cachedInput: 0.4,
+      output: 18,
+    },
+  },
   'gpt-5.6-terra-pro': { input: 2, cachedInput: 0.2, output: 12 },
-  'gpt-6-astra': { input: 10, cachedInput: 1, output: 50 },
+  'gpt-6-astra': {
+    input: 10,
+    cachedInput: 1,
+    output: 50,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 20,
+      cachedInput: 2,
+      output: 75,
+    },
+  },
   'gpt-6-astra-pro': { input: 10, cachedInput: 1, output: 50 },
-  'gpt-6-luna': { input: 0.1, cachedInput: 0.01, output: 0.5 },
+  'gpt-6-luna': {
+    input: 0.1,
+    cachedInput: 0.01,
+    output: 0.5,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 0.2,
+      cachedInput: 0.02,
+      output: 0.75,
+    },
+  },
   'gpt-6-luna-pro': { input: 0.1, cachedInput: 0.01, output: 0.5 },
-  'gpt-6-sol': { input: 2, cachedInput: 0.2, output: 10 },
+  'gpt-6-sol': {
+    input: 2,
+    cachedInput: 0.2,
+    output: 10,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 4,
+      cachedInput: 0.4,
+      output: 15,
+    },
+  },
   'gpt-6-sol-pro': { input: 2, cachedInput: 0.2, output: 10 },
-  'gpt-6.1-sol': { input: 2, cachedInput: 0.1, output: 10 },
+  'gpt-6.1-sol': {
+    input: 2,
+    cachedInput: 0.1,
+    output: 10,
+    longContext: {
+      thresholdTokens: 272000,
+      input: 4,
+      cachedInput: 0.2,
+      output: 15,
+    },
+  },
   'gpt-6.1-sol-pro': { input: 2, cachedInput: 0.1, output: 10 },
   'gpt-audio': { input: 2.5, cachedInput: 2.5, output: 10 },
   'gpt-audio-mini': { input: 0.6, cachedInput: 0.6, output: 2.4 },

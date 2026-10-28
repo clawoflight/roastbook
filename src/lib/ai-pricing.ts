@@ -20,6 +20,10 @@ export function estimateTokenCostUsd(
   const rates = ratesForModel(model)
   if (!rates) return null
 
+  const selected =
+    rates.longContext && usage.promptTokens > rates.longContext.thresholdTokens
+      ? rates.longContext
+      : rates
   const cachedTokens = Math.min(
     usage.promptTokens,
     usage.promptTokensDetails?.cachedTokens ?? 0,
@@ -27,9 +31,9 @@ export function estimateTokenCostUsd(
   const regularInputTokens = usage.promptTokens - cachedTokens
 
   return (
-    (regularInputTokens * rates.input +
-      cachedTokens * rates.cachedInput +
-      usage.completionTokens * rates.output) /
+    (regularInputTokens * selected.input +
+      cachedTokens * selected.cachedInput +
+      usage.completionTokens * selected.output) /
     1_000_000
   )
 }

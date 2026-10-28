@@ -31,6 +31,26 @@ describe('AI token cost estimates', () => {
     ).toBeCloseTo(0.003232)
   })
 
+  test('uses long-context rates above the catalog threshold', () => {
+    expect(
+      estimateTokenCostUsd('gpt-5.6-sol', {
+        promptTokens: 300_000,
+        completionTokens: 1_000,
+        totalTokens: 301_000,
+      }),
+    ).toBeCloseTo(2.43)
+  })
+
+  test('uses base rates below the long-context threshold', () => {
+    expect(
+      estimateTokenCostUsd('gpt-5.6-sol', {
+        promptTokens: 1_000,
+        completionTokens: 100,
+        totalTokens: 1_100,
+      }),
+    ).toBeCloseTo(0.006)
+  })
+
   test('matches dated GPT-5.1 snapshot names', () => {
     expect(
       estimateTokenCostUsd('gpt-5.1-2025-11-13', {
