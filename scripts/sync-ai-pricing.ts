@@ -2,12 +2,22 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { OPENAI_CHAT_MODELS } from '@tanstack/ai-openai'
 
-const SOURCE = join(
-  process.cwd(),
-  'node_modules/@tanstack/ai-openai/src/model-meta.ts',
-)
-const OUTPUT = join(process.cwd(), 'src/lib/ai-model-pricing.ts')
+const CATALOG_URL = 'https://models.dev/api.json'
+const CATALOG_FILE = join(process.cwd(), 'scripts/ai-pricing.catalog.json')
+const OUTPUT_FILE = join(process.cwd(), 'src/lib/ai-model-pricing.ts')
 const CHAT_MODELS: readonly string[] = OPENAI_CHAT_MODELS
+const PROVIDERS = ['openai', 'azure', 'azure-cognitive-services'] as const
+
+// models.dev lists this historical alias under its `codex-mini` ID.
+const MODEL_ALIASES: Readonly<Record<string, string>> = {
+  'codex-mini-latest': 'codex-mini',
+}
+
+type Cost = {
+  readonly input?: number
+  readonly output?: number
+  readonly cache_read?: number
+}
 
 type Rates = {
   readonly input: number
@@ -15,95 +25,58 @@ type Rates = {
   readonly output: number
 }
 
-function matchingBrace(source: string, start: number): number {
-  let depth = 0
-  let quote: string | null = null
-  let escaped = false
-  let lineComment = false
-  let blockComment = false
+type Provider = {
+  readonly models?: Readonly<Record<string, { readonly cost?: Cost }>>
+}
 
-  for (let index = start; index < source.length; index += 1) {
-    const character = source[index]
-    const next = source[index + 1]
+type Catalog = Readonly<Record<string, Provider>>
 
-    if (lineComment) {
-      if (character === '\n') lineComment = false
-      continue
-    }
-    if (blockComment) {
-      if (character === '*' && next === '/') {
-        blockComment = false
-        index += 1
-      }
-      continue
-    }
-    if (quote) {
-      if (escaped) escaped = false
-      else if (character === '\\') escaped = true
-      else if (character === quote) quote = null
-      continue
-    }
+function isRate(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
 
-    if (character === '/' && next === '/') {
-      lineComment = true
-      index += 1
-    } else if (character === '/' && next === '*') {
-      blockComment = true
-      index += 1
-    } else if (character === "'" || character === '"' || character === '`') {
-      quote = character
-    } else if (character === '{') {
-      depth += 1
-    } else if (character === '}') {
-      depth -= 1
-      if (depth === 0) return index
-    }
+function costRates(cost: Cost | undefined): Rates | undefined {
+  if (!cost || !isRate(cost.input) || !isRate(cost.output)) return undefined
+  return {
+    input: cost.input,
+    cachedInput:
+      isRate(cost.cache_read) && cost.cache_read > 0
+        ? cost.cache_read
+        : cost.input,
+    output: cost.output,
   }
-
-  throw new Error('Unclosed object literal in TanStack model metadata')
 }
 
-function propertyBlock(block: string, name: string): string | undefined {
-  const match = new RegExp(`\\b${name}\\s*:\\s*\\{`).exec(block)
-  if (!match) return undefined
-  const start = block.indexOf('{', match.index)
-  return block.slice(start, matchingBrace(block, start) + 1)
-}
-
-function numberProperty(block: string, name: string): number | undefined {
-  const match = new RegExp(`\\b${name}\\s*:\\s*([0-9.]+)`).exec(block)
-  return match ? Number(match[1]) : undefined
-}
-
-async function readRates(): Promise<Map<string, Rates>> {
-  const source = await readFile(SOURCE, 'utf8')
+function ratesFromModelsDev(
+  catalog: Catalog,
+  existing: Readonly<Record<string, Rates>>,
+): Map<string, Rates> {
   const rates = new Map<string, Rates>()
+  const preserved: string[] = []
 
-  for (const match of source.matchAll(/^const ([A-Z0-9_]+) = \{/gm)) {
-    const start = source.indexOf('{', match.index)
-    const block = source.slice(start, matchingBrace(source, start) + 1)
-    const name = /\bname:\s*'([^']+)'/.exec(block)?.[1]
-    if (!name || !CHAT_MODELS.includes(name)) continue
-
-    const pricing = propertyBlock(block, 'pricing')
-    const input = pricing && propertyBlock(pricing, 'input')
-    const output = pricing && propertyBlock(pricing, 'output')
-    const inputRate = input ? numberProperty(input, 'normal') : undefined
-    const cachedRate = input ? numberProperty(input, 'cached') : undefined
-    const outputRate = output ? numberProperty(output, 'normal') : undefined
-
-    if (inputRate === undefined || outputRate === undefined) {
-      throw new Error(`Missing pricing for ${name}`)
+  for (const model of CHAT_MODELS) {
+    const lookup = MODEL_ALIASES[model] ?? model
+    let found: Rates | undefined
+    for (const provider of PROVIDERS) {
+      found = costRates(catalog[provider]?.models?.[lookup]?.cost)
+      if (found) break
     }
 
-    rates.set(name, {
-      input: inputRate,
-      // Models without a cached-input price are billed at the normal input rate.
-      cachedInput: cachedRate ?? inputRate,
-      output: outputRate,
-    })
+    if (!found) {
+      found = existing[model]
+      if (found) preserved.push(model)
+    }
+    if (!found) {
+      throw new Error(
+        `No models.dev pricing found for ${model}; add an explicit fallback.`,
+      )
+    }
+    rates.set(model, found)
   }
 
+  if (preserved.length > 0) {
+    console.info(`Preserved existing rates for: ${preserved.join(', ')}`)
+  }
   return rates
 }
 
@@ -111,13 +84,7 @@ function formatModelKey(model: string): string {
   return /^[A-Za-z_$][\w$]*$/.test(model) ? model : `'${model}'`
 }
 
-async function main(): Promise<void> {
-  const rates = await readRates()
-  const missing = CHAT_MODELS.filter((model) => !rates.has(model))
-  if (missing.length > 0) {
-    throw new Error(`No pricing found for: ${missing.join(', ')}`)
-  }
-
+function renderTable(rates: ReadonlyMap<string, Rates>): string {
   const entries = [...rates.entries()]
     .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
     .map(
@@ -126,8 +93,8 @@ async function main(): Promise<void> {
     )
     .join('\n')
 
-  const output = `// Generated by scripts/sync-ai-pricing.ts from @tanstack/ai-openai's model
-// metadata. Do not edit manually; run \`bun run sync:ai-pricing\` instead.
+  return `// Generated by scripts/sync-ai-pricing.ts from the models.dev catalog.
+// Do not edit manually; run \`bun run sync:ai-pricing\` instead.
 
 export type ModelTokenRates = {
   readonly input: number
@@ -139,9 +106,29 @@ export const MODEL_TOKEN_RATES: Readonly<Record<string, ModelTokenRates>> = {
 ${entries}
 }
 `
+}
 
+async function readExistingCatalog(): Promise<Record<string, Rates>> {
+  try {
+    return JSON.parse(await readFile(CATALOG_FILE, 'utf8')) as Record<
+      string,
+      Rates
+    >
+  } catch {
+    return {}
+  }
+}
+
+async function main(): Promise<void> {
   if (process.argv.includes('--check')) {
-    const current = await readFile(OUTPUT, 'utf8').catch(() => '')
+    const existing = await readExistingCatalog()
+    if (Object.keys(existing).length === 0) {
+      throw new Error(
+        'Pricing catalog is missing. Run `bun run sync:ai-pricing`.',
+      )
+    }
+    const output = renderTable(new Map(Object.entries(existing)))
+    const current = await readFile(OUTPUT_FILE, 'utf8').catch(() => '')
     if (current !== output) {
       console.error(
         'AI pricing table is out of date. Run `bun run sync:ai-pricing`.',
@@ -153,8 +140,22 @@ ${entries}
     return
   }
 
-  await writeFile(OUTPUT, output)
-  console.info(`Wrote ${rates.size} model prices to ${OUTPUT}`)
+  const response = await fetch(CATALOG_URL)
+  if (!response.ok) {
+    throw new Error(`Could not fetch models.dev catalog (${response.status})`)
+  }
+  const catalog = (await response.json()) as Catalog
+  const existing = await readExistingCatalog()
+  const rates = ratesFromModelsDev(catalog, existing)
+  const sorted = Object.fromEntries(
+    [...rates.entries()].sort(([left], [right]) =>
+      left < right ? -1 : left > right ? 1 : 0,
+    ),
+  )
+
+  await writeFile(CATALOG_FILE, `${JSON.stringify(sorted, null, 2)}\n`)
+  await writeFile(OUTPUT_FILE, renderTable(rates))
+  console.info(`Wrote ${rates.size} model prices from models.dev`)
 }
 
 await main()
